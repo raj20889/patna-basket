@@ -5,64 +5,66 @@ const verifyToken = require('../middlewares/verifyToken');
 
 const router = express.Router();
 
-// Add to Cart
+// Add or update product in cart
 router.post('/add', verifyToken, async (req, res) => {
-    const { productId, quantity } = req.body;
+  const { productId, quantity } = req.body;
 
-    try {
-        let cart = await Cart.findOne({ userId: req.user.id });
+  if (!productId || quantity === undefined) {
+    return res.status(400).json({ msg: 'Product ID and quantity required' });
+  }
 
-        if (cart) {
-            const itemIndex = cart.products.findIndex(p => p.productId == productId);
+  try {
+    let cart = await Cart.findOne({ userId: req.user.id });
 
-            if (itemIndex > -1) {
-                cart.products[itemIndex].quantity += quantity;
-            } else {
-                cart.products.push({ productId, quantity });
-            }
+    // If cart exists
+    if (cart) {
+      const itemIndex = cart.products.findIndex(p => p.productId.toString() === productId);
 
+      if (itemIndex > -1) {
+        if (quantity <= 0) {
+          // Remove the item if quantity is 0 or less
+          cart.products.splice(itemIndex, 1);
         } else {
-            cart = new Cart({
-                userId: req.user.id,
-                products: [{ productId, quantity }],
-            });
+          // Update quantity
+          cart.products[itemIndex].quantity = quantity;
         }
+      } else {
+        // Add new product if quantity > 0
+        if (quantity > 0) {
+          cart.products.push({ productId, quantity });
+        }
+      }
 
-        await cart.save();
-        res.status(200).json({ msg: 'Cart Updated', cart });
-
-    } catch (err) {
-        res.status(500).json({ msg: 'Server Error', error: err.message });
+      await cart.save();
+      return res.status(200).json({ msg: 'Cart updated successfully', cart });
+    } else {
+      // Create new cart
+      const newCart = new Cart({
+        userId: req.user.id,
+        products: quantity > 0 ? [{ productId, quantity }] : [],
+      });
+      await newCart.save();
+      return res.status(201).json({ msg: 'Cart created', cart: newCart });
     }
+  } catch (error) {
+    console.error('Cart Add Error:', error);
+    return res.status(500).json({ msg: 'Server error' });
+  }
 });
 
-// Get Cart
+// Get cart with populated product details
 router.get('/', verifyToken, async (req, res) => {
-    try {
-        const cart = await Cart.findOne({ userId: req.user.id }).populate('products.productId');
-        res.status(200).json(cart);
-    } catch (err) {
-        res.status(500).json({ msg: 'Server Error', error: err.message });
+  try {
+    const cart = await Cart.findOne({ userId: req.user.id }).populate('products.productId');
+    if (!cart) {
+      return res.status(200).json({ products: [] });
     }
-});
 
-// Remove Product from Cart
-router.put('/remove', verifyToken, async (req, res) => {
-    const { productId } = req.body;
-
-    try {
-        const cart = await Cart.findOne({ userId: req.user.id });
-
-        if (!cart) return res.status(404).json({ msg: 'Cart Not Found' });
-
-        cart.products = cart.products.filter(p => p.productId != productId);
-
-        await cart.save();
-        res.status(200).json({ msg: 'Product Removed', cart });
-
-    } catch (err) {
-        res.status(500).json({ msg: 'Server Error', error: err.message });
-    }
+    return res.status(200).json(cart);
+  } catch (error) {
+    console.error('Cart Fetch Error:', error);
+    return res.status(500).json({ msg: 'Server error' });
+  }
 });
 
 module.exports = router;

@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import Navbar from '../components/Navbar'
+import AdminNavbar from '../components/Navbar/AdminNavbar'; // ✅ Fix here
+
 import { addProduct } from '../api/product'
 import { useNavigate } from 'react-router-dom'
 
@@ -9,7 +10,7 @@ const AddProduct = () => {
     price: '',
     description: '',
     category: '',
-    imageUrl: ''
+    image: ''
   })
 
   const navigate = useNavigate()
@@ -24,7 +25,7 @@ const AddProduct = () => {
     try {
       await addProduct(productData) // ✅ API call
       alert('Product added successfully!')
-      navigate('/') // ✅ redirect to Home after adding
+      navigate('/admin/dashboard') // ✅ redirect to Home after adding
     } catch (err) {
       console.error('Add Product Error:', err.response?.data || err.message)
       alert('Something went wrong. Please try again.')
@@ -36,7 +37,7 @@ const AddProduct = () => {
 
   return (
     <>
-      <Navbar />
+   
       <div className="max-w-lg mx-auto p-6 shadow-lg bg-white mt-8 rounded-lg">
         <h2 className="text-2xl font-bold text-center mb-6">Add a New Product</h2>
         <form onSubmit={handleSubmit}>
@@ -95,12 +96,12 @@ const AddProduct = () => {
           </div>
 
           <div className="mb-6">
-            <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-700">Image URL</label>
+            <label htmlFor="image" className="block text-sm font-medium text-gray-700">Image URL</label>
             <input
               type="text"
-              id="imageUrl"
-              name="imageUrl"
-              value={productData.imageUrl}
+              id="image"
+              name="image"
+              value={productData.image}
               onChange={handleChange}
               className="mt-1 block w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring focus:border-blue-500"
               placeholder="Enter image URL"

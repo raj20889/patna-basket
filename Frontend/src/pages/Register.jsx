@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
-import Navbar from '../components/Navbar'
+
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -32,7 +32,7 @@ const Register = () => {
 
   return (
     <>
-      <Navbar />
+   
       <div className="max-w-md mx-auto mt-10 p-6 bg-white shadow-lg rounded-md">
         <h2 className="text-2xl font-bold text-center mb-6">Register</h2>
         <form onSubmit={handleSubmit}>
