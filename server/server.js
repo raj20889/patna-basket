@@ -6,16 +6,26 @@ const app = express();
 const authRoute = require('./routes/auth');
 const productRoute = require('./routes/product');
 const cartRoute = require('./routes/cart');
+const addressRoutes = require('./routes/addressRoutes');
 
 dotenv.config();
 
-app.use(cors());
+// Enhanced CORS configuration
+app.use(cors({
+  origin: 'http://localhost:5173',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+  exposedHeaders: ['Authorization'] // Add this line
+}));
+
 app.use(express.json());
 
 // Routes
 app.use('/api/auth', authRoute);
 app.use('/api/products', productRoute);
 app.use('/api/cart', cartRoute);
+app.use('/api/addresses', addressRoutes);
 
 app.get('/', (req, res) => {
     res.send('E-Commerce API Running...');

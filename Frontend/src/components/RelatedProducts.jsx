@@ -1,81 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 
-const RelatedProducts = ({ products, onCartUpdate, cart: parentCart, loading: parentLoading }) => {
+const RelatedProducts = ({ products, onCartChange, cart, loading }) => {
   const navigate = useNavigate();
-  const [localCart, setLocalCart] = useState({});
-  const [localLoading, setLocalLoading] = useState({});
-
-  // Sync with parent cart state
-  useEffect(() => {
-    if (parentCart) {
-      setLocalCart(parentCart);
-    }
-  }, [parentCart]);
-
-  useEffect(() => {
-    if (parentLoading) {
-      setLocalLoading(parentLoading);
-    }
-  }, [parentLoading]);
-
-  const handleChange = async (productId, change) => {
-    const currentQty = localCart[productId] || 0;
-    const newQty = currentQty + change;
-
-    if (newQty < 0) return;
-
-    setLocalLoading(prev => ({ ...prev, [productId]: true }));
-    setLocalCart(prev => ({ ...prev, [productId]: newQty }));
-
-    try {
-      updateGuestCart(productId, newQty);
-    } catch (err) {
-      console.error("Error updating cart", err);
-      // Revert UI if error occurs
-      setLocalCart(prev => ({ ...prev, [productId]: currentQty }));
-    } finally {
-      setLocalLoading(prev => ({ ...prev, [productId]: false }));
-    }
-  };
-
-  const updateGuestCart = (productId, quantity) => {
-    let guestCart = JSON.parse(localStorage.getItem("guestCart")) || [];
-    const product = products.find(p => p._id === productId);
-    
-    if (!product) return;
-
-    const index = guestCart.findIndex(item => item.productId === productId);
-
-    if (index > -1) {
-      if (quantity > 0) {
-        guestCart[index].quantity = quantity;
-      } else {
-        guestCart.splice(index, 1);
-      }
-    } else if (quantity > 0) {
-      guestCart.push({
-        productId,
-        name: product.name,
-        price: product.price,
-        image: product.image,
-        quantity,
-      });
-    }
-
-    localStorage.setItem("guestCart", JSON.stringify(guestCart));
-    calculateAndUpdateCart(guestCart);
-  };
-
-  const calculateAndUpdateCart = (cartItems) => {
-    const count = cartItems.reduce((sum, item) => sum + item.quantity, 0);
-    const total = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    onCartUpdate(count, total);
-  };
 
   const handleAddToCart = (productId) => {
-    handleChange(productId, 1);
+    onCartChange(productId, 1);
+  };
+
+  const handleQuantityChange = (productId, change) => {
+    onCartChange(productId, change);
   };
 
   // Filter dairy-related products
@@ -105,8 +40,8 @@ const RelatedProducts = ({ products, onCartUpdate, cart: parentCart, loading: pa
       <div className="relative">
         <div className="flex space-x-4 overflow-x-auto pb-4 scrollbar-hide">
           {dairyProducts.map(product => {
-            const quantity = localCart[product._id] || 0;
-            const isLoading = localLoading[product._id];
+            const quantity = cart[product._id] || 0;
+            const isLoading = loading[product._id];
 
             return (
               <div 
@@ -159,36 +94,36 @@ const RelatedProducts = ({ products, onCartUpdate, cart: parentCart, loading: pa
                     
                     {quantity === 0 ? (
                       <div className='border-green-600 rounded-md border-[1.5px] mb-2'>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleAddToCart(product._id);
-                        }}
-                        disabled={isLoading}
-                        className={`bg-blue-50 border-green-600 text-green-600 text-xs font-bold px-4 py-1.5  cursor-pointer  rounded hover:bg-blue-100 ${
-                          isLoading ? 'opacity-50 cursor-not-allowed' : ''
-                        }`}
-                      >
-                        {isLoading ? '...' : 'ADD'}
-                      </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleAddToCart(product._id);
+                          }}
+                          disabled={isLoading}
+                          className={`bg-blue-50 border-green-600 text-green-600 text-xs font-bold px-4 py-1.5 cursor-pointer rounded hover:bg-blue-100 ${
+                            isLoading ? 'opacity-50 cursor-not-allowed' : ''
+                          }`}
+                        >
+                          {isLoading ? '...' : 'ADD'}
+                        </button>
                       </div>
                     ) : (
                       <div 
-                        className="flex items-center space-x-2 cursor-pointer  bg-green-600 rounded px-2 py-1"
+                        className="flex items-center space-x-2 cursor-pointer bg-green-600 rounded px-2 py-1"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <button
-                          onClick={() => handleChange(product._id, -1)}
+                          onClick={() => handleQuantityChange(product._id, -1)}
                           disabled={isLoading}
-                          className="text-white cursor-pointer font-size- xs font-bold"
+                          className="text-white cursor-pointer font-size-xs font-bold"
                         >
                           -
                         </button>
-                        <div  className='h-full w-2'>
-                        <span className="text-sm text-white font-medium">{quantity}</span>
+                        <div className='h-full w-2'>
+                          <span className="text-sm text-white font-medium">{quantity}</span>
                         </div>
                         <button
-                          onClick={() => handleChange(product._id, 1)}
+                          onClick={() => handleQuantityChange(product._id, 1)}
                           disabled={isLoading}
                           className="text-white cursor-pointer font-bold"
                         >

@@ -12,6 +12,7 @@ const SubcategoryWithProducts = () => {
   const [totalPrice, setTotalPrice] = useState(0);
   const [cart, setCart] = useState({});
   const [subcategoryName, setSubcategoryName] = useState('');
+  const [cartUpdated, setCartUpdated] = useState(false);
 
   const fetchCartData = async () => {
     const token = localStorage.getItem("token");
@@ -69,7 +70,7 @@ const SubcategoryWithProducts = () => {
 
     fetchProducts();
     fetchCartData();
-  }, [category]);
+  }, [category, cartUpdated]);
 
   const handleCartChange = async (productId, change) => {
     const token = localStorage.getItem("token");
@@ -80,10 +81,13 @@ const SubcategoryWithProducts = () => {
 
     // Find the product for price calculation
     const product = products.find(p => p._id === productId);
-    const priceChange = (product?.price || 0) * change;
+    if (!product) return;
+
+    const priceChange = product.price * change;
 
     // Optimistic UI update
-    setCart(prev => ({ ...prev, [productId]: newQty }));
+    const updatedCart = { ...cart, [productId]: newQty };
+    setCart(updatedCart);
     setCartCount(prev => prev + change);
     setTotalPrice(prev => prev + priceChange);
 
@@ -103,8 +107,8 @@ const SubcategoryWithProducts = () => {
         );
       }
 
-      // Verify with server after update
-      await fetchCartData();
+      // Trigger cart refresh in all components
+      setCartUpdated(prev => !prev);
     } catch (err) {
       console.error("Error updating cart", err);
       // Revert optimistic update on error
@@ -119,6 +123,7 @@ const SubcategoryWithProducts = () => {
       <CustomerNavbar 
         cartCount={cartCount} 
         totalPrice={totalPrice} 
+        cartUpdated={cartUpdated}
       />
       
       <div className="container mx-auto px-4 py-8">
@@ -129,6 +134,7 @@ const SubcategoryWithProducts = () => {
             products={products} 
             cart={cart}
             onCartChange={handleCartChange}
+            cartUpdated={cartUpdated}
           />
         ) : (
           <div className="text-center py-12">

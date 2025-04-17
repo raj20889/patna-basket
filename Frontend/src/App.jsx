@@ -1,4 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { CartProvider } from './contexts/CartContext';
+
 
 import Home from "./pages/Home";
 import AddProduct from "./pages/AddProduct";
@@ -13,9 +15,11 @@ import CartPage from "./components/Cart";
 import SearchResults from "./components/SearchResultsPage";
 import SubcategoryWithProducts from "./components/SubcategoryWithProducts";
 import CustomerSubCategory from "./components/Customer/SubcategoryWithProducts";
+import Checkout from "./components/Customer/Checkout";
 
 const App = () => {
   return (
+    <CartProvider> {/* Wrap the app with CartProvider */}
  
       <Router>
         <Routes>
@@ -70,6 +74,16 @@ const App = () => {
             }
           />
 
+<Route
+            path="/checkout"
+            element={
+              <PrivateRoute allowedRoles={["customer"]}>
+                <Checkout />
+              </PrivateRoute>
+            }
+          />
+
+
           {/* Protected Delivery Route */}
           <Route
             path="/delivery/orders"
@@ -85,6 +99,7 @@ const App = () => {
         </Routes>
       </Router>
   
+      </CartProvider>
   );
 };
 

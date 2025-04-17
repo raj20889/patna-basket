@@ -2,19 +2,24 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 const CustomerNavbar = ({ 
-  cartCount = 0, 
-  totalPrice = 0 
+  cartUpdated, 
+  cartCount: propCartCount, 
+  totalPrice: propTotalPrice,
+  forceUpdate 
 }) => {
   const [showDropdown, setShowDropdown] = useState(false);
+  const [cartCount, setCartCount] = useState(propCartCount || 0);
+  const [totalPrice, setTotalPrice] = useState(propTotalPrice || 0);
   const [searchQuery, setSearchQuery] = useState('');
   const [blink, setBlink] = useState(false);
   const navigate = useNavigate();
+  const token = localStorage.getItem('token');
 
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     localStorage.removeItem('role');
-    localStorage.removeItem('guestToken');
+    localStorage.clear();
     navigate('/');
   };
 
@@ -30,6 +35,65 @@ const CustomerNavbar = ({
     setTimeout(() => setBlink(false), 300);
     navigate('/cart');
   };
+
+  const fetchCartDetails = async () => {
+    try {
+      if (!token) {
+        // Handle guest cart
+        const guestCart = JSON.parse(localStorage.getItem('guestCart')) || [];
+        let count = 0;
+        let total = 0;
+        
+        guestCart.forEach(item => {
+          count += item.quantity;
+          total += item.price * item.quantity;
+        });
+        
+        setCartCount(count);
+        setTotalPrice(total);
+      } else {
+        // Handle logged-in user cart
+        const res = await fetch('http://localhost:5000/api/cart', {
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+        
+        if (!res.ok) {
+          throw new Error('Failed to fetch cart details');
+        }
+        
+        const data = await res.json();
+        let quantity = 0;
+        let price = 0;
+        
+        if (data?.products?.length > 0) {
+          data.products.forEach(item => {
+            quantity += item.quantity;
+            price += item.productId.price * item.quantity;
+          });
+        }
+        
+        setCartCount(quantity);
+        setTotalPrice(price);
+      }
+    } catch (err) {
+      console.error('Error fetching cart details:', err);
+      setCartCount(0);
+      setTotalPrice(0);
+    }
+  };
+
+  // Fetch cart details when component mounts or when cart is updated
+  useEffect(() => {
+    fetchCartDetails();
+  }, [cartUpdated, forceUpdate]);
+
+  // Sync with props if they change (for immediate updates)
+  useEffect(() => {
+    setCartCount(propCartCount || 0);
+    setTotalPrice(propTotalPrice || 0);
+  }, [propCartCount, propTotalPrice]);
 
   return (
     <nav className="bg-white shadow-md p-4 flex justify-between items-center sticky top-0 z-50">

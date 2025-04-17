@@ -13,85 +13,60 @@ const Home = () => {
   const [totalPrice, setTotalPrice] = useState(0);
   const [cart, setCart] = useState({});
   const [loading, setLoading] = useState({});
+  const [cartUpdated, setCartUpdated] = useState(false);
   const role = localStorage.getItem("role");
 
+  // Calculate totals from cart state
+  const calculateTotals = (cartItems) => {
+    const count = Object.values(cartItems).reduce((sum, qty) => sum + qty, 0);
+    const total = Object.entries(cartItems).reduce((sum, [productId, qty]) => {
+      const product = products.find(p => p._id === productId);
+      return sum + (product ? product.price * qty : 0);
+    }, 0);
+    return { count, total };
+  };
+
+  // Initialize cart and products
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchData = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/api/products');
-        setProducts(res.data);
-      } catch (err) {
-        console.error('Error fetching products:', err);
-      }
-    };
+        const [productsRes, cartRes] = await Promise.all([
+          axios.get('http://localhost:5000/api/products'),
+          localStorage.getItem("token") 
+            ? axios.get('http://localhost:5000/api/cart', {
+                headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+              })
+            : Promise.resolve({ data: { products: [] } })
+        ]);
 
-    const fetchCartData = async () => {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        // Load guest cart
-        const guestCart = JSON.parse(localStorage.getItem("guestCart")) || [];
-        const guestCartMap = {};
-        guestCart.forEach(item => {
-          guestCartMap[item.productId] = item.quantity;
-        });
-        setCart(guestCartMap);
-        calculateAndUpdateCart(guestCart);
-      } else {
-        // Fetch user's cart from server
-        try {
-          const res = await axios.get('http://localhost:5000/api/cart', {
-            headers: { Authorization: `Bearer ${token}` }
+        setProducts(productsRes.data);
+
+        // Initialize cart
+        const cartMap = {};
+        if (cartRes.data.products?.length > 0) {
+          cartRes.data.products.forEach(item => {
+            cartMap[item.productId._id] = item.quantity;
           });
-          const cartData = res.data;
-          const serverCartMap = {};
-          
-          if (cartData.products && cartData.products.length > 0) {
-            cartData.products.forEach(item => {
-              serverCartMap[item.productId._id] = item.quantity;
-            });
-          }
-
-          setCart(serverCartMap);
-          
-          // Calculate totals from server data
-          if (cartData.products) {
-            const count = cartData.products.reduce((sum, item) => sum + item.quantity, 0);
-            const total = cartData.products.reduce((sum, item) => sum + (item.productId.price * item.quantity), 0);
-            setCartCount(count);
-            setTotalPrice(total);
-          }
-        } catch (err) {
-          console.error('Error fetching cart:', err);
+        } else if (!localStorage.getItem("token")) {
+          const guestCart = JSON.parse(localStorage.getItem("guestCart")) || [];
+          guestCart.forEach(item => {
+            cartMap[item.productId] = item.quantity;
+          });
         }
+
+        setCart(cartMap);
+        const { count, total } = calculateTotals(cartMap);
+        setCartCount(count);
+        setTotalPrice(total);
+      } catch (err) {
+        console.error("Initialization error:", err);
       }
     };
 
-    if (role !== 'admin') {
-      fetchProducts();
-      fetchCartData();
-    }
-  }, [role]);
+    if (role !== 'admin') fetchData();
+  }, [role, cartUpdated]);
 
-  const calculateAndUpdateCart = (cartItems) => {
-    const count = cartItems.reduce((sum, item) => sum + item.quantity, 0);
-    const total = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    setCartCount(count);
-    setTotalPrice(total);
-  };
-
-  const handleCartUpdate = (count, total, updatedProducts) => {
-    setCartCount(count);
-    setTotalPrice(total);
-    
-    if (updatedProducts) {
-      const updatedCart = {};
-      updatedProducts.forEach(item => {
-        updatedCart[item.productId._id] = item.quantity;
-      });
-      setCart(updatedCart);
-    }
-  };
-
+  // Handle cart changes
   const handleCartChange = async (productId, change) => {
     const token = localStorage.getItem("token");
     const currentQty = cart[productId] || 0;
@@ -99,14 +74,15 @@ const Home = () => {
 
     if (newQty < 0) return;
 
+    setLoading(prev => ({ ...prev, [productId]: true }));
+
     try {
       if (!token) {
-        // Handle guest cart update
-        let guestCart = JSON.parse(localStorage.getItem("guestCart")) || [];
+        // Handle guest cart
         const product = products.find(p => p._id === productId);
-        
         if (!product) return;
 
+        let guestCart = JSON.parse(localStorage.getItem("guestCart")) || [];
         const index = guestCart.findIndex(item => item.productId === productId);
 
         if (index > -1) {
@@ -126,26 +102,44 @@ const Home = () => {
         }
 
         localStorage.setItem("guestCart", JSON.stringify(guestCart));
-        calculateAndUpdateCart(guestCart);
+        
+        // Update state
+        const updatedCart = { ...cart };
+        if (newQty > 0) {
+          updatedCart[productId] = newQty;
+        } else {
+          delete updatedCart[productId];
+        }
+        
+        setCart(updatedCart);
+        const { count, total } = calculateTotals(updatedCart);
+        setCartCount(count);
+        setTotalPrice(total);
       } else {
-        // Handle logged-in user cart update
-        const res = await axios.post("http://localhost:5000/api/cart/add", 
+        // Handle user cart
+        const res = await axios.post(
+          "http://localhost:5000/api/cart/add",
           { productId, quantity: newQty },
-          {
-            headers: {
-              "Authorization": `Bearer ${token}`,
-            },
-          }
+          { headers: { Authorization: `Bearer ${token}` } }
         );
 
         if (res.data.products) {
-          const count = res.data.products.reduce((sum, item) => sum + item.quantity, 0);
-          const total = res.data.products.reduce((sum, item) => sum + (item.productId.price * item.quantity), 0);
-          handleCartUpdate(count, total, res.data.products);
+          const cartMap = {};
+          res.data.products.forEach(item => {
+            cartMap[item.productId._id] = item.quantity;
+          });
+          
+          setCart(cartMap);
+          const { count, total } = calculateTotals(cartMap);
+          setCartCount(count);
+          setTotalPrice(total);
         }
       }
+      setCartUpdated(prev => !prev); // Trigger refresh of RelatedProducts
     } catch (err) {
-      console.error("Error updating cart", err);
+      console.error("Cart update error:", err);
+    } finally {
+      setLoading(prev => ({ ...prev, [productId]: false }));
     }
   };
 
@@ -159,16 +153,16 @@ const Home = () => {
           <CategoryGrid />
           <RelatedProducts 
             products={products} 
-            onCartUpdate={handleCartUpdate}
             cart={cart}
+            onCartChange={handleCartChange}
             loading={loading}
+            key={cartUpdated} // Force re-render when cart updates
           />
           <ProductComponent 
             products={products} 
-            onCartUpdate={handleCartUpdate}
             cart={cart}
-            loading={loading}
             onCartChange={handleCartChange}
+            loading={loading}
           />
         </>
       )}

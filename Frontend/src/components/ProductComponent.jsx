@@ -1,8 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const ProductComponent = ({ products, onCartUpdate }) => {
-    const [cart, setCart] = useState({});
+const ProductComponent = ({ 
+  products, 
+  cart: propCart, 
+  onCartChange,  // Changed from onCartUpdate to onCartChange
+  cartUpdated 
+}) => {
+    const [localCart, setLocalCart] = useState({});
     const [loading, setLoading] = useState({});
     const navigate = useNavigate();
 
@@ -16,46 +21,13 @@ const ProductComponent = ({ products, onCartUpdate }) => {
             guestCart.forEach(item => {
                 guestCartMap[item.productId] = item.quantity;
             });
-            setCart(guestCartMap);
+            setLocalCart(guestCartMap);
             calculateAndUpdateCart(guestCart);
         } else {
-            // Fetch user's cart from server
-            fetchUserCart();
+            // Sync with parent cart prop
+            setLocalCart(propCart || {});
         }
-    }, []);
-
-    const fetchUserCart = async () => {
-        try {
-            const token = localStorage.getItem("token");
-            const res = await fetch("http://localhost:5000/api/cart", {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            });
-
-            if (!res.ok) throw new Error("Failed to fetch cart");
-
-            const data = await res.json();
-            const serverCartMap = {};
-            
-            if (data.products && data.products.length > 0) {
-                data.products.forEach(item => {
-                    serverCartMap[item.productId._id] = item.quantity;
-                });
-            }
-
-            setCart(serverCartMap);
-            
-            // Calculate totals from server data
-            if (data.products) {
-                const count = data.products.reduce((sum, item) => sum + item.quantity, 0);
-                const total = data.products.reduce((sum, item) => sum + (item.productId.price * item.quantity), 0);
-                onCartUpdate(count, total);
-            }
-        } catch (err) {
-            console.error("Error fetching user cart", err);
-        }
-    };
+    }, [propCart, cartUpdated]);
 
     const updateGuestCart = (productId, quantity) => {
         let guestCart = JSON.parse(localStorage.getItem("guestCart")) || [];
@@ -82,19 +54,19 @@ const ProductComponent = ({ products, onCartUpdate }) => {
         }
 
         localStorage.setItem("guestCart", JSON.stringify(guestCart));
-        setCart(prev => ({ ...prev, [productId]: quantity }));
+        setLocalCart(prev => ({ ...prev, [productId]: quantity }));
         calculateAndUpdateCart(guestCart);
     };
 
     const calculateAndUpdateCart = (cartItems) => {
         const count = cartItems.reduce((sum, item) => sum + item.quantity, 0);
         const total = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-        onCartUpdate(count, total);
+        if (onCartChange) onCartChange(count, total);  // Changed from onCartUpdate to onCartChange
     };
 
     const handleChange = async (productId, change) => {
         const token = localStorage.getItem("token");
-        const currentQty = cart[productId] || 0;
+        const currentQty = localCart[productId] || 0;
         const newQty = currentQty + change;
 
         if (newQty < 0) return;
@@ -102,54 +74,32 @@ const ProductComponent = ({ products, onCartUpdate }) => {
         setLoading(prev => ({ ...prev, [productId]: true }));
 
         try {
+            // Optimistic UI update
+            setLocalCart(prev => ({ ...prev, [productId]: newQty }));
+            
             if (!token) {
                 updateGuestCart(productId, newQty);
             } else {
-                const res = await fetch("http://localhost:5000/api/cart/add", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${token}`,
-                    },
-                    body: JSON.stringify({ productId, quantity: newQty }),
-                });
-
-                if (!res.ok) throw new Error("Failed to update cart");
-
-                const data = await res.json();
-                setCart(prev => ({ ...prev, [productId]: newQty }));
-                
-                // Update totals from server response
-                if (data.products) {
-                    const count = data.products.reduce((sum, p) => sum + p.quantity, 0);
-                    const total = data.products.reduce((sum, p) => sum + (p.productId.price * p.quantity), 0);
-                    onCartUpdate(count, total);
-                }
+                // Call parent handler to update server and global state
+                await onCartChange(productId, change);
             }
         } catch (err) {
             console.error("Error updating cart", err);
-            // Revert UI if error occurs
-            setCart(prev => ({ ...prev, [productId]: currentQty }));
+            // Revert on error
+            setLocalCart(prev => ({ ...prev, [productId]: currentQty }));
         } finally {
             setLoading(prev => ({ ...prev, [productId]: false }));
         }
     };
 
     const handleAddToCart = (productId) => {
-        const token = localStorage.getItem("token");
-        if (!token) {
-            // For guest users, add directly
-            handleChange(productId, 1);
-        } else {
-            // For authenticated users
-            handleChange(productId, 1);
-        }
+        handleChange(productId, 1);
     };
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4">
             {products.map(product => {
-                const quantity = cart[product._id] || 0;
+                const quantity = localCart[product._id] || 0;
                 const isLoading = loading[product._id];
 
                 return (
