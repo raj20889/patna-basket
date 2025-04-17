@@ -7,6 +7,7 @@ const authRoute = require('./routes/auth');
 const productRoute = require('./routes/product');
 const cartRoute = require('./routes/cart');
 const addressRoutes = require('./routes/addressRoutes');
+const orderRoutes = require('./routes/order');
 
 dotenv.config();
 
@@ -26,6 +27,7 @@ app.use('/api/auth', authRoute);
 app.use('/api/products', productRoute);
 app.use('/api/cart', cartRoute);
 app.use('/api/addresses', addressRoutes);
+app.use('/api/orders', orderRoutes);
 
 app.get('/', (req, res) => {
     res.send('E-Commerce API Running...');

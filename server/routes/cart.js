@@ -67,4 +67,32 @@ router.get('/', verifyToken, async (req, res) => {
   }
 });
 
+
+
+// Clear cart - now using DELETE /api/cart
+router.delete('/', verifyToken, async (req, res) => {
+  try {
+    const result = await Cart.findOneAndDelete({ userId: req.user.id });
+    
+    if (!result) {
+      return res.status(200).json({ 
+        success: true, 
+        message: 'Cart was already empty' 
+      });
+    }
+    
+    res.json({ 
+      success: true, 
+      message: 'Cart cleared successfully' 
+    });
+  } catch (err) {
+    console.error('Cart clear error:', err);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error clearing cart' 
+    });
+  }
+});
+
+
 module.exports = router;

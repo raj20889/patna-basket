@@ -1,7 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { CartProvider } from './contexts/CartContext';
 
-
 import Home from "./pages/Home";
 import AddProduct from "./pages/AddProduct";
 import Login from "./pages/Login";
@@ -16,11 +15,14 @@ import SearchResults from "./components/SearchResultsPage";
 import SubcategoryWithProducts from "./components/SubcategoryWithProducts";
 import CustomerSubCategory from "./components/Customer/SubcategoryWithProducts";
 import Checkout from "./components/Customer/Checkout";
+import Payment from "./components/Customer/Payment";
+import OrderConfirmation from "./components/Customer/OrderConfirmation";
+import OrderDetails from "./components/Customer/orders";
+import CustomerOrders from "./components/Customer/CustomerOrders.JSX";
 
 const App = () => {
   return (
-    <CartProvider> {/* Wrap the app with CartProvider */}
- 
+    <CartProvider>
       <Router>
         <Routes>
           {/* Public Routes */}
@@ -30,6 +32,7 @@ const App = () => {
           <Route path="/search" element={<SearchResults />} />
           <Route path="/cart" element={<CartPage />} />
           <Route path="/:category" element={<SubcategoryWithProducts />} />
+          
 
           {/* Protected Admin Routes */}
           <Route
@@ -55,35 +58,85 @@ const App = () => {
             }
           />
 
-          {/* Protected Customer Route */}
+          {/* Protected Customer Routes */}
           <Route
             path="/customer/dashboard"
             element={
               <PrivateRoute allowedRoles={["customer"]}>
-                <Dashboard />
+                <>
+                
+                  <Dashboard />
+                </>
               </PrivateRoute>
             }
           />
 
           <Route
-            path="c/:category"
+            path="/c/:category"
             element={
               <PrivateRoute allowedRoles={["customer"]}>
-                <CustomerSubCategory />
+                <>
+                
+                  <CustomerSubCategory />
+                </>
+              </PrivateRoute>
+            }
+          />
+
+          <Route
+            path="/checkout"
+            element={
+              <PrivateRoute allowedRoles={["customer"]}>
+                <>
+               
+                  <Checkout />
+                </>
+              </PrivateRoute>
+            }
+          />
+
+          <Route
+            path="/payment"
+            element={
+              <PrivateRoute allowedRoles={["customer"]}>
+                <>
+                  <CustomerNavbar />
+                  <Payment />
+                </>
               </PrivateRoute>
             }
           />
 
 <Route
-            path="/checkout"
+            path="/order-confirmation"
             element={
               <PrivateRoute allowedRoles={["customer"]}>
-                <Checkout />
+                <>
+               
+                  < OrderConfirmation />
+                </>
               </PrivateRoute>
             }
           />
 
+  {/* Order Details Route */}
+  <Route
+        path="/orders/:orderId"
+        element={
+          <PrivateRoute allowedRoles={["customer"]}>
+            <OrderDetails />
+          </PrivateRoute>
+        }
+      />
 
+<Route
+  path="/orders"
+  element={
+    <PrivateRoute allowedRoles={["customer"]}>
+      <CustomerOrders />
+    </PrivateRoute>
+  }
+/>
           {/* Protected Delivery Route */}
           <Route
             path="/delivery/orders"
@@ -98,8 +151,7 @@ const App = () => {
           />
         </Routes>
       </Router>
-  
-      </CartProvider>
+    </CartProvider>
   );
 };
 

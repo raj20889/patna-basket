@@ -11,6 +11,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000
 const Checkout = () => {
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [showAddressForm, setShowAddressForm] = useState(false);
+  const [editingAddress, setEditingAddress] = useState(null);
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -40,7 +41,7 @@ const Checkout = () => {
       });
       setAddresses(res.data);
     } catch (err) {
-      toast.error('Failed to load addresses');
+      showNotification('Failed to load addresses', 'error');
       console.error('Address fetch error:', err);
     }
   };
@@ -65,6 +66,11 @@ const Checkout = () => {
       addr._id === updatedAddress._id ? updatedAddress : addr
     ));
     showNotification('Address updated successfully');
+    
+    // If the updated address was the selected one, update the selection
+    if (selectedAddress === updatedAddress._id) {
+      setSelectedAddress(updatedAddress._id);
+    }
   };
 
   const handleAddressDeleted = (addressId) => {
@@ -74,29 +80,76 @@ const Checkout = () => {
     }
     showNotification('Address deleted successfully');
   };
-
   const proceedToPayment = async () => {
     if (!selectedAddress) {
       showNotification('Please select an address', 'error');
       return;
     }
-    
+  
     try {
-      const response = await axios.get(`${API_BASE_URL}/addresses/${selectedAddress}`, {
+      // Get the selected address from local state first
+      let address = addresses.find(addr => addr._id === selectedAddress);
+      
+      // If not found locally, fetch from API
+      if (!address) {
+        const addressResponse = await axios.get(`${API_BASE_URL}/addresses/${selectedAddress}`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        address = addressResponse.data;
+      }
+  
+      // Fetch cart with populated product details
+      const cartResponse = await axios.get(`${API_BASE_URL}/cart`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
       });
-      
+  
+      // Prepare cart items in the format Payment component expects
+      const cartItems = cartResponse.data.products.map(item => ({
+        productId: item.productId._id,
+        name: item.productId.name,
+        image: item.productId.image,
+        unit: item.productId.unit || '1 item', // Default unit if not specified
+        price: item.productId.price,
+        quantity: item.quantity
+      }));
+  
+      // Calculate totals
+      const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      const deliveryFee = 40; // Or fetch from API if dynamic
+      const total = subtotal + deliveryFee;
+  
       navigate('/payment', { 
         state: { 
-          address: response.data,
-          addressId: selectedAddress 
+          address, // Full address object
+          addressId: selectedAddress, // Address ID
+          cartItems, // Array of cart items with product details
+          subtotal,
+          deliveryFee,
+          total
         } 
       });
     } catch (error) {
-      showNotification('Failed to verify address', 'error');
-      console.error('Address verification error:', error);
+      console.error('Payment preparation error:', error);
+      showNotification('Failed to prepare payment details', 'error');
+      
+      // Fallback: Try to proceed with minimum required data
+      const localAddress = addresses.find(addr => addr._id === selectedAddress);
+      if (localAddress) {
+        navigate('/payment', { 
+          state: { 
+            address: localAddress,
+            addressId: selectedAddress,
+            cartItems: [], // Empty array as fallback
+            subtotal: 0,
+            deliveryFee: 40,
+            total: 40
+          } 
+        });
+      }
     }
   };
 
@@ -112,15 +165,18 @@ const Checkout = () => {
         selectedAddress={selectedAddress}
         onSelect={handleAddressSelect}
         onDelete={handleAddressDeleted}
-        onEdit={(addressId) => {
-          // You can implement edit functionality here
-          console.log('Edit address', addressId);
+        onEdit={(address) => {
+          setEditingAddress(address);
+          setShowAddressForm(true);
         }}
       />
       
       <button 
         className="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
-        onClick={() => setShowAddressForm(true)}
+        onClick={() => {
+          setEditingAddress(null);
+          setShowAddressForm(true);
+        }}
       >
         Add New Address
       </button>
@@ -129,8 +185,20 @@ const Checkout = () => {
         <AddressForm 
           userId={user._id}
           token={token}
-          onSuccess={handleAddressAdded}
-          onCancel={() => setShowAddressForm(false)}
+          addressToEdit={editingAddress}
+          onSuccess={(address) => {
+            if (editingAddress) {
+              handleAddressUpdated(address);
+            } else {
+              handleAddressAdded(address);
+            }
+            setShowAddressForm(false);
+            setEditingAddress(null);
+          }}
+          onCancel={() => {
+            setShowAddressForm(false);
+            setEditingAddress(null);
+          }}
         />
       )}
       

@@ -8,6 +8,7 @@ const CustomerNavbar = ({
   forceUpdate 
 }) => {
   const [showDropdown, setShowDropdown] = useState(false);
+  const [showOrdersDropdown, setShowOrdersDropdown] = useState(false);
   const [cartCount, setCartCount] = useState(propCartCount || 0);
   const [totalPrice, setTotalPrice] = useState(propTotalPrice || 0);
   const [searchQuery, setSearchQuery] = useState('');
@@ -84,12 +85,10 @@ const CustomerNavbar = ({
     }
   };
 
-  // Fetch cart details when component mounts or when cart is updated
   useEffect(() => {
     fetchCartDetails();
   }, [cartUpdated, forceUpdate]);
 
-  // Sync with props if they change (for immediate updates)
   useEffect(() => {
     setCartCount(propCartCount || 0);
     setTotalPrice(propTotalPrice || 0);
@@ -118,6 +117,35 @@ const CustomerNavbar = ({
           </button>
         </form>
 
+        {/* Orders Dropdown */}
+        <div className="relative">
+          <button
+            onClick={() => setShowOrdersDropdown(!showOrdersDropdown)}
+            className="text-gray-700 hover:text-green-600"
+          >
+            Orders ⌄
+          </button>
+          {showOrdersDropdown && (
+            <div className="absolute right-0 mt-2 w-48 bg-white border rounded shadow-md z-10">
+              <Link
+                to="/orders"
+                className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+                onClick={() => setShowOrdersDropdown(false)}
+              >
+                View All Orders
+              </Link>
+              <Link
+                to="/order-confirmation"
+                className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+                onClick={() => setShowOrdersDropdown(false)}
+              >
+                Recent Order
+              </Link>
+            </div>
+          )}
+        </div>
+
+        {/* Account Dropdown */}
         <button
           onClick={() => setShowDropdown(!showDropdown)}
           className="text-gray-700 hover:text-green-600 relative"
@@ -143,6 +171,7 @@ const CustomerNavbar = ({
           </div>
         )}
 
+        {/* Cart Button */}
         <button 
           onClick={handleCartClick}
           className="text-gray-700 hover:text-green-600 relative flex items-center focus:outline-none"
