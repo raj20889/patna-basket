@@ -5,58 +5,64 @@ import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 const BannerComponent = () => {
   const navigate = useNavigate();
   const [currentSlide, setCurrentSlide] = useState(0);
+  const role = localStorage.getItem('role');
+  const isCustomer = role === 'customer';
 
   const slides = [
+   
+   
     {
-      image: "https://media.starquik.com/bannerslider/s/t/starquik_ipl_fl_web_1400x400.jpg",
+      image: "https://mcprod.sparindia.com/media/catalog/category/web-header.png",
+      path: "seasonal-sale"
+    },
+    { 
+      image: "https://cdn.zeptonow.com/production/tr:w-1280,ar-3840-705,pr-true,f-auto,q-80/inventory/banner/4ea3de05-f469-4df2-9548-db9c9863dfdf.png",
+      path: "paan-corner"
     },
     {
       image: "https://media.starquik.com/bannerslider/n/p/npobe_cadbury_cadbury_1400x400.jpg",
-    },
-    {
-      image: "https://mcprod.sparindia.com/media/catalog/category/web-header.png",
+      path: "special-offers"
     },
     { 
-      image: "https://media.starquik.com/bannerslider/s/t/starquik_ipl_fl_web_1400x400.jpg" 
+      image: "https://media.starquik.com/bannerslider/s/t/startquik_mango_25_post_1400x400.jpg",
+      path: "fruits"
     },
     { 
-      image: "https://media.starquik.com/bannerslider/s/t/startquik_mango_25_post_1400x400.jpg" 
+      image: "https://cdn.zeptonow.com/production/tr:w-1280,ar-3840-705,pr-true,f-auto,q-80/inventory/banner/4ea3de05-f469-4df2-9548-db9c9863dfdf.png",
+      path: "paan-corner"
     },
-    { 
-      image: "https://media.starquik.com/bannerslider/s/t/starquik_ipl_fl_web_1400x400.jpg" 
-    },
+   
   ];
 
-  // Modified to stop at last slide
   const nextSlide = () => {
     setCurrentSlide((prev) => (prev === slides.length - 1 ? prev : prev + 1));
   };
 
-  // Modified to stop at first slide
   const prevSlide = () => {
     setCurrentSlide((prev) => (prev === 0 ? prev : prev - 1));
   };
 
-  // Auto-advance only if not at last slide
   useEffect(() => {
     const interval = setInterval(() => {
       if (currentSlide < slides.length - 1) {
         nextSlide();
-      } else {
-        // Optional: Uncomment if you want to reset to first slide instead of stopping
-        // setCurrentSlide(0);
       }
     }, 5000);
     return () => clearInterval(interval);
-  }, [currentSlide]); // Added dependency
+  }, [currentSlide]);
 
   const handleBannerClick = () => {
-    navigate("/popular-products");
+    const path = slides[currentSlide].path;
+    if (isCustomer) {
+      navigate(`/c/${path}`);
+    } else {
+      navigate(`/${path}`);
+    }
   };
 
   return (
-    <div className="mx-5 my-3">
-      <div className="relative w-full h-[200px] md:h-[250px] lg:h-[340px] overflow-hidden rounded-xl shadow-lg">
+    <div className="mx-10 my-3">
+      <div className="relative w-full h-[200px] md:h-[250px] lg:h-[200px] overflow-hidden rounded-xl shadow-lg">
         <div
           className="flex h-full transition-transform duration-1000 ease-in-out"
           style={{ transform: `translateX(-${currentSlide * 100}%)` }}

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import ProductCard from './ProductCard';
 
-const RelatedProducts = ({ products, onCartUpdate, cart: parentCart, loading: parentLoading }) => {
+const SnacksAndChips = ({ products, onCartUpdate, cart: parentCart, loading: parentLoading }) => {
   const navigate = useNavigate();
   const [localCart, setLocalCart] = useState({});
   const [localLoading, setLocalLoading] = useState({});
@@ -91,25 +91,32 @@ const RelatedProducts = ({ products, onCartUpdate, cart: parentCart, loading: pa
     handleChange(productId, 1);
   };
 
-  // Filter dairy-related products
-  const dairyProducts = products.filter(product => {
-    const lowerName = product.category.toLowerCase();
-    return lowerName.includes('milk') || 
-           lowerName.includes('bread') || 
-           lowerName.includes('egg');
+  // Filter snacks and chips products
+  const snacksProducts = products.filter(product => {
+    const lowerCategory = product.category.toLowerCase();
+    const lowerName = product.name.toLowerCase();
+    return lowerCategory.includes('snack') || 
+           lowerCategory.includes('chip') ||
+           lowerName.includes('snack') || 
+           lowerName.includes('chip') ||
+           lowerName.includes('crisp') ||
+           lowerName.includes('pretzel') ||
+           lowerName.includes('popcorn') ||
+           lowerName.includes('nuts') ||
+           lowerName.includes('cracker');
   });
 
-  if (dairyProducts.length === 0) {
+  if (snacksProducts.length === 0) {
     return null;
   }
 
   return (
     <div className="px-4 py-6 bg-white">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold">Dairy &amp; Bread</h2>
+        <h2 className="text-xl font-bold">Snacks &amp; Chips</h2>
         <button 
           className="text-blue-500 text-sm font-medium"
-          onClick={() => navigate('/category/dairy')}
+          onClick={() => navigate('/category/snacks')}
         >
           See all
         </button>
@@ -117,7 +124,7 @@ const RelatedProducts = ({ products, onCartUpdate, cart: parentCart, loading: pa
       
       <div className="relative">
         <div className="flex space-x-4 overflow-x-auto pb-4 scrollbar-hide">
-          {dairyProducts.map(product => (
+          {snacksProducts.map(product => (
             <ProductCard
               key={product._id}
               product={product}
@@ -130,7 +137,7 @@ const RelatedProducts = ({ products, onCartUpdate, cart: parentCart, loading: pa
         </div>
         
         {/* Navigation Arrows */}
-        {dairyProducts.length > 4 && (
+        {snacksProducts.length > 4 && (
           <>
             <button className="absolute left-0 top-1/2 -translate-y-1/2 bg-white rounded-full p-2 shadow-md hover:bg-gray-100">
               <FiChevronLeft size={20} />
@@ -145,4 +152,4 @@ const RelatedProducts = ({ products, onCartUpdate, cart: parentCart, loading: pa
   );
 };
 
-export default RelatedProducts;
+export default SnacksAndChips;

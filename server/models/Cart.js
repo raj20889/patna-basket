@@ -18,6 +18,26 @@ const CartSchema = new mongoose.Schema({
             },
         },
     ],
+    grandTotal: {
+        type: Number,
+        default: 0
+    },
+    deliveryCharge: {
+        type: Number,
+        default: 0
+    },
+    handlingCharge: {
+        type: Number,
+        default: 0
+    },
+    tipAmount: {
+        type: Number,
+        default: 0
+    },
+    donationAmount: {
+        type: Number,
+        default: 0
+    }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Cart', CartSchema);

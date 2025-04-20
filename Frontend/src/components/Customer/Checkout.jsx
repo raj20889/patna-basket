@@ -40,6 +40,12 @@ const Checkout = () => {
         },
       });
       setAddresses(res.data);
+      
+      // Automatically select the default address if one exists
+      const defaultAddress = res.data.find(addr => addr.isDefault);
+      if (defaultAddress) {
+        setSelectedAddress(defaultAddress._id);
+      }
     } catch (err) {
       showNotification('Failed to load addresses', 'error');
       console.error('Address fetch error:', err);
@@ -47,7 +53,14 @@ const Checkout = () => {
   };
 
   const showNotification = (message, type = 'success') => {
-    toast[type](message);
+    toast[type](message, {
+      position: "bottom-center",
+      autoClose: 3000,
+      hideProgressBar: true,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+    });
   };
 
   const handleAddressSelect = (address) => {
@@ -59,6 +72,11 @@ const Checkout = () => {
     setAddresses([...addresses, newAddress]);
     setShowAddressForm(false);
     showNotification('Address added successfully');
+    
+    // If this is the first address or it's marked as default, select it
+    if (addresses.length === 0 || newAddress.isDefault) {
+      setSelectedAddress(newAddress._id);
+    }
   };
 
   const handleAddressUpdated = (updatedAddress) => {
@@ -67,8 +85,8 @@ const Checkout = () => {
     ));
     showNotification('Address updated successfully');
     
-    // If the updated address was the selected one, update the selection
-    if (selectedAddress === updatedAddress._id) {
+    // If the updated address is now default or was selected, update selection
+    if (updatedAddress.isDefault || selectedAddress === updatedAddress._id) {
       setSelectedAddress(updatedAddress._id);
     }
   };
@@ -77,9 +95,15 @@ const Checkout = () => {
     setAddresses(addresses.filter(addr => addr._id !== addressId));
     if (selectedAddress === addressId) {
       setSelectedAddress(null);
+      // Select another default address if available
+      const defaultAddr = addresses.find(addr => addr.isDefault && addr._id !== addressId);
+      if (defaultAddr) {
+        setSelectedAddress(defaultAddr._id);
+      }
     }
     showNotification('Address deleted successfully');
   };
+
   const proceedToPayment = async () => {
     if (!selectedAddress) {
       showNotification('Please select an address', 'error');
@@ -153,63 +177,85 @@ const Checkout = () => {
     }
   };
 
-  if (loading) return <div className="text-center p-8">Loading...</div>;
+  if (loading) return (
+    <div className="flex items-center justify-center min-h-screen p-4">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+    </div>
+  );
+  
   if (!user || !token) return null;
 
   return (
-    <div className="checkout-container max-w-4xl mx-auto p-4">
-      <h2 className="text-2xl font-bold mb-6">Select Delivery Address</h2>
-      
-      <AddressList 
-        addresses={addresses}
-        selectedAddress={selectedAddress}
-        onSelect={handleAddressSelect}
-        onDelete={handleAddressDeleted}
-        onEdit={(address) => {
-          setEditingAddress(address);
-          setShowAddressForm(true);
-        }}
-      />
-      
-      <button 
-        className="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
-        onClick={() => {
-          setEditingAddress(null);
-          setShowAddressForm(true);
-        }}
-      >
-        Add New Address
-      </button>
-      
-      {showAddressForm && (
-        <AddressForm 
-          userId={user._id}
-          token={token}
-          addressToEdit={editingAddress}
-          onSuccess={(address) => {
-            if (editingAddress) {
-              handleAddressUpdated(address);
-            } else {
-              handleAddressAdded(address);
-            }
-            setShowAddressForm(false);
-            setEditingAddress(null);
-          }}
-          onCancel={() => {
-            setShowAddressForm(false);
-            setEditingAddress(null);
-          }}
-        />
-      )}
-      
-      {selectedAddress && (
+    <div className="min-h-screen bg-gray-50 pb-20">
+      <div className="max-w-md mx-auto p-4">
+        <h2 className="text-2xl font-bold mb-6 text-gray-800 pt-4">Select Delivery Address</h2>
+        
+        <div className="space-y-4 mb-6">
+          <AddressList 
+            addresses={addresses}
+            selectedAddress={selectedAddress}
+            onSelect={handleAddressSelect}
+            onDelete={handleAddressDeleted}
+            onEdit={(address) => {
+              setEditingAddress(address);
+              setShowAddressForm(true);
+            }}
+          />
+        </div>
+        
         <button 
-          className="mt-6 w-full bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 text-lg font-medium transition-colors"
-          onClick={proceedToPayment}
+          className="w-full bg-white border-2 border-blue-500 text-blue-600 px-4 py-3 rounded-lg hover:bg-blue-50 font-medium transition-colors mb-6"
+          onClick={() => {
+            setEditingAddress(null);
+            setShowAddressForm(true);
+          }}
         >
-          Proceed to Payment
+          + Add New Address
         </button>
-      )}
+        
+        {showAddressForm && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg w-full max-w-md p-6 max-h-[90vh] overflow-y-auto">
+              <AddressForm 
+                userId={user._id}
+                token={token}
+                addressToEdit={editingAddress}
+                onSuccess={(address) => {
+                  if (editingAddress) {
+                    handleAddressUpdated(address);
+                  } else {
+                    handleAddressAdded(address);
+                  }
+                  setShowAddressForm(false);
+                  setEditingAddress(null);
+                }}
+                onCancel={() => {
+                  setShowAddressForm(false);
+                  setEditingAddress(null);
+                }}
+              />
+            </div>
+          </div>
+        )}
+        
+        <div className="fixed bottom-0 left-0 right-0 bg-white p-4 shadow-lg border-t border-gray-200">
+          {selectedAddress ? (
+            <button 
+              className="w-full bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 text-lg font-medium transition-colors"
+              onClick={proceedToPayment}
+            >
+              Proceed to Payment
+            </button>
+          ) : (
+            <button 
+              className="w-full bg-gray-400 text-white px-4 py-3 rounded-lg text-lg font-medium cursor-not-allowed"
+              disabled
+            >
+              Select an Address
+            </button>
+          )}
+        </div>
+      </div>
     </div>
   );
 };
