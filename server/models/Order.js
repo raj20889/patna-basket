@@ -10,12 +10,14 @@ const OrderSchema = new mongoose.Schema({
     addressId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Address',
-      required: [true, 'Address ID is required']
+      required: [true, 'Address ID is required'],
+      
     },
     details: {
       type: String,
       required: [true, 'Address details are required']
-    }
+    },
+  
   },
   items: [{
     productId: {
@@ -28,9 +30,9 @@ const OrderSchema = new mongoose.Schema({
       required: [true, 'Product name is required']
     },
     image: String,
-    unit: {
+    variant: {
       type: String,
-      default: '1 item'
+      default: '1 unit'
     },
     price: {
       type: Number,
@@ -51,20 +53,35 @@ const OrderSchema = new mongoose.Schema({
     },
     required: [true, 'Payment method is required']
   },
-  subtotal: {
+  itemsTotal: {
     type: Number,
-    required: [true, 'Subtotal is required'],
-    min: [0, 'Subtotal cannot be negative']
+    required: [true, 'Items total is required'],
+    min: [0, 'Items total cannot be negative']
   },
-  deliveryFee: {
+  deliveryCharge: {
     type: Number,
-    default: 40,
-    min: [0, 'Delivery fee cannot be negative']
+    default: 0,
+    min: [0, 'Delivery charge cannot be negative']
   },
-  total: {
+  handlingCharge: {
     type: Number,
-    required: [true, 'Total amount is required'],
-    min: [0, 'Total cannot be negative']
+    default: 2,
+    min: [0, 'Handling charge cannot be negative']
+  },
+  tipAmount: {
+    type: Number,
+    default: 0,
+    min: [0, 'Tip amount cannot be negative']
+  },
+  donationAmount: {
+    type: Number,
+    default: 0,
+    min: [0, 'Donation amount cannot be negative']
+  },
+  grandTotal: {
+    type: Number,
+    required: [true, 'Grand total is required'],
+    min: [0, 'Grand total cannot be negative']
   },
   status: {
     type: String,
@@ -86,20 +103,29 @@ const OrderSchema = new mongoose.Schema({
     type: String,
     maxlength: [500, 'Notes cannot exceed 500 characters']
   },
-  createdAt: {
+  estimatedDelivery: {
     type: Date,
-    default: Date.now
-  },
-  updatedAt: {
-    type: Date
+    default: function() {
+      // Default to 3 days from order creation
+      const deliveryDate = new Date(this.createdAt || Date.now());
+      deliveryDate.setDate(deliveryDate.getDate() + 3);
+      return deliveryDate;
+    }
   }
 }, {
-  timestamps: true, // Auto-add `createdAt` and `updatedAt`
-  toJSON: { virtuals: true }, // Include virtuals when converting to JSON
+  timestamps: true,
+  toJSON: { virtuals: true },
   toObject: { virtuals: true }
 });
 
-// Add index for faster queries
-OrderSchema.index({ userId: 1, status: 1 });
+// Add virtual for formatted order date
+OrderSchema.virtual('formattedDate').get(function() {
+  return this.createdAt.toLocaleDateString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric'
+  });
+});
 
 module.exports = mongoose.model('Order', OrderSchema);

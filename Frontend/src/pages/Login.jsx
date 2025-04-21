@@ -111,6 +111,17 @@ const Login = () => {
         >
           {loading ? 'Logging in...' : 'Login'}
         </button>
+        
+        <div className="mt-4 text-center text-sm">
+          New to Patna Basket Register ?{' '}
+          <button 
+            type="button" 
+            onClick={() => navigate('/register')}
+            className="text-blue-600 hover:underline"
+          >
+            Register here
+          </button>
+        </div>
       </form>
     </div>
   )

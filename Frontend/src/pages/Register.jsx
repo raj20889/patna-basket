@@ -94,6 +94,18 @@ const Register = () => {
           <button type="submit" className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700">
             Register
           </button>
+
+          
+        <div className="mt-4 text-center text-sm">
+          Already have an account?{' '}
+          <button 
+            type="button" 
+            onClick={() => navigate('/login')}
+            className="text-blue-600 hover:underline"
+          >
+            Login here
+          </button>
+        </div>
         </form>
       </div>
     </>
