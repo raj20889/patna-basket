@@ -10,7 +10,7 @@ const ColdDrinksJuices = ({ products, onCartChange, cart, loading, isLoggedIn })
   const drinksProducts = products.filter(product => {
     const lowerName = product.name.toLowerCase();
     return lowerName.includes('juice') || 
-           lowerName.includes('soda') || 
+           lowerName.includes('sprite') || 
            lowerName.includes('cola') ||
            lowerName.includes('drink');
   });

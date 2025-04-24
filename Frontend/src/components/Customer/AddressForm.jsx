@@ -20,6 +20,7 @@ const AddressForm = ({ userId, token, onSuccess, onCancel, addressToEdit }) => {
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [activeField, setActiveField] = useState(null);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -86,23 +87,23 @@ const AddressForm = ({ userId, token, onSuccess, onCancel, addressToEdit }) => {
   };
 
   const addressTypeOptions = [
-    { value: 'Home', label: 'Home', icon: 'https://cdn.grofers.com/cdn-cgi/image/f=auto,fit=scale-down,q=70,metadata=none,w=45/layout-engine/v2/2024-12/address_home_location_v4/light.png' },
-    { value: 'Work', label: 'Work', icon: 'https://cdn.grofers.com/cdn-cgi/image/f=auto,fit=scale-down,q=70,metadata=none,w=45/layout-engine/v2/2024-12/address_work_location_v4/light.png' },
-    { value: 'Hotel', label: 'Hotel', icon: 'https://cdn.grofers.com/cdn-cgi/image/f=auto,fit=scale-down,q=70,metadata=none,w=45/layout-engine/v2/2024-12/address_hotel_location_v4/light.png' },
-    { value: 'Other', label: 'Other', icon: 'https://cdn.grofers.com/cdn-cgi/image/f=auto,fit=scale-down,q=70,metadata=none,w=45/layout-engine/v2/2024-12/address_other_location_v4/light.png' }
+    { value: 'Home', label: 'Home', icon: '🏠' },
+    { value: 'Work', label: 'Work', icon: '🏢' },
+    { value: 'Hotel', label: 'Hotel', icon: '🏨' },
+    { value: 'Other', label: 'Other', icon: '📍' }
   ];
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }} className="bg-white rounded-lg max-w-md max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-lg w-full max-w-md max-h-[90vh] flex flex-col">
         {/* Modal Header */}
-        <div className="flex justify-between items-center p-4 border-b border-gray-200">
+        <div className="flex justify-between items-center p-4 border-b border-gray-200 sticky top-0 bg-white z-10">
           <span className="text-lg font-medium">Enter complete address</span>
           <button 
             onClick={onCancel}
-            className="text-gray-500 hover:text-gray-700"
+            className="text-gray-500 hover:text-gray-700 text-2xl"
           >
-            <span className="icon-cross">×</span>
+            &times;
           </button>
         </div>
 
@@ -110,123 +111,153 @@ const AddressForm = ({ userId, token, onSuccess, onCancel, addressToEdit }) => {
         <div className="p-4 overflow-y-auto flex-grow">
           {/* Address Type Selection */}
           <div className="mb-6">
-            <div className="text-sm font-medium mb-2">Save address as *</div>
+            <div className="text-sm font-medium mb-3 text-gray-700">Save address as *</div>
             <div className="flex flex-wrap gap-2">
               {addressTypeOptions.map((option) => (
-                <div 
+                <button
                   key={option.value}
-                  className={`flex items-center px-3 py-2 border rounded-full cursor-pointer ${formData.addressType === option.value ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}
+                  type="button"
+                  className={`flex items-center px-4 py-2 border rounded-full transition-colors ${
+                    formData.addressType === option.value 
+                      ? 'border-blue-500 bg-blue-50 text-blue-600' 
+                      : 'border-gray-300 hover:border-gray-400 text-gray-700'
+                  }`}
                   onClick={() => handleAddressTypeChange(option.value)}
                 >
-                  <img src={option.icon} width="18" height="18" alt={option.label} className="mr-2" />
+                  <span className="text-lg mr-2">{option.icon}</span>
                   <span>{option.label}</span>
-                </div>
+                </button>
               ))}
             </div>
+            {formData.addressType === 'Other' && (
+              <div className="mt-3">
+                <input
+                  type="text"
+                  name="customName"
+                  value={formData.customName}
+                  onChange={handleChange}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Enter custom name (e.g. Grandma's place)"
+                  required
+                />
+              </div>
+            )}
           </div>
 
           {/* Form Fields */}
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Building/House No */}
-            <div className="relative">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Flat / House no / Building name *
+              </label>
               <input
                 type="text"
                 name="building"
                 value={formData.building}
                 onChange={handleChange}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 peer"
-                placeholder=" "
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="e.g. 123, Sunshine Apartments"
                 required
+                onFocus={() => setActiveField('building')}
+                onBlur={() => setActiveField(null)}
               />
-              <label className="absolute left-3 top-1/2 -translate-y-1/2 peer-focus:text-xs peer-focus:top-2 peer-placeholder-shown:top-1/2 peer-placeholder-shown:text-base transition-all duration-200 text-gray-500 pointer-events-none bg-white px-1 text-xs peer-focus:text-blue-500">
-                Flat / House no / Building name *
-              </label>
             </div>
 
             {/* Floor */}
-            <div className="relative">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Floor (optional)
+              </label>
               <input
                 type="text"
                 name="floor"
                 value={formData.floor}
                 onChange={handleChange}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 peer"
-                placeholder=" "
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="e.g. 3rd Floor"
+                onFocus={() => setActiveField('floor')}
+                onBlur={() => setActiveField(null)}
               />
-              <label className="absolute left-3 top-1/2 -translate-y-1/2 peer-focus:text-xs peer-focus:top-2 peer-placeholder-shown:top-1/2 peer-placeholder-shown:text-base transition-all duration-200 text-gray-500 pointer-events-none bg-white px-1 text-xs peer-focus:text-blue-500">
-                Floor (optional)
-              </label>
             </div>
 
             {/* Locality */}
-            <div className="relative">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Area / Sector / Locality *
+              </label>
               <textarea
-                rows="1"
+                rows="3"
                 name="locality"
                 value={formData.locality}
                 onChange={handleChange}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 peer min-h-[50px]"
-                placeholder=" "
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="e.g. Main Street, Downtown"
                 required
+                onFocus={() => setActiveField('locality')}
+                onBlur={() => setActiveField(null)}
               />
-              <label className="absolute left-3 top-4 peer-focus:text-xs peer-focus:top-2 peer-placeholder-shown:top-4 peer-placeholder-shown:text-base transition-all duration-200 text-gray-500 pointer-events-none bg-white px-1 text-xs peer-focus:text-blue-500">
-                Area / Sector / Locality *
-              </label>
             </div>
 
             {/* Landmark */}
-            <div className="relative">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Nearby landmark (optional)
+              </label>
               <input
                 type="text"
                 name="landmark"
                 value={formData.landmark}
                 onChange={handleChange}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 peer"
-                placeholder=" "
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="e.g. Near Central Park"
+                onFocus={() => setActiveField('landmark')}
+                onBlur={() => setActiveField(null)}
               />
-              <label className="absolute left-3 top-1/2 -translate-y-1/2 peer-focus:text-xs peer-focus:top-2 peer-placeholder-shown:top-1/2 peer-placeholder-shown:text-base transition-all duration-200 text-gray-500 pointer-events-none bg-white px-1 text-xs peer-focus:text-blue-500">
-                Nearby landmark (optional)
-              </label>
             </div>
 
             {/* Divider with text */}
-            <div className="py-4">
-              <div className="text-sm text-gray-500 font-medium">
+            <div className="py-4 border-t border-gray-200 mt-6">
+              <div className="text-sm font-medium text-gray-700">
                 Enter your details for seamless delivery experience
               </div>
             </div>
 
             {/* Contact Name */}
-            <div className="relative">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Your name *
+              </label>
               <input
                 type="text"
                 name="contactName"
                 value={formData.contactName}
                 onChange={handleChange}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 peer"
-                placeholder=" "
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="e.g. John Doe"
                 required
+                onFocus={() => setActiveField('contactName')}
+                onBlur={() => setActiveField(null)}
               />
-              <label className="absolute left-3 top-1/2 -translate-y-1/2 peer-focus:text-xs peer-focus:top-2 peer-placeholder-shown:top-1/2 peer-placeholder-shown:text-base transition-all duration-200 text-gray-500 pointer-events-none bg-white px-1 text-xs peer-focus:text-blue-500">
-                Your name *
-              </label>
             </div>
 
             {/* Contact Phone */}
-            <div className="relative">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Your phone number (optional)
+              </label>
               <input
                 type="tel"
                 name="contactPhone"
                 value={formData.contactPhone}
                 onChange={handleChange}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 peer"
-                placeholder=" "
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="e.g. 9876543210"
                 maxLength="10"
                 pattern="[0-9]{10}"
+                onFocus={() => setActiveField('contactPhone')}
+                onBlur={() => setActiveField(null)}
               />
-              <label className="absolute left-3 top-1/2 -translate-y-1/2 peer-focus:text-xs peer-focus:top-2 peer-placeholder-shown:top-1/2 peer-placeholder-shown:text-base transition-all duration-200 text-gray-500 pointer-events-none bg-white px-1 text-xs peer-focus:text-blue-500">
-                Your phone number (optional)
-              </label>
               {formData.contactPhone && !/^[0-9]{10}$/.test(formData.contactPhone) && (
                 <p className="mt-1 text-sm text-red-500">Please enter a valid 10-digit number</p>
               )}
@@ -255,18 +286,18 @@ const AddressForm = ({ userId, token, onSuccess, onCancel, addressToEdit }) => {
             type="submit"
             onClick={handleSubmit}
             disabled={isSubmitting}
-            className="w-full py-3 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center"
           >
             {isSubmitting ? (
-              <span className="flex items-center justify-center">
-                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <>
+                <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
                 {isEditMode ? 'Updating...' : 'Saving...'}
-              </span>
+              </>
             ) : (
-              'Save Address'
+              <span>{isEditMode ? 'Update Address' : 'Save Address'}</span>
             )}
           </button>
         </div>

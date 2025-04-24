@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import ProductComponent from './ProductComponent';
+import PublicNavBar from './Navbar/PublicNavbar'; // Adjust the import path as necessary
 
 const SearchResults = () => {
     const [results, setResults] = useState([]);
@@ -130,6 +131,8 @@ const SearchResults = () => {
     const queryText = new URLSearchParams(location.search).get('q');
 
     return (
+        <>
+        <PublicNavBar cartCount={cartCount} cartTotal={cartTotal} /> {/* Assuming you have a PublicNavBar component */}
         <div className="container mx-auto  px-4 py-8">
             <h1 className="text-2xl font-bold mb-6">
                 {results.length > 0
@@ -149,6 +152,7 @@ const SearchResults = () => {
                 ))}
             </div>
         </div>
+        </>
     );
 };
 

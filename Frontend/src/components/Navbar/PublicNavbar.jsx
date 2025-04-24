@@ -1,38 +1,41 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { TypeAnimation } from 'react-type-animation';
+import LocationSelector from '../Customer/LocationSelector';
 
-const PublicNavbar = ({ cartCount, totalPrice }) => {
+const PublicNavbar = ({ cartCount, totalPrice, cartUpdated }) => {
   const [blink, setBlink] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [displayCount, setDisplayCount] = useState(0);
   const [displayTotal, setDisplayTotal] = useState(0);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
+  const [currentAddress, setCurrentAddress] = useState(
+    localStorage.getItem('selectedAddress') || 'select your address'
+  );
   const navigate = useNavigate();
 
   const updateCartDisplay = () => {
-    if (!localStorage.getItem("token")) {
-      const guestCart = JSON.parse(localStorage.getItem("guestCart")) || [];
-      const count = guestCart.reduce((sum, item) => sum + item.quantity, 0);
-      const total = guestCart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-      setDisplayCount(count);
-      setDisplayTotal(total);
-    } else {
-      setDisplayCount(cartCount);
-      setDisplayTotal(totalPrice);
-    }
+    const guestCart = JSON.parse(localStorage.getItem("guestCart")) || [];
+    const count = guestCart.reduce((sum, item) => sum + item.quantity, 0);
+    const total = guestCart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    setDisplayCount(count);
+    setDisplayTotal(total);
   };
 
   useEffect(() => {
     updateCartDisplay();
 
     const handleStorageChange = (e) => {
-      if (e.key === "guestCart") {
+      if (e.key === "guestCart" || e.key === "selectedAddress") {
         updateCartDisplay();
+        if (e.key === "selectedAddress") {
+          setCurrentAddress(localStorage.getItem('selectedAddress') || 'Select your address');
+        }
       }
     };
 
+    // Add custom event listener for cart updates
     const handleCartUpdate = () => updateCartDisplay();
 
     window.addEventListener('storage', handleStorageChange);
@@ -42,7 +45,7 @@ const PublicNavbar = ({ cartCount, totalPrice }) => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('cartUpdated', handleCartUpdate);
     };
-  }, [cartCount, totalPrice]);
+  }, [cartUpdated]); // Add cartUpdated to dependencies
 
   const handleCartClick = () => {
     setBlink(true);
@@ -54,8 +57,13 @@ const PublicNavbar = ({ cartCount, totalPrice }) => {
     e.preventDefault();
     if (searchQuery.trim()) {
       navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
-      setShowSearch(false); // Close search on mobile after submit
+      setShowSearch(false);
     }
+  };
+
+  const handleLocationChange = (address) => {
+    setCurrentAddress(address);
+    localStorage.setItem('selectedAddress', address);
   };
 
   return (
@@ -72,19 +80,13 @@ const PublicNavbar = ({ cartCount, totalPrice }) => {
           
           <div className="h-8 w-px bg-gray-300"></div>
           
-          <div className="flex flex-col cursor-pointer">
-            <div className="text-xs text-gray-500">Delivery in 8 minutes</div>
-            <div className="flex items-center gap-1">
-              <span className="text-sm font-medium">Indrapuri, Patna</span>
-              <div className="w-0 h-0 border-l-4 border-l-transparent border-r-4 border-r-transparent border-t-4 border-t-gray-600"></div>
-            </div>
-          </div>
+          <LocationSelector 
+            currentAddress={currentAddress}
+            onLocationChange={handleLocationChange}
+          />
         </div>
 
-        <form 
-          onSubmit={handleSearchSubmit}
-          className="flex-grow max-w-2xl mx-4 relative"
-        >
+        <form onSubmit={handleSearchSubmit} className="flex-grow max-w-2xl mx-4 relative">
           <div className="relative">
             <input
               type="text"
@@ -154,7 +156,6 @@ const PublicNavbar = ({ cartCount, totalPrice }) => {
 
       {/* Mobile Navbar */}
       <div className="md:hidden flex flex-col">
-        {/* Top Row - Logo and Menu */}
         <div className="flex justify-between items-center">
           <Link to="/" className="text-xl font-bold text-green-600 flex items-center">
             <span className="relative">
@@ -201,27 +202,20 @@ const PublicNavbar = ({ cartCount, totalPrice }) => {
           </div>
         </div>
         
-        {/* Delivery Info */}
-        <div className="mt-2 flex items-center justify-between">
-          <div className="flex flex-col">
-            <div className="text-xs text-gray-500">Delivery in 8 minutes</div>
-            <div className="flex items-center gap-1">
-              <span className="text-sm font-medium">Indrapuri, Patna</span>
-              <div className="w-0 h-0 border-l-4 border-l-transparent border-r-4 border-r-transparent border-t-4 border-t-gray-600"></div>
-            </div>
-          </div>
+        <div className="mt-2">
+          <LocationSelector 
+            currentAddress={currentAddress}
+            onLocationChange={handleLocationChange}
+            mobileView={true}
+          />
         </div>
         
-        {/* Mobile Search (shown when search button clicked) */}
         {showSearch && (
-          <form 
-            onSubmit={handleSearchSubmit}
-            className="mt-3 relative"
-          >
+          <form onSubmit={handleSearchSubmit} className="mt-3 relative">
             <div className="relative">
               <input
                 type="text"
-                placeholder=""
+                placeholder="Search products..."
                 className="w-full py-2 pl-10 pr-4 rounded-lg bg-gray-100 border border-transparent focus:border-green-500 focus:bg-white focus:outline-none"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -231,21 +225,15 @@ const PublicNavbar = ({ cartCount, totalPrice }) => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
               </div>
-              {!searchQuery && (
-                <div className="absolute inset-y-0 left-10 flex items-center pointer-events-none">
-                  <span className="text-gray-400 text-sm">Search products...</span>
-                </div>
-              )}
             </div>
           </form>
         )}
         
-        {/* Mobile Menu (shown when menu button clicked) */}
         {isMenuOpen && (
           <div className="mt-3 py-2 border-t border-gray-200">
             <Link 
               to="/login" 
-              className=" px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md flex items-center gap-2"
+              className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md flex items-center gap-2"
               onClick={() => setIsMenuOpen(false)}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -15,6 +15,9 @@ const SnacksAndChips = ({ products, onCartChange, cart, loading, isLoggedIn }) =
            lowerName.includes('popcorn') ||
            lowerName.includes('nuts') ||
            lowerName.includes('pretzel');
+
+           console.log("All products:", products);
+console.log("Filtered dairy products:", dairyProducts);
   });
 
   if (snacksProducts.length === 0) {

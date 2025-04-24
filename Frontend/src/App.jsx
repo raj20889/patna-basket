@@ -20,6 +20,8 @@ import OrderConfirmation from "./components/Customer/OrderConfirmation";
 import OrderDetails from "../src/components/Customer/OrderDetails";
 import CustomerOrders from "./components/Customer/CustomerOrders.JSX";
 import AddressManager from "./components/Customer/AddressManager";
+import CustomerSearch from "./components/Customer/SearchResults";
+import AddressForm from "./components/Customer/AddressForm";
 
 const App = () => {
   return (
@@ -71,6 +73,18 @@ const App = () => {
           />
 
           <Route
+            path="/customer/search"
+            element={
+              <PrivateRoute allowedRoles={["customer"]}>
+                <>
+                  
+                  <CustomerSearch />
+                </>
+              </PrivateRoute>
+            }
+          />
+
+          <Route
             path="/c/:category"
             element={
               <PrivateRoute allowedRoles={["customer"]}>
@@ -102,6 +116,8 @@ const App = () => {
               </PrivateRoute>
             }
           />
+
+
 
           <Route
             path="/payment"

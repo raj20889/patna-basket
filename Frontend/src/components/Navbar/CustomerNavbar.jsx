@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { TypeAnimation } from 'react-type-animation';
+import LocationSelector from '../Customer/LocationSelector';
 
 const CustomerNavbar = ({ 
   cartUpdated, 
@@ -15,6 +16,10 @@ const CustomerNavbar = ({
   const [blink, setBlink] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
+  const [currentAddress, setCurrentAddress] = useState(() => {
+    const savedAddress = localStorage.getItem('selectedAddress');
+    return savedAddress ? savedAddress : 'Select your location';
+  });
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
   const user = JSON.parse(localStorage.getItem('user')) || {};
@@ -31,7 +36,7 @@ const CustomerNavbar = ({
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+      navigate(`/customer/search?q=${encodeURIComponent(searchQuery.trim())}`);
       setShowMobileSearch(false);
     }
   };
@@ -112,13 +117,13 @@ const CustomerNavbar = ({
           
           <div className="h-8 w-px bg-gray-300"></div>
           
-          <div className="flex flex-col cursor-pointer">
-            <div className="text-xs text-gray-500">Delivery in 8 minutes</div>
-            <div className="flex items-center gap-1">
-              <span className="text-sm font-medium">Indrapuri, Patna</span>
-              <div className="w-0 h-0 border-l-4 border-l-transparent border-r-4 border-r-transparent border-t-4 border-t-gray-600"></div>
-            </div>
-          </div>
+          <LocationSelector 
+            currentAddress={currentAddress}
+            onLocationChange={(address) => {
+              setCurrentAddress(address);
+              localStorage.setItem('selectedAddress', address); // Save to localStorage
+            }}
+          />
         </div>
 
         <form 
@@ -267,7 +272,7 @@ const CustomerNavbar = ({
               <span className="absolute -right-3 -bottom-1 w-2 h-2 bg-yellow-400 rounded-full"></span>
             </span>
           </Link>
-
+          
           <div className="flex items-center gap-4">
             <button 
               onClick={() => setShowMobileSearch(!showMobileSearch)}
@@ -306,15 +311,16 @@ const CustomerNavbar = ({
           </div>
         </div>
 
-        {/* Delivery Info */}
-        <div className="mt-2 flex items-center justify-between">
-          <div className="flex flex-col">
-            <div className="text-xs text-gray-500">Delivery in 8 minutes</div>
-            <div className="flex items-center gap-1">
-              <span className="text-sm font-medium">Indrapuri, Patna</span>
-              <div className="w-0 h-0 border-l-4 border-l-transparent border-r-4 border-r-transparent border-t-4 border-t-gray-600"></div>
-            </div>
-          </div>
+        {/* Delivery Info - Now only using LocationSelector */}
+        <div className="mt-2">
+          <LocationSelector 
+            currentAddress={currentAddress}
+            onLocationChange={(address) => {
+              setCurrentAddress(address);
+              setIsMobileMenuOpen(false);
+            }}
+            mobileView={true}
+          />
         </div>
 
         {/* Mobile Search */}
