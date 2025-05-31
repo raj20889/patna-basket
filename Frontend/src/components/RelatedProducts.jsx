@@ -1,16 +1,29 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import ProductComponent from './ProductComponent';
 
 const RelatedProducts = ({ products = [], onCartChange, cart = [], loading, isLoggedIn }) => {
   const navigate = useNavigate();
+  const scrollRef = useRef(null);
+
+  const scrollLeft = () => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollBy({ left: -300, behavior: 'smooth' });
+    }
+  };
+
+  const scrollRight = () => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollBy({ left: 300, behavior: 'smooth' });
+    }
+  };
 
   // Safely filter dairy-related products
   const dairyProducts = (products || []).filter(product => {
     if (!product || !product.name) return false;
     
-    const lowerName = product.name.toLowerCase();
+    const lowerName = product.category.toLowerCase();
     return lowerName.includes('milk') || 
            lowerName.includes('bread') || 
            lowerName.includes('egg') ||
@@ -59,20 +72,21 @@ const RelatedProducts = ({ products = [], onCartChange, cart = [], loading, isLo
           cart={cart}
           onCartChange={onCartChange}
           isLoggedIn={isLoggedIn}
+          scrollRef={scrollRef}
         />
         
         {/* Navigation Arrows */}
         {dairyProducts.length > 4 && (
           <>
             <button 
-              className="absolute left-0 top-1/2 -translate-y-1/2 bg-white rounded-full p-2 shadow-md hover:bg-gray-100"
-              onClick={() => {/* Add scroll left functionality */}}
+              className="absolute left-0 top-1/2 -translate-y-1/2 bg-white rounded-full p-2 shadow-md hover:bg-gray-100 z-10"
+              onClick={scrollLeft}
             >
               <FiChevronLeft size={20} />
             </button>
             <button 
-              className="absolute right-0 top-1/2 -translate-y-1/2 bg-white rounded-full p-2 shadow-md hover:bg-gray-100"
-              onClick={() => {/* Add scroll right functionality */}}
+              className="absolute right-0 top-1/2 -translate-y-1/2 bg-white rounded-full p-2 shadow-md hover:bg-gray-100 z-10"
+              onClick={scrollRight}
             >
               <FiChevronRight size={20} />
             </button>

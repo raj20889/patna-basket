@@ -2,6 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { TypeAnimation } from 'react-type-animation';
 import LocationSelector from '../Customer/LocationSelector';
+import Dialog from '@mui/material/Dialog';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import Button from '@mui/material/Button';
 
 const PublicNavbar = ({ cartCount, totalPrice, cartUpdated }) => {
   const [blink, setBlink] = useState(false);
@@ -10,10 +14,30 @@ const PublicNavbar = ({ cartCount, totalPrice, cartUpdated }) => {
   const [displayTotal, setDisplayTotal] = useState(0);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
-  const [currentAddress, setCurrentAddress] = useState(
-    localStorage.getItem('selectedAddress') || 'select your address'
-  );
+  const [isPatnaLocation, setIsPatnaLocation] = useState(false);
+  const [showCongratsDialog, setShowCongratsDialog] = useState(false);
+  const [showSorryDialog, setShowSorryDialog] = useState(false);
+  const [currentAddress, setCurrentAddress] = useState(() => {
+    const savedAddress = localStorage.getItem('selectedAddress');
+    const isPatna = savedAddress?.toLowerCase().includes('patna');
+    setIsPatnaLocation(isPatna || false);
+    return savedAddress ? savedAddress : 'Select your location';
+  });
   const navigate = useNavigate();
+
+  const handleLocationChange = (address) => {
+    setCurrentAddress(address);
+    localStorage.setItem('selectedAddress', address);
+    
+    const isPatna = address.toLowerCase().includes('patna');
+    setIsPatnaLocation(isPatna);
+    
+    if (isPatna) {
+      setShowCongratsDialog(true);
+    } else {
+      setShowSorryDialog(true);
+    }
+  };
 
   const updateCartDisplay = () => {
     const guestCart = JSON.parse(localStorage.getItem("guestCart")) || [];
@@ -30,12 +54,14 @@ const PublicNavbar = ({ cartCount, totalPrice, cartUpdated }) => {
       if (e.key === "guestCart" || e.key === "selectedAddress") {
         updateCartDisplay();
         if (e.key === "selectedAddress") {
-          setCurrentAddress(localStorage.getItem('selectedAddress') || 'Select your address');
+          const address = localStorage.getItem('selectedAddress') || 'Select your location';
+          setCurrentAddress(address);
+          const isPatna = address.toLowerCase().includes('patna');
+          setIsPatnaLocation(isPatna);
         }
       }
     };
 
-    // Add custom event listener for cart updates
     const handleCartUpdate = () => updateCartDisplay();
 
     window.addEventListener('storage', handleStorageChange);
@@ -45,9 +71,11 @@ const PublicNavbar = ({ cartCount, totalPrice, cartUpdated }) => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('cartUpdated', handleCartUpdate);
     };
-  }, [cartUpdated]); // Add cartUpdated to dependencies
+  }, [cartUpdated]);
 
   const handleCartClick = () => {
+    if (!isPatnaLocation) return;
+    
     setBlink(true);
     setTimeout(() => setBlink(false), 300);
     navigate('/cart');
@@ -59,11 +87,6 @@ const PublicNavbar = ({ cartCount, totalPrice, cartUpdated }) => {
       navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
       setShowSearch(false);
     }
-  };
-
-  const handleLocationChange = (address) => {
-    setCurrentAddress(address);
-    localStorage.setItem('selectedAddress', address);
   };
 
   return (
@@ -138,8 +161,13 @@ const PublicNavbar = ({ cartCount, totalPrice, cartUpdated }) => {
 
           <button 
             onClick={handleCartClick}
-            className="flex items-center gap-2 px-4 py-2 bg-[#54B226] rounded-md hover:bg-[#3F8C1F] transition-colors relative"
+            className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors relative ${
+              isPatnaLocation 
+                ? 'bg-[#54B226] hover:bg-[#3F8C1F]' 
+                : 'bg-gray-300 cursor-not-allowed'
+            }`}
             style={{ transform: blink ? 'scale(1.05)' : 'scale(1)' }}
+            disabled={!isPatnaLocation}
           >
             <span className="text-white text-lg">🛒</span>
             <div className="flex flex-col text-white">
@@ -175,9 +203,12 @@ const PublicNavbar = ({ cartCount, totalPrice, cartUpdated }) => {
             </button>
             
             <button 
-              onClick={handleCartClick}
-              className="relative p-2"
+              onClick={isPatnaLocation ? handleCartClick : null}
+              className={`relative p-2 ${
+                isPatnaLocation ? '' : 'opacity-50 cursor-not-allowed'
+              }`}
               style={{ transform: blink ? 'scale(1.05)' : 'scale(1)' }}
+              disabled={!isPatnaLocation}
             >
               <span className="text-lg">🛒</span>
               {displayCount > 0 && (
@@ -249,6 +280,51 @@ const PublicNavbar = ({ cartCount, totalPrice, cartUpdated }) => {
           </div>
         )}
       </div>
+
+      {/* Congratulations Dialog for Patna */}
+      <Dialog
+        open={showCongratsDialog}
+        onClose={() => setShowCongratsDialog(false)}
+      >
+        <DialogContent>
+          <div className="p-4 text-center">
+            <h3 className="text-lg font-bold text-green-600 mb-2">Congratulations!</h3>
+            <p>We are delivering in your city (Patna)!</p>
+          </div>
+        </DialogContent>
+        <DialogActions>
+          <Button 
+            onClick={() => setShowCongratsDialog(false)}
+            color="primary"
+            variant="contained"
+          >
+            Great!
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Sorry Dialog for non-Patna locations */}
+      <Dialog
+        open={showSorryDialog}
+        onClose={() => setShowSorryDialog(false)}
+      >
+        <DialogContent>
+          <div className="p-4 text-center">
+            <h3 className="text-lg font-bold text-red-600 mb-2">Sorry</h3>
+            <p>Currently we are not delivering in your city.</p>
+            <p className="mt-2 text-sm text-gray-600">We only deliver in Patna at this time.</p>
+          </div>
+        </DialogContent>
+        <DialogActions>
+          <Button 
+            onClick={() => setShowSorryDialog(false)}
+            color="primary"
+            variant="outlined"
+          >
+            OK
+          </Button>
+        </DialogActions>
+      </Dialog>
     </nav>
   );
 };

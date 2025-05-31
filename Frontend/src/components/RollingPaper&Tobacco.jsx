@@ -8,11 +8,11 @@ const RollingPaperTobacco = ({ products, onCartChange, cart, loading, isLoggedIn
 
   // Filter tobacco-related products
   const tobaccoProducts = products.filter(product => {
-    const lowerName = product.name.toLowerCase();
+    const lowerName = product.category.toLowerCase();
     return lowerName.includes('rolling paper') || 
            lowerName.includes('tobacco') || 
            lowerName.includes('cigarette') ||
-           lowerName.includes('filter tip') ||
+           lowerName.includes('smoking') ||
            lowerName.includes('rolling machine');
   });
 

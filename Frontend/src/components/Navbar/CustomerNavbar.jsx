@@ -1,7 +1,12 @@
+
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { TypeAnimation } from 'react-type-animation';
 import LocationSelector from '../Customer/LocationSelector';
+import Dialog from '@mui/material/Dialog';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import Button from '@mui/material/Button';
 
 const CustomerNavbar = ({ 
   cartUpdated, 
@@ -16,14 +21,32 @@ const CustomerNavbar = ({
   const [blink, setBlink] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
+  const [isPatnaLocation, setIsPatnaLocation] = useState(false);
+  const [showCongratsDialog, setShowCongratsDialog] = useState(false);
+  const [showSorryDialog, setShowSorryDialog] = useState(false);
   const [currentAddress, setCurrentAddress] = useState(() => {
     const savedAddress = localStorage.getItem('selectedAddress');
+    const isPatna = savedAddress?.toLowerCase().includes('patna');
+    setIsPatnaLocation(isPatna || false);
     return savedAddress ? savedAddress : 'Select your location';
   });
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
   const user = JSON.parse(localStorage.getItem('user')) || {};
 
+  const handleLocationChange = (address) => {
+    setCurrentAddress(address);
+    localStorage.setItem('selectedAddress', address);
+    
+    const isPatna = address.toLowerCase().includes('patna');
+    setIsPatnaLocation(isPatna);
+    
+    if (isPatna) {
+      setShowCongratsDialog(true);
+    } else {
+      setShowSorryDialog(true);
+    }
+  };
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
@@ -42,6 +65,8 @@ const CustomerNavbar = ({
   };
 
   const handleCartClick = () => {
+    if (!isPatnaLocation) return;
+    
     setBlink(true);
     setTimeout(() => setBlink(false), 300);
     navigate('/cart');
@@ -119,10 +144,7 @@ const CustomerNavbar = ({
           
           <LocationSelector 
             currentAddress={currentAddress}
-            onLocationChange={(address) => {
-              setCurrentAddress(address);
-              localStorage.setItem('selectedAddress', address); // Save to localStorage
-            }}
+            onLocationChange={handleLocationChange}
           />
         </div>
 
@@ -246,8 +268,13 @@ const CustomerNavbar = ({
 
           <button 
             onClick={handleCartClick}
-            className="flex items-center gap-2 px-4 py-2 bg-[#54B226] rounded-md hover:bg-[#3F8C1F] transition-colors relative"
+            className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors relative ${
+              isPatnaLocation 
+                ? 'bg-[#54B226] hover:bg-[#3F8C1F]' 
+                : 'bg-gray-300 cursor-not-allowed'
+            }`}
             style={{ transform: blink ? 'scale(1.05)' : 'scale(1)' }}
+            disabled={!isPatnaLocation}
           >
             <span className="text-white text-lg">🛒</span>
             <div className="flex flex-col text-white">
@@ -284,9 +311,12 @@ const CustomerNavbar = ({
             </button>
 
             <button 
-              onClick={handleCartClick}
-              className="relative p-2"
+              onClick={isPatnaLocation ? handleCartClick : null}
+              className={`relative p-2 ${
+                isPatnaLocation ? '' : 'opacity-50 cursor-not-allowed'
+              }`}
               style={{ transform: blink ? 'scale(1.05)' : 'scale(1)' }}
+              disabled={!isPatnaLocation}
             >
               <span className="text-lg">🛒</span>
               {cartCount > 0 && (
@@ -311,14 +341,11 @@ const CustomerNavbar = ({
           </div>
         </div>
 
-        {/* Delivery Info - Now only using LocationSelector */}
+        {/* Delivery Info */}
         <div className="mt-2">
           <LocationSelector 
             currentAddress={currentAddress}
-            onLocationChange={(address) => {
-              setCurrentAddress(address);
-              setIsMobileMenuOpen(false);
-            }}
+            onLocationChange={handleLocationChange}
             mobileView={true}
           />
         </div>
@@ -433,6 +460,50 @@ const CustomerNavbar = ({
           </div>
         )}
       </div>
+  {/* Congratulations Dialog for Patna */}
+  <Dialog
+        open={showCongratsDialog}
+        onClose={() => setShowCongratsDialog(false)}
+      >
+        <DialogContent>
+          <div className="p-4 text-center">
+            <h3 className="text-lg font-bold text-green-600 mb-2">Congratulations!</h3>
+            <p>We are delivering in your city (Patna)!</p>
+          </div>
+        </DialogContent>
+        <DialogActions>
+          <Button 
+            onClick={() => setShowCongratsDialog(false)}
+            color="primary"
+            variant="contained"
+          >
+            Great!
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Sorry Dialog for non-Patna locations */}
+      <Dialog
+        open={showSorryDialog}
+        onClose={() => setShowSorryDialog(false)}
+      >
+        <DialogContent>
+          <div className="p-4 text-center">
+            <h3 className="text-lg font-bold text-red-600 mb-2">Sorry</h3>
+            <p>Currently we are not delivering in your city.</p>
+            <p className="mt-2 text-sm text-gray-600">We only deliver in Patna at this time.</p>
+          </div>
+        </DialogContent>
+        <DialogActions>
+          <Button 
+            onClick={() => setShowSorryDialog(false)}
+            color="primary"
+            variant="outlined"
+          >
+            OK
+          </Button>
+        </DialogActions>
+      </Dialog>
     </nav>
   );
 };

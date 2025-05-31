@@ -33,35 +33,99 @@ const CategoryGrid = () => {
 
   const handleCategoryClick = (categoryPath) => {
     if (isCustomer) {
-      // For logged-in customers, navigate to the protected route
       navigate(`/c/${categoryPath}`);
     } else {
-      // For non-logged-in users, navigate to the public route
       navigate(`/${categoryPath}`);
     }
   };
 
   return (
-    <div className="container mx-auto px-4">
-      <div className="grid grid-cols-2 sm:grid-cols-5 md:grid-cols-10 gap-4">
+    <div className="container mx-auto px-4 py-6">
+      <h2 className="text-xl md:text-2xl font-bold mb-6">Shop by category</h2>
+      
+      {/* Mobile layout */}
+      <div className="md:hidden space-y-4">
+        {/* First row - 2 equal items */}
+        <div className="grid grid-cols-2 gap-4">
+          {categories.slice(0, 2).map((category, index) => (
+            <CategoryItem 
+              key={index}
+              category={category}
+              onClick={handleCategoryClick}
+              className="col-span-1"
+              imageClass="h-32"
+            />
+          ))}
+        </div>
+        
+        {/* Second row - 3 items (small-big-small) */}
+        <div className="grid grid-cols-6 gap-4">
+          <CategoryItem 
+            category={categories[2]}
+            onClick={handleCategoryClick}
+            className="col-span-2"
+            imageClass="h-32"
+          />
+          <CategoryItem 
+            category={categories[3]}
+            onClick={handleCategoryClick}
+            className="col-span-2"
+            imageClass="h-40"
+          />
+          <CategoryItem 
+            category={categories[4]}
+            onClick={handleCategoryClick}
+            className="col-span-2"
+            imageClass="h-32"
+          />
+        </div>
+        
+        {/* Remaining rows - 4 equal items */}
+        <div className="grid grid-cols-4 gap-4">
+          {categories.slice(5).map((category, index) => (
+            <CategoryItem 
+              key={index + 5}
+              category={category}
+              onClick={handleCategoryClick}
+              className="col-span-1"
+              imageClass="h-32"
+            />
+          ))}
+        </div>
+      </div>
+      
+      {/* Desktop layout */}
+      <div className="hidden md:grid md:grid-cols-5 lg:grid-cols-10 gap-4">
         {categories.map((category, index) => (
-          <div 
-            key={index} 
-            className="flex flex-col items-center cursor-pointer transition-transform hover:scale-105"
-            onClick={() => handleCategoryClick(category.path)}
-          >
-            <div className="w-20 h-20 md:w-25 md:h-30 rounded-2xl overflow-hidden border-2 border-gray-200">
-              <img 
-                src={category.imageUrl} 
-                alt={category.name}
-                className="w-full h-full object-cover"
-                loading="lazy"
-              />
-            </div>
-            <span className="mt-2 text-xs md:text-sm text-center font-medium">{category.name}</span>
-          </div>
+          <CategoryItem 
+            key={index}
+            category={category}
+            onClick={handleCategoryClick}
+            className="col-span-1"
+            imageClass="h-30"
+          />
         ))}
       </div>
+    </div>
+  );
+};
+
+// Reusable Category Item Component
+const CategoryItem = ({ category, onClick, className, imageClass }) => {
+  return (
+    <div 
+      className={`flex flex-col items-center cursor-pointer transition-transform hover:scale-105 ${className}`}
+      onClick={() => onClick(category.path)}
+    >
+      <div className={`w-full rounded-2xl overflow-hidden border-2 border-gray-200 ${imageClass}`}>
+        <img 
+          src={category.imageUrl} 
+          alt={category.name}
+          className="w-full h-full object-cover"
+          loading="lazy"
+        />
+      </div>
+      <span className="mt-2 text-xs md:text-sm text-center font-medium">{category.name}</span>
     </div>
   );
 };

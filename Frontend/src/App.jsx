@@ -22,6 +22,9 @@ import CustomerOrders from "./components/Customer/CustomerOrders.JSX";
 import AddressManager from "./components/Customer/AddressManager";
 import CustomerSearch from "./components/Customer/SearchResults";
 import AddressForm from "./components/Customer/AddressForm";
+import AdminDashboard from "./pages/Admin/AdminDashboardPage";
+import CustomerManager from "./pages/Admin/CustomerManagement";
+import OrderManagement from "./pages/Admin/OrderManagement";
 
 const App = () => {
   return (
@@ -38,7 +41,7 @@ const App = () => {
 
           {/* Protected Admin Routes */}
           <Route
-            path="/add-product"
+            path="admin/add-product"
             element={
               <PrivateRoute allowedRoles={["admin"]}>
                 <>
@@ -48,13 +51,51 @@ const App = () => {
               </PrivateRoute>
             }
           />
+             <Route
+            path='/admin/user-management'
+            element={
+              <PrivateRoute allowedRoles={["admin"]}>
+                <>
+                  <AdminNavbar />
+                  <CustomerManager />
+                </>
+              </PrivateRoute>
+            }
+          />
+
+  <Route
+            path='/admin/user-management'
+            element={
+              <PrivateRoute allowedRoles={["admin"]}>
+                <>
+                  <AdminNavbar />
+                  <CustomerManager />
+                </>
+              </PrivateRoute>
+            }
+          />
+
+<Route
+            path='/admin/order-management'
+            element={
+              <PrivateRoute allowedRoles={["admin"]}>
+                <>
+                
+                  <OrderManagement />
+                </>
+              </PrivateRoute>
+            }
+          />
+
+
+          
           <Route
             path="/admin/dashboard"
             element={
               <PrivateRoute allowedRoles={["admin"]}>
                 <>
-                  <AdminNavbar />
-                  <h1 className="p-4 text-2xl">Welcome Admin!</h1>
+                <AdminDashboard />
+                 
                 </>
               </PrivateRoute>
             }

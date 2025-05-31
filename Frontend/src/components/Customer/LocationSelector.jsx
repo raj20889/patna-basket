@@ -90,7 +90,7 @@ const LocationSelector = ({ currentAddress, onLocationChange, mobileView = false
     setIsSearching(true);
     try {
       const response = await axios.get(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&addressdetails=1&limit=5`
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&addressdetails=1&limit=10`
       );
       setSearchResults(response.data);
     } catch (error) {

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import ProductCard from './ProductCard';
 
 const RelatedProducts = ({ products, onCartUpdate, cart: parentCart, loading: parentLoading }) => {
@@ -128,18 +127,6 @@ const RelatedProducts = ({ products, onCartUpdate, cart: parentCart, loading: pa
             />
           ))}
         </div>
-        
-        {/* Navigation Arrows */}
-        {dairyProducts.length > 4 && (
-          <>
-            <button className="absolute left-0 top-1/2 -translate-y-1/2 bg-white rounded-full p-2 shadow-md hover:bg-gray-100">
-              <FiChevronLeft size={20} />
-            </button>
-            <button className="absolute right-0 top-1/2 -translate-y-1/2 bg-white rounded-full p-2 shadow-md hover:bg-gray-100">
-              <FiChevronRight size={20} />
-            </button>
-          </>
-        )}
       </div>
     </div>
   );

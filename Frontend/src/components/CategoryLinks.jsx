@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 const CategoryLinks = () => {
   const navigate = useNavigate();
   
-  // Get user role from localStorage
   const role = localStorage.getItem('role');
   const isCustomer = role === 'customer';
 
@@ -27,19 +26,15 @@ const CategoryLinks = () => {
   ];
 
   const handleCategoryClick = (categoryPath) => {
-    if (isCustomer) {
-      // For logged-in customers, navigate to the protected route
-      navigate(`/c/${categoryPath}`);
-    } else {
-      // For non-logged-in users, navigate to the public route
-      navigate(`/${categoryPath}`);
-    }
+    navigate(isCustomer ? `/c/${categoryPath}` : `/${categoryPath}`);
   };
 
   return (
-    <div className="text-center text-2xl font-bold my-5">
-      <h1>Explore Our Categories</h1>   
-      <div className="flex justify-evenly p-5">
+    <div className="text-center my-5 px-4">
+      <h1 className="text-xl md:text-2xl font-bold mb-4">Explore Our Categories</h1>   
+      
+      {/* Desktop View (unchanged) */}
+      <div className="hidden sm:flex justify-evenly p-5">
         {categories.map((category, index) => (
           <div 
             key={index} 
@@ -53,6 +48,27 @@ const CategoryLinks = () => {
               loading="lazy"
             />
             <div className="p-2 font-bold text-lg bg-gray-50">
+              {category.name}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Mobile View (new compact scrollable version) */}
+      <div className="sm:hidden flex overflow-x-auto gap-3 px-2 py-1 hide-scrollbar -mx-2">
+        {categories.map((category, index) => (
+          <div 
+            key={index} 
+            className="flex-shrink-0 w-28 cursor-pointer transition-transform duration-300 hover:scale-105 text-center rounded-lg overflow-hidden shadow-sm"
+            onClick={() => handleCategoryClick(category.path)}
+          >
+            <img 
+              src={category.imageUrl} 
+              alt={category.name} 
+              className="w-full h-20 object-cover"
+              loading="lazy"
+            />
+            <div className="p-1 font-medium text-sm bg-gray-50 truncate">
               {category.name}
             </div>
           </div>

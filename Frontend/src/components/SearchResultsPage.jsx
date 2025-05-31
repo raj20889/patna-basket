@@ -140,7 +140,7 @@ const SearchResults = () => {
                     : `No products found matching "${queryText}"`}
             </h1>
 
-            <div >
+            <div className='flex flex-row p-10' >
                 {results.map(product => (
                     <ProductComponent
                         key={product._id}

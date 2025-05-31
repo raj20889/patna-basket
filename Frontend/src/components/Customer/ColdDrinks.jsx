@@ -101,6 +101,7 @@ const ColdDrinksJuices = ({ products, onCartUpdate, cart: parentCart, loading: p
            lowerName.includes('drink') ||
            lowerName.includes('lemonade') ||
            lowerCategory.includes('beverage') ||
+           lowerCategory.includes('drink') ||
            lowerCategory.includes('juice');
   });
 

@@ -9,8 +9,6 @@ const BannerComponent = () => {
   const isCustomer = role === 'customer';
 
   const slides = [
-   
-   
     {
       image: "https://mcprod.sparindia.com/media/catalog/category/web-header.png",
       path: "seasonal-sale"
@@ -31,7 +29,6 @@ const BannerComponent = () => {
       image: "https://cdn.zeptonow.com/production/tr:w-1280,ar-3840-705,pr-true,f-auto,q-80/inventory/banner/4ea3de05-f469-4df2-9548-db9c9863dfdf.png",
       path: "paan-corner"
     },
-   
   ];
 
   const nextSlide = () => {
@@ -53,16 +50,12 @@ const BannerComponent = () => {
 
   const handleBannerClick = () => {
     const path = slides[currentSlide].path;
-    if (isCustomer) {
-      navigate(`/c/${path}`);
-    } else {
-      navigate(`/${path}`);
-    }
+    navigate(isCustomer ? `/c/${path}` : `/${path}`);
   };
 
   return (
-    <div className="mx-10 my-3">
-      <div className="relative w-full h-[200px] md:h-[250px] lg:h-[200px] overflow-hidden rounded-xl shadow-lg">
+    <div className="mx-4 sm:mx-8 my-3">
+      <div className="relative w-full h-[70px] md:h-[250px] lg:h-[200px] overflow-hidden rounded-xl shadow-lg">
         <div
           className="flex h-full transition-transform duration-1000 ease-in-out"
           style={{ transform: `translateX(-${currentSlide * 100}%)` }}
@@ -76,41 +69,41 @@ const BannerComponent = () => {
               <img
                 src={slide.image}
                 alt={`Slide ${index}`}
-                className="w-full h-full object-cover brightness-110 saturate-125"
+                className="w-full h-full lg:object-cover object-cover brightness-110 saturate-125"
               />
             </div>
           ))}
         </div>
 
-        {/* Arrows - Disabled when at boundaries */}
+        {/* Mobile Navigation (smaller and less prominent) */}
         <button
           onClick={prevSlide}
           disabled={currentSlide === 0}
-          className={`absolute left-4 top-1/2 -translate-y-1/2 bg-black/30 text-white p-2 rounded-full z-30 hover:bg-black/50 ${
+          className={`absolute left-1 top-1/2 -translate-y-1/2 bg-black/20 text-white p-1 rounded-full z-30 hover:bg-black/30 sm:left-4 sm:p-2 ${
             currentSlide === 0 ? "opacity-50 cursor-not-allowed" : ""
           }`}
         >
-          <FiChevronLeft size={24} />
+          <FiChevronLeft className="text-sm sm:text-base" size={20} />
         </button>
         <button
           onClick={nextSlide}
           disabled={currentSlide === slides.length - 1}
-          className={`absolute right-4 top-1/2 -translate-y-1/2 bg-black/30 text-white p-2 rounded-full z-30 hover:bg-black/50 ${
+          className={`absolute right-1 top-1/2 -translate-y-1/2 bg-black/20 text-white p-1 rounded-full z-30 hover:bg-black/30 sm:right-4 sm:p-2 ${
             currentSlide === slides.length - 1 ? "opacity-50 cursor-not-allowed" : ""
           }`}
         >
-          <FiChevronRight size={24} />
+          <FiChevronRight className="text-sm sm:text-base" size={20} />
         </button>
 
-        {/* Dots */}
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 flex space-x-2">
+        {/* Dots - Smaller on mobile */}
+        <div className="absolute bottom-2 sm:bottom-4 left-1/2 -translate-x-1/2 z-30 flex space-x-1 sm:space-x-2">
           {slides.map((_, index) => (
             <button
               key={index}
               onClick={() => setCurrentSlide(index)}
-              className={`w-3 h-3 rounded-full transition-all ${
+              className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full transition-all ${
                 index === currentSlide
-                  ? "bg-white w-6"
+                  ? "bg-white sm:w-6 w-4"
                   : "bg-white/50 hover:bg-white"
               }`}
             />

@@ -8,6 +8,14 @@ const productRoute = require('./routes/product');
 const cartRoute = require('./routes/cart');
 const addressRoutes = require('./routes/addressRoutes');
 const orderRoutes = require('./routes/order');
+// In your main app file (app.js/server.js)
+const userRoutes = require('./routes/users');
+
+
+
+
+
+
 
 dotenv.config();
 
@@ -28,6 +36,12 @@ app.use('/api/products', productRoute);
 app.use('/api/cart', cartRoute);
 app.use('/api/addresses', addressRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/users', userRoutes);
+
+
+
+
+
 
 app.get('/', (req, res) => {
     res.send('E-Commerce API Running...');

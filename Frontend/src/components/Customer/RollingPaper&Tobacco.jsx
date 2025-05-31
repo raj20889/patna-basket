@@ -100,7 +100,7 @@ const RollingPaperTobacco = ({ products, onCartUpdate, cart: parentCart, loading
            lowerName.includes('cigarette') ||
            lowerName.includes('smoking') ||
            lowerName.includes('paper') ||
-           lowerName.includes('wrap') ||
+           lowerName.includes('marlboro') ||
            lowerName.includes('filter') ||
            lowerCategory.includes('tobacco') ||
            lowerCategory.includes('smoking');

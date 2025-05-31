@@ -85,7 +85,7 @@ const ProductComponent = ({
   return (
     <div className="px-4 py-6 bg-white">
       <div className="relative">
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+      <div className="flex overflow-x-auto pb-4 -mx-4 px-4 scrollbar-hide space-x-4">
           {products.map(product => {
             const quantity = localCart[product._id] || 0;
             const isLoading = loading[product._id];
@@ -104,14 +104,12 @@ const ProductComponent = ({
                       {product.discountPercentage}% OFF
                     </div>
                   )}
-                  <img 
-                    src={product.image || '/placeholder-product.jpg'} 
-                    alt={product.name}
-                    className="h-full w-full object-contain"
-                    onError={(e) => {
-                      e.target.src = '/placeholder-product.jpg';
-                    }}
-                  />
+                <img 
+  src={product.image || '/placeholder-product.jpg'} 
+  alt={product.name}
+  className="h-full w-full object-contain"
+
+/>
                 </div>
                 
                 <div className="p-2">
