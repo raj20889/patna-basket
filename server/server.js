@@ -23,7 +23,7 @@ dotenv.config();
 // Configure CORS to allow requests from your frontend's domain
 // Replace 'https://your-frontend-domain.com' with the actual domain of your deployed frontend
 app.use(cors({
-  origin: 'https://your-frontend-domain.com', 
+  origin: 'https://patna-basket-r0uhf6e5g-mohit-rajs-projects-8c1c79e9.vercel.app', 
   credentials: true // if you are sending cookies/authentication headers
 }));
 
