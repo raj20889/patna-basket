@@ -19,6 +19,7 @@ import Payment from "./components/Customer/Payment";
 import OrderConfirmation from "./components/Customer/OrderConfirmation";
 import OrderDetails from "../src/components/Customer/OrderDetails";
 import CustomerOrders from "./components/Customer/CustomerOrders.jsx";
+import RollingPaperTobacco from "./components/Customer/RollingPaperAndTobacco.jsx";
 import AddressManager from "./components/Customer/AddressManager";
 import CustomerSearch from "./components/Customer/SearchResults";
 import AddressForm from "./components/Customer/AddressForm";

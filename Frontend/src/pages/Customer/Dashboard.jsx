@@ -6,7 +6,7 @@ import CategoryGrid from "../../components/CategoryGrid";
 import RelatedProducts from "../../components/Customer/RelatedProducts";
 
 import ColdDrinksAndJuices from "../../components/Customer/ColdDrinksAndJuices";
-import RollingPaperTobacco from "../../components/Customer/RollingPaper&Tobacco";
+import RollingPaperTobacco from "../../components/Customer/RollingPaperAndTobacco.jsx";
 import AllProducts from "../../components/Customer/AllProducts";
 import SnacksAndChips from "../../components/Customer/SnacksAndChips";
 import CandiesAndChocolates from "../../components/Customer/CandiesAndChocolates";
@@ -22,12 +22,12 @@ const Dashboard = () => {
   const fetchData = async () => {
     try {
       const [productsRes, cartRes] = await Promise.all([
-        fetch("http://localhost:5000/api/products", {
+        fetch("https://patna-basket-1.onrender.com/api/products", {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
         }),
-        fetch("http://localhost:5000/api/cart", {
+        fetch("https://patna-basket-1.onrender.com/api/cart", {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
@@ -70,7 +70,7 @@ const Dashboard = () => {
       const token = localStorage.getItem("token");
       const endpoint = token ? "api/cart/add" : "api/guest-cart/add";
 
-      const response = await fetch(`http://localhost:5000/${endpoint}`, {
+      const response = await fetch(`https://patna-basket-1.onrender.com/${endpoint}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -88,7 +88,7 @@ const Dashboard = () => {
         }));
 
         // Fetch updated cart details
-        const cartResponse = await fetch(`http://localhost:5000/api/cart`, {
+        const cartResponse = await fetch(`https://patna-basket-1.onrender.com/api/cart`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
