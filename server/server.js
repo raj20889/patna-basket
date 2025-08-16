@@ -20,13 +20,11 @@ const userRoutes = require('./routes/users');
 
 dotenv.config();
 
-// Enhanced CORS configuration
+// Configure CORS to allow requests from your frontend's domain
+// Replace 'https://your-frontend-domain.com' with the actual domain of your deployed frontend
 app.use(cors({
-  origin: 'http://localhost:5173',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true,
-  exposedHeaders: ['Authorization'] // Add this line
+  origin: 'https://your-frontend-domain.com', 
+  credentials: true // if you are sending cookies/authentication headers
 }));
 
 app.use(express.json());

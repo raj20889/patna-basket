@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5000/api/orders';
-const USER_API_URL = 'http://localhost:5000/api/user-orders';
+const API_URL = 'https://patna-basket-1.onrender.com/api/orders';
+const USER_API_URL = 'https://patna-basket-1.onrender.com/api/user-orders';
 
 const api = axios.create({
   baseURL: API_URL,
