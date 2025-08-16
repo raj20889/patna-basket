@@ -60,7 +60,7 @@ const Login = () => {
       } else if (user.role === 'delivery') {
         navigate('/delivery/orders')
       } else {
-        navigate('/customer/dashboard')
+        navigate('/Customer/dashboard')
       }
 
     } catch (err) {

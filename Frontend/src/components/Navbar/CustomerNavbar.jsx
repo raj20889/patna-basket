@@ -133,7 +133,7 @@ const CustomerNavbar = ({
       {/* Desktop View */}
       <div className="hidden md:flex items-center justify-between max-w-7xl mx-auto">
         <div className="flex items-center gap-4">
-          <Link to="/customer/dashboard" className="text-2xl font-bold text-green-600 flex items-center">
+          <Link to="/Customer/dashboard" className="text-2xl font-bold text-green-600 flex items-center">
             <span className="relative">
               Patna Basket
               <span className="absolute -right-3 -bottom-1 w-2 h-2 bg-yellow-400 rounded-full"></span>
@@ -293,7 +293,7 @@ const CustomerNavbar = ({
       <div className="md:hidden flex flex-col">
         {/* Top Row */}
         <div className="flex justify-between items-center">
-          <Link to="/customer/dashboard" className="text-xl font-bold text-green-600 flex items-center">
+          <Link to="/Customer/dashboard" className="text-xl font-bold text-green-600 flex items-center">
             <span className="relative">
               Patna Basket
               <span className="absolute -right-3 -bottom-1 w-2 h-2 bg-yellow-400 rounded-full"></span>

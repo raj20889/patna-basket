@@ -172,7 +172,7 @@ const SubcategoryWithProducts = () => {
           <div className="text-center py-12">
             <p className="text-lg">No products found in this category.</p>
             <button 
-              onClick={() => navigate('/customer/dashboard')}
+              onClick={() => navigate('/Customer/dashboard')}
               className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
             >
               Continue Shopping

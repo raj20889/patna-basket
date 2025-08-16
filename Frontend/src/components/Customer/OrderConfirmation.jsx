@@ -31,7 +31,7 @@ const OrderConfirmation = () => {
   }, [navigate]);
 
   const handleDashboardRedirect = () => {
-    navigate('/customer/dashboard');
+    navigate('/Customer/dashboard');
   };
 
   if (loading) {
