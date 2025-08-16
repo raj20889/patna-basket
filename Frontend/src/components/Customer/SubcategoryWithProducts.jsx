@@ -1,28 +1,47 @@
+// SubcategoryWithProducts.js
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import ProductComponent from '../ProductComponent';
 import CustomerNavbar from '../Navbar/CustomerNavbar';
+import ProductCard from './ProductCard'; // ✅ use the same ProductCard
 
 const SubcategoryWithProducts = () => {
   const { category } = useParams();
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
+  const [localCart, setLocalCart] = useState({});
+  const [localLoading, setLocalLoading] = useState({});
+  const [subcategoryName, setSubcategoryName] = useState('');
   const [cartCount, setCartCount] = useState(0);
   const [totalPrice, setTotalPrice] = useState(0);
-  const [cart, setCart] = useState({});
-  const [subcategoryName, setSubcategoryName] = useState('');
-  const [cartUpdated, setCartUpdated] = useState(false);
 
+  // 🔹 Fetch products by category
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const res = await axios.get(`http://localhost:5000/api/products/category/${category}`);
+        setProducts(res.data);
+        const formattedName = category
+          .replace(/-/g, ' ')
+          .replace(/\b\w/g, l => l.toUpperCase());
+        setSubcategoryName(formattedName);
+      } catch (err) {
+        console.error('Error fetching products:', err);
+      }
+    };
+
+    fetchProducts();
+    fetchCartData();
+  }, [category]);
+
+  // 🔹 Fetch cart data (guest or logged-in)
   const fetchCartData = async () => {
     const token = localStorage.getItem("token");
     try {
       let res;
       if (!token) {
         res = await axios.get('http://localhost:5000/api/guest-cart', {
-          headers: { 
-            'Guest-Token': localStorage.getItem('guestToken') || ''
-          }
+          headers: { 'Guest-Token': localStorage.getItem('guestToken') || '' }
         });
       } else {
         res = await axios.get('http://localhost:5000/api/cart', {
@@ -34,7 +53,7 @@ const SubcategoryWithProducts = () => {
       const serverCartMap = {};
       let count = 0;
       let total = 0;
-      
+
       if (cartData.products?.length > 0) {
         cartData.products.forEach(item => {
           serverCartMap[item.productId._id] = item.quantity;
@@ -43,79 +62,87 @@ const SubcategoryWithProducts = () => {
         });
       }
 
-      setCart(serverCartMap);
+      setLocalCart(serverCartMap);
       setCartCount(count);
       setTotalPrice(total);
-      
-      if (!token && res.data.guestToken) {
-        localStorage.setItem('guestToken', res.data.guestToken);
+
+      if (!token && cartData.guestToken) {
+        localStorage.setItem('guestToken', cartData.guestToken);
       }
     } catch (err) {
       console.error('Error fetching cart:', err);
     }
   };
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const res = await axios.get(`http://localhost:5000/api/products/category/${category}`);
-        setProducts(res.data);
-        const formattedName = category.replace(/-/g, ' ')
-                                    .replace(/\b\w/g, l => l.toUpperCase());
-        setSubcategoryName(formattedName);
-      } catch (err) {
-        console.error('Error fetching products:', err);
+  // 🔹 Update Cart (same style as RelatedProducts)
+  const updateCart = async (productId, newQuantity) => {
+    try {
+      const token = localStorage.getItem('token');
+      const guestToken = localStorage.getItem('guestToken');
+      const endpoint = token ? 'api/cart/add' : 'api/guest-cart/add';
+
+      const response = await fetch(`http://localhost:5000/${endpoint}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token 
+            ? { 'Authorization': `Bearer ${token}` }
+            : { 'Guest-Token': guestToken || '' }),
+        },
+        body: JSON.stringify({ productId, quantity: newQuantity }),
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        setLocalCart(prev => ({
+          ...prev,
+          [productId]: newQuantity > 0 ? newQuantity : undefined
+        }));
+
+        // Refresh cart data (count + total)
+        fetchCartData();
+
+        if (!token && data.guestToken) {
+          localStorage.setItem('guestToken', data.guestToken);
+        }
+
+        return true;
+      } else {
+        console.error("Error updating cart:", data.msg);
+        return false;
       }
-    };
+    } catch (err) {
+      console.error("Error updating cart:", err);
+      return false;
+    }
+  };
 
-    fetchProducts();
-    fetchCartData();
-  }, [category, cartUpdated]);
-
-  const handleCartChange = async (productId, change) => {
-    const token = localStorage.getItem("token");
-    const currentQty = cart[productId] || 0;
+  // 🔹 Handle cart change (+/- buttons)
+  const handleChange = async (productId, change) => {
+    const currentQty = localCart[productId] || 0;
     const newQty = currentQty + change;
 
     if (newQty < 0) return;
 
-    // Find the product for price calculation
-    const product = products.find(p => p._id === productId);
-    if (!product) return;
-
-    const priceChange = product.price * change;
-
-    // Optimistic UI update
-    const updatedCart = { ...cart, [productId]: newQty };
-    setCart(updatedCart);
-    setCartCount(prev => prev + change);
-    setTotalPrice(prev => prev + priceChange);
+    setLocalLoading(prev => ({ ...prev, [productId]: true }));
+    setLocalCart(prev => ({ ...prev, [productId]: newQty }));
 
     try {
-      if (!token) {
-        const guestToken = localStorage.getItem('guestToken');
-        await axios.post(
-          "http://localhost:5000/api/guest-cart/add",
-          { productId, quantity: newQty },
-          { headers: { 'Guest-Token': guestToken || '' } }
-        );
-      } else {
-        await axios.post(
-          "http://localhost:5000/api/cart/add",
-          { productId, quantity: newQty },
-          { headers: { "Authorization": `Bearer ${token}` } }
-        );
+      const success = await updateCart(productId, newQty);
+      if (!success) {
+        setLocalCart(prev => ({ ...prev, [productId]: currentQty }));
       }
-
-      // Trigger cart refresh in all components
-      setCartUpdated(prev => !prev);
     } catch (err) {
       console.error("Error updating cart", err);
-      // Revert optimistic update on error
-      setCart(prev => ({ ...prev, [productId]: currentQty }));
-      setCartCount(prev => prev - change);
-      setTotalPrice(prev => prev - priceChange);
+      setLocalCart(prev => ({ ...prev, [productId]: currentQty }));
+    } finally {
+      setLocalLoading(prev => ({ ...prev, [productId]: false }));
     }
+  };
+
+  // 🔹 Direct Add button
+  const handleAddToCart = (productId) => {
+    handleChange(productId, 1);
   };
 
   return (
@@ -123,19 +150,24 @@ const SubcategoryWithProducts = () => {
       <CustomerNavbar 
         cartCount={cartCount} 
         totalPrice={totalPrice} 
-        cartUpdated={cartUpdated}
       />
-      
+
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold mb-8 text-center">{subcategoryName}</h1>
-        
+
         {products.length > 0 ? (
-          <ProductComponent 
-            products={products} 
-            cart={cart}
-            onCartChange={handleCartChange}
-            cartUpdated={cartUpdated}
-          />
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+            {products.map(product => (
+              <ProductCard
+                key={product._id}
+                product={product}
+                quantity={localCart[product._id] || 0}
+                isLoading={localLoading[product._id]}
+                handleAddToCart={handleAddToCart}
+                handleChange={handleChange}
+              />
+            ))}
+          </div>
         ) : (
           <div className="text-center py-12">
             <p className="text-lg">No products found in this category.</p>
