@@ -1,43 +1,62 @@
 const express = require('express');
+const router = express.Router(); // Initialize router
 const Order = require('../models/Order');
+const User = require('../models/User'); // Make sure User model is imported
+const mongoose = require('mongoose'); // Make sure mongoose is imported
 const verifyToken = require('../middlewares/verifyToken');
-const router = express.Router();
+
+// Middleware to check user role
+const checkRole = (roles) => (req, res, next) => {
+  if (!roles.includes(req.user.role)) {
+    return res.status(403).json({ message: 'Forbidden' });
+  }
+  next();
+};
 
 // Get all orders (Admin only)
-router.get('/', verifyToken, async (req, res) => {
+router.get('/', verifyToken, checkRole(['admin']), async (req, res) => {
   try {
-    // Verify admin role
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ success: false, message: 'Access denied' });
+    const { page = 1, limit = 10, search, status } = req.query;
+    let query = {};
+
+    if (status) {
+      query.status = status;
     }
 
-    // Query parameters
-    const { status, paymentStatus, page = 1, limit = 10, search } = req.query;
-    const query = {};
-
-    // Apply filters
-    if (status) query.status = status;
-    if (paymentStatus) query.paymentStatus = paymentStatus;
-
-    // Search functionality
     if (search) {
-      // Try to find exact match for _id first
-      if (mongoose.Types.ObjectId.isValid(search)) {
+      const isObjectId = mongoose.Types.ObjectId.isValid(search);
+
+      if (isObjectId) {
         query._id = search;
       } else {
-        // If not a valid ObjectId, search by user name/phone
+        // Search for users by name or phone
         const users = await User.find({
           $or: [
             { name: { $regex: search, $options: 'i' } },
             { phone: { $regex: search, $options: 'i' } }
           ]
         }).select('_id');
+
+        const userIds = users.map(user => user._id);
         
-        query.userId = { $in: users.map(u => u._id) };
+        // Build a query that searches by user ID or by a partial match on the string representation of the _id
+        const searchConditions = [];
+        if (userIds.length > 0) {
+          searchConditions.push({ userId: { $in: userIds } });
+        }
+
+        // Add regex search for _id by treating it as a string
+        // This allows searching for parts of the id like '27C2CF'
+        searchConditions.push({ $expr: { $regexMatch: { input: { $toString: '$_id' }, regex: search, options: 'i' } } });
+
+        if (searchConditions.length > 0) {
+          query.$or = searchConditions;
+        }
       }
     }
 
-    // Get orders with pagination
+    console.log('Final query:', JSON.stringify(query, null, 2));
+
     const orders = await Order.find(query)
       .populate({
         path: 'userId',
@@ -47,6 +66,8 @@ router.get('/', verifyToken, async (req, res) => {
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(parseInt(limit));
+
+    console.log('Found orders:', orders.length); // Added for debugging
 
     // Count total orders for pagination
     const count = await Order.countDocuments(query);
@@ -58,9 +79,9 @@ router.get('/', verifyToken, async (req, res) => {
       address: order.address,
       items: order.items,
       paymentMethod: order.paymentMethod,
-      itemsTotal: order.subtotal,       // Map subtotal to itemsTotal
-      deliveryCharge: order.deliveryFee, // Map deliveryFee to deliveryCharge
-      grandTotal: order.total,          // Map total to grandTotal
+      itemsTotal: order.subtotal || order.itemsTotal || 0,       // Map subtotal to itemsTotal
+      deliveryCharge: order.deliveryFee || order.deliveryCharge || 0, // Map deliveryFee to deliveryCharge
+      grandTotal: order.total || order.grandTotal || 0,          // Map total to grandTotal with fallback
       status: order.status,
       paymentStatus: order.paymentStatus,
       orderNotes: order.orderNotes,
@@ -134,6 +155,60 @@ router.put('/:id/status', verifyToken, async (req, res) => {
 
     res.status(200).json({ success: true, order });
   } catch (error) {
+    res.status(500).json({ success: false, error: 'Server error' });
+  }
+});
+
+// Add new route to update payment status
+router.put('/:id/payment-status', verifyToken, async (req, res) => {
+
+// Add new route to update carrier and tracking number
+router.put('/:id/delivery-details', verifyToken, checkRole(['admin']), async (req, res) => {
+  try {
+    const { carrier, trackingNumber } = req.body;
+
+    const order = await Order.findById(req.params.id);
+
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+
+    if (carrier) {
+      order.carrier = carrier;
+    }
+    if (trackingNumber) {
+      order.trackingNumber = trackingNumber;
+    }
+
+    await order.save();
+
+    res.status(200).json({ success: true, order });
+  } catch (error) {
+    console.error('Error updating delivery details:', error);
+    res.status(500).json({ success: false, error: 'Server error' });
+  }
+});
+  try {
+    const { paymentStatus } = req.body;
+    const validPaymentStatuses = ['pending', 'paid', 'refunded']; // Define valid payment statuses
+
+    if (!validPaymentStatuses.includes(paymentStatus)) {
+      return res.status(400).json({ success: false, message: 'Invalid payment status' });
+    }
+
+    const order = await Order.findByIdAndUpdate(
+      req.params.id,
+      { paymentStatus },
+      { new: true }
+    );
+
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+
+    res.status(200).json({ success: true, order });
+  } catch (error) {
+    console.error('Error updating payment status:', error);
     res.status(500).json({ success: false, error: 'Server error' });
   }
 });

@@ -4,8 +4,7 @@ import {
   getOrders, 
   getOrderDetails, 
   updateOrderStatus, 
-  updatePaymentStatus,
-  searchOrders 
+  updatePaymentStatus
 } from '../../api/OrderService';
 import ErrorBoundary from '../../components/ErrorBoundary';
 
@@ -38,8 +37,7 @@ const OrderManagement = () => {
   const paymentStatusOptions = [
     { value: '', label: 'All Payment Statuses' },
     { value: 'pending', label: 'Pending' },
-    { value: 'completed', label: 'Completed' },
-    { value: 'failed', label: 'Failed' },
+    { value: 'paid', label: 'Paid' }, // Changed from 'completed' to 'paid'
     { value: 'refunded', label: 'Refunded' }
   ];
 
@@ -51,12 +49,8 @@ const OrderManagement = () => {
     try {
       setLoading(true);
       setError('');
-      const params = {
-        page: currentPage,
-        limit: ordersPerPage,
-        ...filters
-      };
-      const response = await getOrders(params);
+      const response = await getOrders();
+      console.log('API Response:', response); // Added for debugging
       setOrders(response.orders || []);
     } catch (err) {
       console.error('Fetch orders error:', err);
@@ -70,7 +64,9 @@ const OrderManagement = () => {
     try {
       setLoading(true);
       setError('');
-      const response = await searchOrders(searchTerm);
+      const cleanedSearchTerm = searchTerm.startsWith('#') ? searchTerm.substring(1) : searchTerm;
+      console.log('Searching for:', cleanedSearchTerm); // Add this line for debugging
+      const response = await getOrders({ search: cleanedSearchTerm }); // Use getOrders for search
       setOrders(response.orders || []);
       setCurrentPage(1);
     } catch (err) {

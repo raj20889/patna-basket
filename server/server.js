@@ -7,7 +7,8 @@ const authRoute = require('./routes/auth');
 const productRoute = require('./routes/product');
 const cartRoute = require('./routes/cart');
 const addressRoutes = require('./routes/addressRoutes');
-const orderRoutes = require('./routes/order');
+const orderRoutes = require('./routes/orderRoutes');
+const userOrderRoutes = require('./routes/order'); // Renamed for clarity
 // In your main app file (app.js/server.js)
 const userRoutes = require('./routes/users');
 
@@ -35,7 +36,10 @@ app.use('/api/auth', authRoute);
 app.use('/api/products', productRoute);
 app.use('/api/cart', cartRoute);
 app.use('/api/addresses', addressRoutes);
-app.use('/api/orders', orderRoutes);
+app.use('/api/orders', orderRoutes); // For admin
+app.use('/api/user-orders', userOrderRoutes);
+const notificationRoutes = require('./routes/notificationRoutes');
+app.use('/api/notifications', notificationRoutes); // For user orders
 app.use('/api/users', userRoutes);
 
 

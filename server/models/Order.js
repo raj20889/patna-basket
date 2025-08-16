@@ -51,8 +51,16 @@ const OrderSchema = new mongoose.Schema({
   },
   paymentStatus: {
     type: String,
-    enum: ['pending', 'completed', 'failed', 'refunded'],
+    enum: ['pending', 'paid', 'failed', 'refunded'],
     default: 'pending'
+  },
+  carrier: {
+    type: String,
+    trim: true
+  },
+  trackingNumber: {
+    type: String,
+    trim: true
   },
   orderNotes: {
     type: String,
@@ -77,7 +85,7 @@ OrderSchema.post('find', function(docs) {
   docs.forEach(doc => {
     doc.itemsTotal = doc.subtotal || doc.itemsTotal;
     doc.deliveryCharge = doc.deliveryFee || doc.deliveryCharge;
-    doc.grandTotal = doc.total || doc.grandTotal;
+    doc.grandTotal = doc.total || doc.grandTotal || 0; // Fallback to 0 if both are missing
   });
 });
 

@@ -4,24 +4,45 @@ import axios from 'axios'
 import { formatDistanceToNow } from 'date-fns'
 
 const NotificationPanel = () => {
-  const [notifications, setNotifications] = useState([])
+  const [notifications, setNotifications] = useState([]);
+  const [filterStatus, setFilterStatus] = useState('confirmed'); // Default to 'confirmed'
+
+  const [refreshInterval, setRefreshInterval] = useState(30000); // Default to 30 seconds
 
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/api/notifications/order-notifications')
-        setNotifications(res.data)
+        const res = await axios.get(`http://localhost:5000/api/notifications/order-notifications?status=${filterStatus}`);
+        setNotifications(res.data);
       } catch (err) {
-        console.error('Failed to fetch notifications:', err)
+        console.error('Failed to fetch notifications:', err);
       }
-    }
+    };
 
-    fetchNotifications()
-  }, [])
+    fetchNotifications(); // Initial fetch
+
+    const intervalId = setInterval(fetchNotifications, refreshInterval);
+
+    return () => clearInterval(intervalId); // Cleanup on unmount
+  }, [refreshInterval]);
 
   return (
     <div className="bg-white p-6 rounded-lg shadow">
       <h2 className="text-xl font-semibold mb-4">🛒 Order Notifications</h2>
+      <div className="mb-4">
+        <label className="inline-flex items-center mr-4">
+          <input type="radio" className="form-radio" name="notificationStatus" value="confirmed" checked={filterStatus === 'confirmed'} onChange={() => setFilterStatus('confirmed')} />
+          <span className="ml-2">Confirmed</span>
+        </label>
+        <label className="inline-flex items-center mr-4">
+          <input type="radio" className="form-radio" name="notificationStatus" value="pending_payment" checked={filterStatus === 'pending_payment'} onChange={() => setFilterStatus('pending_payment')} />
+          <span className="ml-2">Pending Payment</span>
+        </label>
+        <label className="inline-flex items-center">
+          <input type="radio" className="form-radio" name="notificationStatus" value="completed" checked={filterStatus === 'completed'} onChange={() => setFilterStatus('completed')} />
+          <span className="ml-2">Completed</span>
+        </label>
+      </div>
       <div className="space-y-4">
         {notifications.length > 0 ? notifications.map(notification => (
           <div 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
+import { getUserOrders } from '../../api/OrderService'; // Corrected import
 import { 
   FiShoppingBag, 
   FiClock, 
@@ -24,13 +24,10 @@ const CustomerOrders = () => {
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const token = localStorage.getItem('token');
-        const response = await axios.get(`${API_BASE_URL}/orders`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const response = await getUserOrders(); // Use the new function
         
-        if (response.data.success && Array.isArray(response.data.orders)) {
-          setOrders(response.data.orders);
+        if (response.success && Array.isArray(response.orders)) {
+          setOrders(response.orders);
         } else {
           setError('No orders found');
           setOrders([]);

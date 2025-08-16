@@ -25,6 +25,8 @@ import AddressForm from "./components/Customer/AddressForm";
 import AdminDashboard from "./pages/Admin/AdminDashboardPage";
 import CustomerManager from "./pages/Admin/CustomerManagement";
 import OrderManagement from "./pages/Admin/OrderManagement";
+import NotificationPanel from "./pages/Admin/NotificationPanel";
+import DeliveryManagement from "./pages/Admin/DeliveryManagement";
 
 const App = () => {
   return (
@@ -96,6 +98,30 @@ const App = () => {
                 <>
                 <AdminDashboard />
                  
+                </>
+              </PrivateRoute>
+            }
+          />
+
+          <Route
+            path="/admin/notification"
+            element={
+              <PrivateRoute allowedRoles={["admin"]}>
+                <>
+                  <AdminNavbar />
+                  <NotificationPanel />
+                </>
+              </PrivateRoute>
+            }
+          />
+
+          <Route
+            path="/admin/delivery-management"
+            element={
+              <PrivateRoute allowedRoles={["admin"]}>
+                <>
+                  <AdminNavbar />
+                  <DeliveryManagement />
                 </>
               </PrivateRoute>
             }

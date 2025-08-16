@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 const API_URL = 'http://localhost:5000/api/orders';
+const USER_API_URL = 'http://localhost:5000/api/user-orders';
 
 const api = axios.create({
   baseURL: API_URL,
@@ -22,6 +23,26 @@ export const getOrders = async (params = {}) => {
     return response.data;
   } catch (error) {
     console.error('Get orders error:', error);
+    throw error;
+  }
+};
+
+export const getUserOrders = async (params = {}) => {
+  try {
+    const userApi = axios.create({
+      baseURL: USER_API_URL,
+    });
+    userApi.interceptors.request.use((config) => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+      return config;
+    });
+    const response = await userApi.get('/', { params });
+    return response.data;
+  } catch (error) {
+    console.error('Get user orders error:', error);
     throw error;
   }
 };
@@ -56,6 +77,8 @@ export const updatePaymentStatus = async (orderId, paymentStatus) => {
   }
 };
 
+// This function is removed as it's incorrect
+/*
 export const searchOrders = async (query) => {
   try {
     const response = await api.get('/search/orders', { params: { q: query } });
@@ -65,3 +88,4 @@ export const searchOrders = async (query) => {
     throw error;
   }
 };
+*/
