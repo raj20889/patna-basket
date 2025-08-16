@@ -201,24 +201,32 @@ router.get(
     verifyToken,
     check('page', 'Page must be a positive integer').optional().isInt({ min: 1 }),
     check('limit', 'Limit must be a positive integer').optional().isInt({ min: 1 }),
-    check('status', 'Invalid status value').optional().isString()
+    check('status', 'Invalid status value').optional().isString(),
+    check('paymentStatus', 'Invalid payment status value').optional().isString()
   ],
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        errors: errors.array() 
+        errors: errors.array()
       });
     }
 
+    console.log('Received query parameters at start of route (All Orders):', req.query); // Moved for debugging
+
     try {
-      const { page = 1, limit = 10, status } = req.query;
+      const { page = 1, limit = 10, status, paymentStatus } = req.query;
       const skip = (page - 1) * limit;
 
       const query = { userId: req.user.id };
       if (status) query.status = status;
+      if (paymentStatus) {
+        query.paymentStatus = paymentStatus;
+        console.log('Payment status received in backend:', paymentStatus); // Added for debugging
+      }
 
+      console.log('Final query before Mongoose find:', query); // Added for debugging
       const orders = await Order.find(query)
         .sort({ createdAt: -1 })
         .skip(skip)

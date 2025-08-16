@@ -15,12 +15,17 @@ const checkRole = (roles) => (req, res, next) => {
 
 // Get all orders (Admin only)
 router.get('/', verifyToken, checkRole(['admin']), async (req, res) => {
+  console.log('Received query parameters at start of route (All Orders):', req.query); // Debugging line
   try {
-    const { page = 1, limit = 10, search, status } = req.query;
+    const { page = 1, limit = 10, search, status, paymentStatus } = req.query;
     let query = {};
 
     if (status) {
       query.status = status;
+    }
+
+    if (paymentStatus && paymentStatus !== '') {
+      query.paymentStatus = paymentStatus;
     }
 
     if (search) {
@@ -55,7 +60,7 @@ router.get('/', verifyToken, checkRole(['admin']), async (req, res) => {
       }
     }
 
-    console.log('Final query:', JSON.stringify(query, null, 2));
+    console.log('Final query before Order.find():', JSON.stringify(query, null, 2));
 
     const orders = await Order.find(query)
       .populate({

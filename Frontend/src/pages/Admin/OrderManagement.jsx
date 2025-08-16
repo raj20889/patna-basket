@@ -10,6 +10,7 @@ import ErrorBoundary from '../../components/ErrorBoundary';
 
 const OrderManagement = () => {
   const [orders, setOrders] = useState([]);
+  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
@@ -42,16 +43,26 @@ const OrderManagement = () => {
   ];
 
   useEffect(() => {
+    console.log('useEffect triggered. Current filters:', filters); // Debugging line
     fetchOrders();
+
+    // Debugging log to see what's being sent to the API
+    console.log('Filters object when API call is about to be made:', filters);
   }, [currentPage, filters]);
 
   const fetchOrders = async () => {
     try {
       setLoading(true);
       setError('');
-      const response = await getOrders();
+      console.log('Fetching orders with parameters:', { page: currentPage, limit: ordersPerPage, ...filters }); // Debugging line
+      const response = await getOrders({
+        page: currentPage,
+        limit: ordersPerPage,
+        ...filters,
+      });
       console.log('API Response:', response); // Added for debugging
       setOrders(response.orders || []);
+      setTotalPages(response.pagination?.pages || 1);
     } catch (err) {
       console.error('Fetch orders error:', err);
       setError(err.response?.data?.message || err.message || 'Failed to fetch orders');
@@ -66,7 +77,12 @@ const OrderManagement = () => {
       setError('');
       const cleanedSearchTerm = searchTerm.startsWith('#') ? searchTerm.substring(1) : searchTerm;
       console.log('Searching for:', cleanedSearchTerm); // Add this line for debugging
-      const response = await getOrders({ search: cleanedSearchTerm }); // Use getOrders for search
+      const response = await getOrders({
+        search: cleanedSearchTerm,
+        page: 1,
+        limit: ordersPerPage,
+        ...filters,
+      });
       setOrders(response.orders || []);
       setCurrentPage(1);
     } catch (err) {
@@ -119,6 +135,7 @@ const OrderManagement = () => {
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
+    console.log(`Filter changed: ${name} = ${value}`); // Debugging line
     setFilters(prev => ({ ...prev, [name]: value }));
     setCurrentPage(1);
   };
@@ -184,6 +201,7 @@ const OrderManagement = () => {
                 <option key={option.value} value={option.value}>{option.label}</option>
               ))}
             </select>
+
             <select
               name="paymentStatus"
               value={filters.paymentStatus}
@@ -198,6 +216,8 @@ const OrderManagement = () => {
         </div>
 
         {/* Loading State */}
+
+     
         {loading ? (
           <div className="flex justify-center items-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
