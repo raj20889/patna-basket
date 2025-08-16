@@ -9,7 +9,7 @@ import PrivateRoute from "./components/PrivateRoute";
 import CustomerNavbar from "./components/Navbar/CustomerNavbar";
 import DeliveryNavbar from "./components/Navbar/DeliveryNavbar";
 import AdminNavbar from "./components/Navbar/AdminNavbar";
-import Dashboard from "./pages/customer/dashboard/Dashboard";
+import Dashboard from "./pages/Customer/Dashboard.jsx";
 import CartPage from "./components/Cart";
 import SearchResults from "./components/SearchResultsPage";
 import SubcategoryWithProducts from "./components/SubcategoryWithProducts";
