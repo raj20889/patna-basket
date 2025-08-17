@@ -88,7 +88,7 @@ const Dashboard = () => {
         }));
 
         // Fetch updated cart details
-        const cartResponse = await fetch(`https://patna-basket-1.onrender.com/api/cart`, {
+        const cartResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/cart`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
