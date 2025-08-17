@@ -12,7 +12,7 @@ const DeliveryManagement = () => {
   const fetchOrders = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:5000/api/orders', {
+      const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/orders`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -29,7 +29,7 @@ const DeliveryManagement = () => {
   const updateDeliveryDetails = useCallback(async (orderId) => {
     try {
       const token = localStorage.getItem('token');
-      await axios.put(`http://localhost:5000/api/orders/${orderId}/delivery-details`, 
+      await axios.put(`${import.meta.env.VITE_API_BASE_URL}/api/orders/${orderId}/delivery-details`, 
         { carrier: currentCarrier, trackingNumber: currentTrackingNumber },
         { headers: { Authorization: `Bearer ${token}` } }
       );
