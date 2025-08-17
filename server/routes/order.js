@@ -65,10 +65,7 @@ router.post(
       // Create new order with the data from frontend (but verified)
       const newOrder = new Order({
         userId: req.user.id,
-        address: {
-          addressId: address._id,
-          details: formatAddressDetails(address)
-        },
+        address: address._id,
         items: items.map(item => ({
           productId: item.productId,
           name: item.name || 'Product',
@@ -133,10 +130,7 @@ router.post(
 router.get('/:orderId', async (req, res) => {
   try {
     const order = await Order.findById(req.params.orderId)
-      .populate({
-        path: 'address.addressId',
-        select: 'contactName contactPhone'
-      });
+      .populate('address');
     
     if (!order) {
       return res.status(404).json({ success: false, message: 'Order not found' });
