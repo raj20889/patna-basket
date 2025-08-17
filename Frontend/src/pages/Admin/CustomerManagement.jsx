@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { getUsers, updateUser, deleteUser } from '../../api/users';
+import AdminNavbar from '../../components/Navbar/AdminNavbar';
 import { useNavigate } from 'react-router-dom';
 import ErrorBoundary from '../../components/ErrorBoundary';
 
-const UserManagement = () => {
+const CustomerManager = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -279,4 +280,4 @@ const UserManagement = () => {
   );
 };
 
-export default UserManagement;
+export default CustomerManager;

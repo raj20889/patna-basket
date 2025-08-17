@@ -18,7 +18,7 @@ api.interceptors.request.use((config) => {
 
 export const getUsers = async () => {
   try {
-    const response = await api.get('/');
+    const response = await api.get('/users');
     return response.data; // Return just the data
   } catch (error) {
     console.error('Get users error:', error);
@@ -28,7 +28,7 @@ export const getUsers = async () => {
 
 export const updateUser = async (userId, userData) => {
   try {
-    const response = await api.put(`/${userId}`, userData);
+    const response = await api.put(`/users/${userId}`, userData);
     return response.data;
   } catch (error) {
     console.error('Update user error:', error);
@@ -38,7 +38,7 @@ export const updateUser = async (userId, userData) => {
 
 export const deleteUser = async (userId) => {
   try {
-    const response = await api.delete(`/${userId}`);
+    const response = await api.delete(`/users/${userId}`);
     return response.data;
   } catch (error) {
     console.error('Delete user error:', error);
