@@ -19,7 +19,7 @@ const SubcategoryWithProducts = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res = await axios.get(`http://localhost:5000/api/products/category/${category}`);
+        const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/products/category/${category}`);
         setProducts(res.data);
         // Format the category name for display
         const formattedName = category.replace(/-/g, ' ')
@@ -44,7 +44,7 @@ const SubcategoryWithProducts = () => {
       } else {
         // Fetch user's cart from server
         try {
-          const res = await axios.get('http://localhost:5000/api/cart', {
+          const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/cart`, {
             headers: { Authorization: `Bearer ${token}` }
           });
           const cartData = res.data;
@@ -132,7 +132,7 @@ const SubcategoryWithProducts = () => {
         calculateAndUpdateCart(guestCart);
       } else {
         // Handle logged-in user cart update
-        const res = await axios.post("http://localhost:5000/api/cart/add", 
+        const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/cart/add`, 
           { productId, quantity: newQty },
           {
             headers: {

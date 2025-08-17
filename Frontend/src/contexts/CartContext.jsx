@@ -28,7 +28,7 @@ const CartProvider = ({ children }) => {
         } else {
           // For logged-in users, fetch cart data from the server
           try {
-            const res = await axios.get('http://localhost:5000/api/cart', {
+            const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/cart`, {
               headers: { Authorization: `Bearer ${token}` }
             });
             const cartData = res.data;
@@ -84,7 +84,7 @@ const CartProvider = ({ children }) => {
         localStorage.setItem("guestCart", JSON.stringify(guestCart));
         calculateAndUpdateCart(guestCart);
       } else {
-        const res = await axios.post("http://localhost:5000/api/cart/add", 
+        const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/cart/add`, 
           { productId, quantity: newQty },
           { headers: { "Authorization": `Bearer ${token}` } }
         );

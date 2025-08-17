@@ -39,7 +39,7 @@ const CartPage = () => {
           grandTotal
         });
       } else {
-        const res = await axios.get('http://localhost:5000/api/cart', {
+        const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/cart`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         
@@ -86,7 +86,7 @@ const CartPage = () => {
     
     try {
       if (token) {
-        await axios.post('http://localhost:5000/api/cart/update-charges', {
+        await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/cart/update-charges`, {
           tipAmount: newTip,
           donationAmount: newDonationAmount,
           deliveryCharge: 0,
@@ -138,7 +138,7 @@ const CartPage = () => {
           grandTotal: newGrandTotal
         }));
       } else {
-        await axios.post('http://localhost:5000/api/cart/add', 
+        await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/cart/add`, 
           { productId, quantity: newQuantity },
           { headers: { Authorization: `Bearer ${token}` } }
         );

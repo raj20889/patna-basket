@@ -17,7 +17,7 @@ const Login = () => {
     setLoading(true)
 
     try {
-      const res = await axios.post('http://localhost:5000/api/auth/login', credentials)
+      const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/auth/login`, credentials)
 
       const token = res.data.token
       const user = res.data.user
@@ -35,7 +35,7 @@ const Login = () => {
       if (guestCart.length > 0) {
         for (const item of guestCart) {
           await axios.post(
-            'http://localhost:5000/api/cart/add',
+            `${import.meta.env.VITE_API_BASE_URL}/api/cart/add`,
             {
               productId: item.productId,
               quantity: item.quantity,

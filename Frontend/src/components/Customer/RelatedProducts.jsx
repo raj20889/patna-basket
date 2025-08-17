@@ -25,7 +25,7 @@ const RelatedProducts = ({ products, onCartUpdate, cart: parentCart, loading: pa
       const token = localStorage.getItem('token');
       const endpoint = token ? 'api/cart/add' : 'api/guest-cart/add';
       
-      const response = await fetch(`http://localhost:5000/${endpoint}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/${endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -42,7 +42,7 @@ const RelatedProducts = ({ products, onCartUpdate, cart: parentCart, loading: pa
         }));
         
         if (onCartUpdate) {
-          const cartResponse = await fetch('http://localhost:5000/api/cart', {
+          const cartResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/cart`, {
             headers: { Authorization: `Bearer ${token}` },
           });
           if (cartResponse.ok) {
