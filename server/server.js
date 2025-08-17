@@ -30,15 +30,15 @@ app.use(cors({
 app.use(express.json());
 
 // Routes
-app.use('/api/auth', authRoute);
-app.use('/api/products', productRoute);
-app.use('/api/cart', cartRoute);
-app.use('/api/addresses', addressRoutes);
-app.use('/api/orders', orderRoutes); // For admin
-app.use('/api/user-orders', userOrderRoutes);
+app.use('/auth', authRoute);
+app.use('/products', productRoute);
+app.use('/cart', cartRoute);
+app.use('/addresses', addressRoutes);
+app.use('/orders', orderRoutes); // For admin
+app.use('/user-orders', userOrderRoutes);
 const notificationRoutes = require('./routes/notificationRoutes');
-app.use('/api/notifications', notificationRoutes); // For user orders
-app.use('/api/users', userRoutes);
+app.use('/notifications', notificationRoutes); // For user orders
+app.use('/users', userRoutes);
 
 
 

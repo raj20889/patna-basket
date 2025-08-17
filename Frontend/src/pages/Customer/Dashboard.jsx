@@ -22,12 +22,12 @@ const Dashboard = () => {
   const fetchData = async () => {
     try {
       const [productsRes, cartRes] = await Promise.all([
-        fetch("https://patna-basket-1.onrender.com/api/products", {
+        fetch(`${import.meta.env.VITE_API_BASE_URL}/products`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
         }),
-        fetch("https://patna-basket-1.onrender.com/api/cart", {
+        fetch(`${import.meta.env.VITE_API_BASE_URL}/cart`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },

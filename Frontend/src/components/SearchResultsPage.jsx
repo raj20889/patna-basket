@@ -20,7 +20,7 @@ const SearchResults = () => {
             if (token) {
                 // For logged-in users - update server cart
                 const response = await axios.put(
-                    `${import.meta.env.VITE_API_BASE_URL}/api/cart/update`,
+                    `${import.meta.env.VITE_API_BASE_URL}/cart/update`,
                     { productId, change },
                     { headers: { Authorization: `Bearer ${token}` } }
                 );
@@ -65,7 +65,7 @@ const SearchResults = () => {
                     ? { headers: { Authorization: `Bearer ${token}` } } 
                     : {};
 
-                const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/products/search`, {
+                const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/products/search`, {
                     params: { q: query },
                     ...config
                 });
@@ -91,7 +91,7 @@ const SearchResults = () => {
         if (token) {
             const fetchCart = async () => {
                 try {
-                    const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/cart`, {
+                    const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/cart`, {
                         headers: { Authorization: `Bearer ${token}` }
                     });
                     if (response.data.success) {
