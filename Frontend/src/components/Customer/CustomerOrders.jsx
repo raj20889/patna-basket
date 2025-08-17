@@ -13,7 +13,7 @@ import {
 import { FaCcVisa, FaCcMastercard, FaCcPaypal, FaCcApplePay } from 'react-icons/fa';
 import { BsCash } from 'react-icons/bs';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const CustomerOrders = () => {
   const [orders, setOrders] = useState([]);
