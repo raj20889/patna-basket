@@ -19,7 +19,7 @@ const SubcategoryWithProducts = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/products/category/${category}`);
+        const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/products/category/${category}`);
         setProducts(res.data);
         const formattedName = category
           .replace(/-/g, ' ')
@@ -40,11 +40,11 @@ const SubcategoryWithProducts = () => {
     try {
       let res;
       if (!token) {
-        res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/guest-cart`, {
+        res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/guest-cart`, {
           headers: { 'Guest-Token': localStorage.getItem('guestToken') || '' }
         });
       } else {
-        res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/cart`, {
+        res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/cart`, {
           headers: { Authorization: `Bearer ${token}` }
         });
       }
@@ -79,7 +79,7 @@ const SubcategoryWithProducts = () => {
     try {
       const token = localStorage.getItem('token');
       const guestToken = localStorage.getItem('guestToken');
-      const endpoint = token ? 'api/cart/add' : 'api/guest-cart/add';
+      const endpoint = token ? 'cart/add' : 'guest-cart/add';
 
       const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/${endpoint}`, {
         method: 'POST',

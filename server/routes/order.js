@@ -350,7 +350,7 @@ function formatOrderResponse(order) {
 async function generatePaymentGatewayUrl(orderId, amount) {
   // In a real implementation, this would integrate with Razorpay, Stripe, etc.
   if (process.env.NODE_ENV === 'development') {
-    return `${process.env.VITE_API_BASE_URL}/api/mock-payment?orderId=${orderId}&amount=${amount}`;
+    return `${process.env.VITE_API_BASE_URL}/mock-payment?orderId=${orderId}&amount=${amount}`;
   }
   
   // Production implementation would go here

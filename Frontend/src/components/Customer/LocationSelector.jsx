@@ -47,7 +47,7 @@ const LocationSelector = ({ currentAddress, onLocationChange, mobileView = false
         }
         
         setLoading(true);
-        const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/addresses`, {
+       const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/addresses`, {
           headers: { 
             'Authorization': `Bearer ${token}`,
           },

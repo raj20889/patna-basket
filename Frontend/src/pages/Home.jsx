@@ -42,9 +42,9 @@ const Home = () => {
     const fetchData = async () => {
       try {
         const [productsRes, cartRes] = await Promise.all([
-          axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/products`),
+          axios.get(`${import.meta.env.VITE_API_BASE_URL}/products`),
           userIsLoggedIn
-            ? axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/cart`, {
+              ? axios.get(`${import.meta.env.VITE_API_BASE_URL}/cart`, {
                 headers: {
                   Authorization: `Bearer ${localStorage.getItem("token")}`,
                 },
@@ -132,7 +132,7 @@ const Home = () => {
       } else {
         // Handle user cart
         const res = await axios.post(
-          `${import.meta.env.VITE_API_BASE_URL}/api/cart/add`,
+          `${import.meta.env.VITE_API_BASE_URL}/cart/add`,
           { productId, quantity: newQty },
           {
             headers: {

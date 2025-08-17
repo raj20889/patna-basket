@@ -21,7 +21,7 @@ const SearchResults = () => {
     const fetchCart = async () => {
         try {
             if (token) {
-                const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/cart`, {
+                const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/cart`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 
@@ -68,7 +68,7 @@ const SearchResults = () => {
 
                 // Use the existing /add endpoint
                 const response = await axios.post(
-                    `${import.meta.env.VITE_API_BASE_URL}/api/cart/add`,
+                    `${import.meta.env.VITE_API_BASE_URL}/cart/add`,
                     { productId, quantity: newQuantity },
                     { headers: { Authorization: `Bearer ${token}` } }
                 );
@@ -131,7 +131,7 @@ const SearchResults = () => {
                     ? { headers: { Authorization: `Bearer ${token}` } } 
                     : {};
 
-                const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/products/search`, {
+                const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/products/search`, {
                     params: { q: query },
                     ...config
                 });

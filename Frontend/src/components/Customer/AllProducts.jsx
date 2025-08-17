@@ -95,7 +95,7 @@ const AllProducts = ({ products, onCartUpdate, cart: parentCart, loading: parent
         }));
         
         if (onCartUpdate) {
-          const cartResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/cart`, {
+          const cartResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/cart`, {
             headers: { Authorization: `Bearer ${token}` },
           });
           if (cartResponse.ok) {

@@ -88,7 +88,7 @@ const CustomerNavbar = ({
         setCartCount(count);
         setTotalPrice(total);
       } else {
-        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/cart`, {
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/cart`, {
           headers: {
             'Authorization': `Bearer ${token}`,
           },

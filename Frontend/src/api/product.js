@@ -4,7 +4,7 @@ export const addProduct = async (productData) => {
   const token = localStorage.getItem('token');
 
   const res = await axios.post(
-    `${import.meta.env.VITE_API_BASE_URL}/api/products/add`,
+    `${import.meta.env.VITE_API_BASE_URL}/products/add`,
     productData,
     {
       headers: {

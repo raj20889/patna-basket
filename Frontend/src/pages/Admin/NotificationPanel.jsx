@@ -12,7 +12,7 @@ const NotificationPanel = () => {
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
-        const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/notifications/order-notifications?status=${filterStatus}`);
+       const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/notifications/order-notifications?status=${filterStatus}`);
         setNotifications(res.data);
       } catch (err) {
         console.error('Failed to fetch notifications:', err);
