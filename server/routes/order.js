@@ -109,7 +109,7 @@ router.post(
       res.status(201).json(response);
 
     } catch (err) {
-      console.error('Order creation error:', err);
+
       
       if (err.name === 'ValidationError') {
         return res.status(400).json({ 
