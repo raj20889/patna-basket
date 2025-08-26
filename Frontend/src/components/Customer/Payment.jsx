@@ -198,11 +198,7 @@ const Payment = () => {
       return;
     }
 
-    console.log('Debugging orderData construction:');
-    console.log('Address:', address);
-    console.log('Selected Payment:', selectedPayment);
-    console.log('Cart Items:', cartItems);
-    console.log('Cart Totals:', cartTotals);
+
   
     try {
       // First create the order

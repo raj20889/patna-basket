@@ -22,23 +22,19 @@ router.post(
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      console.log('Validation Errors:', errors.array());
       return res.status(400).json({
         success: false,
         errors: errors.array()
       });
     }
 
-    console.log('Received orderData in backend:', req.body);
-    console.log('User ID from token:', req.user ? req.user.id : 'No user ID');
-
     try {
-      const { 
-        addressId, 
-        paymentMethod, 
-        items, 
+      const {
+        addressId,
+        paymentMethod,
+        items,
         orderNotes = '',
-        tipAmount = 0, 
+        tipAmount = 0,
         donationAmount = 0,
         itemsTotal,
         deliveryCharge = 0,
@@ -48,7 +44,6 @@ router.post(
       
       // Verify address belongs to user
       const address = await Address.findOne({ _id: addressId, userId: req.user.id });
-      console.log('Address found:', address);
       if (!address) {
         return res.status(404).json({ 
           success: false,
@@ -207,7 +202,6 @@ router.get(
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       console.log('Order validation errors:', errors.array());
-      console.log('Received request body:', req.body);
       return res.status(400).json({
         success: false,
         errors: errors.array()
