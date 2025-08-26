@@ -22,9 +22,9 @@ router.post(
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        errors: errors.array() 
+        errors: errors.array()
       });
     }
 
@@ -208,8 +208,6 @@ router.get(
         errors: errors.array()
       });
     }
-
-    console.log('Received query parameters at start of route (All Orders):', req.query); // Moved for debugging
 
     try {
       const { page = 1, limit = 10, status, paymentStatus } = req.query;
