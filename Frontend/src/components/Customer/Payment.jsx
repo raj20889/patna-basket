@@ -220,7 +220,7 @@ const Payment = () => {
         paymentStatus: 'pending'
       };
   
-      const response = await axios.post(`${API_BASE_URL}/user-orders`, orderData, {
+      const response = await axios.post(`${API_BASE_URL}/order`, orderData, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'

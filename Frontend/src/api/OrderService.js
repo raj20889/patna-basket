@@ -77,15 +77,12 @@ export const updatePaymentStatus = async (orderId, paymentStatus) => {
   }
 };
 
-// This function is removed as it's incorrect
-/*
-export const searchOrders = async (query) => {
+export const createOrder = async (orderData) => {
   try {
-    const response = await api.get('/search/orders', { params: { q: query } });
+    const response = await api.post('/', orderData);
     return response.data;
   } catch (error) {
-    console.error('Search orders error:', error);
+    console.error('Create order error:', error);
     throw error;
   }
 };
-*/
