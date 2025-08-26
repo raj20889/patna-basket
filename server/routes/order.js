@@ -22,11 +22,15 @@ router.post(
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.log('Validation Errors:', errors.array());
       return res.status(400).json({
         success: false,
         errors: errors.array()
       });
     }
+
+    console.log('Received orderData in backend:', req.body);
+    console.log('User ID from token:', req.user ? req.user.id : 'No user ID');
 
     try {
       const { 
@@ -44,6 +48,7 @@ router.post(
       
       // Verify address belongs to user
       const address = await Address.findOne({ _id: addressId, userId: req.user.id });
+      console.log('Address found:', address);
       if (!address) {
         return res.status(404).json({ 
           success: false,
