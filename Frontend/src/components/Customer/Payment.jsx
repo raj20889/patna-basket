@@ -220,11 +220,18 @@ const Payment = () => {
         paymentStatus: 'pending'
       };
   
+      console.log("Order Payload:", orderData);
+      const res = await axios.post(`${API_BASE_URL}/user-orders`, orderData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
       const response = await axios.post(`${API_BASE_URL}/user-orders`, orderData, {
         headers: {
           Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+          'Content-Type': 'application/json',
+        },
       });
   
       // Then clear the cart
