@@ -20,6 +20,7 @@ router.post(
     check('grandTotal', 'Grand total is required').isFloat({ min: 0 })
   ],
   async (req, res) => {
+    console.log('Received request body:', req.body); // Log request body
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({
