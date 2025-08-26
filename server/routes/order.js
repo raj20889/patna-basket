@@ -201,6 +201,8 @@ router.get(
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.log('Order validation errors:', errors.array());
+      console.log('Received request body:', req.body);
       return res.status(400).json({
         success: false,
         errors: errors.array()
