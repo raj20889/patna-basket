@@ -9,25 +9,27 @@ const RelatedProducts = ({ products, onCartUpdate, cart: parentCart, loading: pa
   const [localLoading, setLocalLoading] = useState({});
   const token = localStorage.getItem('token');
 
-  // Sync with parent cart state
+  // ✅ Sync with parent cart state (safe for non-array)
   useEffect(() => {
-    if (parentCart) {
+    if (Array.isArray(parentCart)) {
       const cartMap = {};
       parentCart.forEach(item => {
         const productId = item.productId?._id || item._id;
         cartMap[productId] = item.quantity;
       });
       setLocalCart(cartMap);
+    } else {
+      setLocalCart({});
     }
   }, [parentCart]);
 
   useEffect(() => {
-    if (parentLoading) {
+    if (parentLoading && typeof parentLoading === 'object') {
       setLocalLoading(parentLoading);
     }
   }, [parentLoading]);
 
-  // Fetch cart after update (only if authenticated)
+  // ✅ Fetch updated cart after any cart update
   const fetchCart = async () => {
     try {
       if (token) {
@@ -40,7 +42,6 @@ const RelatedProducts = ({ products, onCartUpdate, cart: parentCart, loading: pa
           onCartUpdate(count, total);
         }
       } else {
-        // Guest cart update
         const guestCart = JSON.parse(localStorage.getItem('guestCart')) || [];
         const count = guestCart.reduce((sum, item) => sum + item.quantity, 0);
         const total = guestCart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -53,7 +54,7 @@ const RelatedProducts = ({ products, onCartUpdate, cart: parentCart, loading: pa
     }
   };
 
-  // Update cart function (same as SearchResults)
+  // ✅ Update cart function
   const updateCart = async (productId, newQuantity) => {
     try {
       if (token) {
@@ -68,7 +69,6 @@ const RelatedProducts = ({ products, onCartUpdate, cart: parentCart, loading: pa
           return true;
         }
       } else {
-        // Guest cart handling (same as SearchResults)
         const guestCart = JSON.parse(localStorage.getItem('guestCart')) || [];
         const existingItemIndex = guestCart.findIndex(item => item._id === productId);
 
@@ -121,9 +121,9 @@ const RelatedProducts = ({ products, onCartUpdate, cart: parentCart, loading: pa
     handleChange(productId, 1);
   };
 
-  // Filter dairy-related products
-  const dairyProducts = products.filter(product => {
-    const lowerName = product.category.toLowerCase();
+  // ✅ Filter dairy-related products safely
+  const dairyProducts = (Array.isArray(products) ? products : []).filter(product => {
+    const lowerName = (product.category || '').toLowerCase();
     return lowerName.includes('milk') ||
            lowerName.includes('bread') ||
            lowerName.includes('egg');
