@@ -1,4 +1,3 @@
-// ProductCard.js
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -6,6 +5,7 @@ const ProductCard = ({
   product, 
   quantity, 
   isLoading, 
+  loadingType,  // ✅ New prop for button-specific loading
   handleAddToCart, 
   handleChange 
 }) => {
@@ -61,40 +61,55 @@ const ProductCard = ({
           
           {quantity === 0 ? (
             <div className='border-green-600 rounded-md border-[1.5px] mb-2'>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleAddToCart(product._id);
-              }}
-              disabled={isLoading}
-              className={`bg-blue-50 border-green-600 text-green-600 text-xs font-bold px-4 py-1.5  cursor-pointer  rounded hover:bg-blue-100 ${
-                isLoading ? 'opacity-50 cursor-not-allowed' : ''
-              }`}
-            >
-              {isLoading ? '...' : 'ADD'}
-            </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleAddToCart(product._id);
+                }}
+                disabled={isLoading}
+                className={`bg-blue-50 border-green-600 text-green-600 text-xs font-bold px-4 py-1.5 rounded hover:bg-blue-100 ${
+                  isLoading ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+              >
+                {isLoading ? (
+                  <div className="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                ) : (
+                  'ADD'
+                )}
+              </button>
             </div>
           ) : (
             <div 
-              className="flex items-center space-x-2 cursor-pointer  bg-green-600 rounded px-2 py-1"
+              className="flex items-center space-x-2 bg-green-600 rounded px-2 py-1"
               onClick={(e) => e.stopPropagation()}
             >
+              {/* Minus Button */}
               <button
-                onClick={() => handleChange(product._id, -1)}
-                disabled={isLoading}
-                className="text-white cursor-pointer font-size- xs font-bold"
+                onClick={() => handleChange(product._id, -1, 'minus')}
+                disabled={loadingType === 'minus'}
+                className="text-white cursor-pointer font-bold w-6 h-6 flex items-center justify-center"
               >
-                -
+                {loadingType === 'minus' ? (
+                  <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                ) : (
+                  '-'
+                )}
               </button>
-              <div className='h-full w-2'>
+
+              {/* Quantity */}
               <span className="text-sm text-white font-medium">{quantity}</span>
-              </div>
+
+              {/* Plus Button */}
               <button
-                onClick={() => handleChange(product._id, 1)}
-                disabled={isLoading}
-                className="text-white cursor-pointer font-bold"
+                onClick={() => handleChange(product._id, 1, 'plus')}
+                disabled={loadingType === 'plus'}
+                className="text-white cursor-pointer font-bold w-6 h-6 flex items-center justify-center"
               >
-                +
+                {loadingType === 'plus' ? (
+                  <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                ) : (
+                  '+'
+                )}
               </button>
             </div>
           )}
