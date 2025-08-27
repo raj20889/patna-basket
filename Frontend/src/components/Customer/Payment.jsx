@@ -222,6 +222,7 @@ const Payment = () => {
         paymentStatus: 'pending'
       };
   
+      console.log('Order Data:', orderData);
 
       const response = await axios.post(`${API_BASE_URL}/user-orders`, orderData, {
         headers: {
