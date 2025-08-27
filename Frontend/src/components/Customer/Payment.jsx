@@ -202,26 +202,25 @@ const Payment = () => {
   
     try {
       // First create the order
-      const orderData = {
-        addressId: address?._id,
-        paymentMethod: selectedPayment,
-        items: cartItems.map(item => ({
-          productId: item._id, // Map item._id to productId as per instruction
-          name: item.name,
-          image: item.image,
-          variant: item.variant,
-          price: item.price,
-          quantity: item.quantity
-        })),
-        itemsTotal: cartTotals.itemsTotal,
-        deliveryCharge: 0,
-        handlingCharge: cartTotals.handlingCharge,
-        tipAmount: cartTotals.tipAmount,
-        donationAmount: cartTotals.donationAmount,
-        grandTotal: cartTotals.grandTotal,
-        paymentStatus: 'pending'
-      };
-  
+     const orderData = {
+  addressId: address?._id,
+  paymentMethod: selectedPayment,
+  items: cartItems.map(item => ({
+    productId: item.productId || item._id, // ✅ FIX here
+    name: item.name,
+    image: item.image,
+    variant: item.variant,
+    price: item.price,
+    quantity: item.quantity
+  })),
+  itemsTotal: cartTotals.itemsTotal,
+  deliveryCharge: 0,
+  handlingCharge: cartTotals.handlingCharge,
+  tipAmount: cartTotals.tipAmount,
+  donationAmount: cartTotals.donationAmount,
+  grandTotal: cartTotals.grandTotal,
+  paymentStatus: 'pending'
+};
       console.log("Order payload to backend:", orderData); // Updated console.log message as per instruction
 
       const response = await axios.post(`${API_BASE_URL}/user-orders`, orderData, {
