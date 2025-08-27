@@ -7,6 +7,7 @@ const RelatedProducts = ({ products, onCartUpdate, cart: parentCart, loading: pa
   const navigate = useNavigate();
   const [localCart, setLocalCart] = useState({});
   const [localLoading, setLocalLoading] = useState({});
+  const [buttonLoading, setButtonLoading] = useState({}); // ✅ Track loading for each product button
   const token = localStorage.getItem('token');
 
   // ✅ Sync with parent cart state (safe for non-array)
@@ -96,12 +97,12 @@ const RelatedProducts = ({ products, onCartUpdate, cart: parentCart, loading: pa
     }
   };
 
-  const handleChange = async (productId, change) => {
+  const handleChange = async (productId, change, type) => {
     const currentQty = localCart[productId] || 0;
     const newQty = currentQty + change;
     if (newQty < 0) return;
 
-    setLocalLoading(prev => ({ ...prev, [productId]: true }));
+    setButtonLoading(prev => ({ ...prev, [productId]: type })); // ✅ Start loading on clicked button
     setLocalCart(prev => ({ ...prev, [productId]: newQty }));
 
     try {
@@ -113,12 +114,12 @@ const RelatedProducts = ({ products, onCartUpdate, cart: parentCart, loading: pa
       console.error('Error updating cart', err);
       setLocalCart(prev => ({ ...prev, [productId]: currentQty }));
     } finally {
-      setLocalLoading(prev => ({ ...prev, [productId]: false }));
+      setButtonLoading(prev => ({ ...prev, [productId]: null })); // ✅ Stop loading
     }
   };
 
   const handleAddToCart = (productId) => {
-    handleChange(productId, 1);
+    handleChange(productId, 1, 'plus');
   };
 
   // ✅ Filter dairy-related products safely
@@ -152,9 +153,10 @@ const RelatedProducts = ({ products, onCartUpdate, cart: parentCart, loading: pa
               key={product._id}
               product={product}
               quantity={localCart[product._id] || 0}
-              isLoading={localLoading[product._id]} // ✅ Used for animation
-              handleAddToCart={handleAddToCart}
-              handleChange={handleChange}
+              isLoading={localLoading[product._id]}
+              loadingType={buttonLoading[product._id]} // ✅ Pass loading type for button animation
+              handleAddToCart={() => handleAddToCart(product._id)}
+              handleChange={(id, change, type) => handleChange(id, change, type)}
             />
           ))}
         </div>
