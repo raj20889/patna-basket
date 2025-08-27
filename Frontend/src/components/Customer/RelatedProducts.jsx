@@ -12,33 +12,20 @@ const RelatedProducts = ({ products, onCartUpdate, cart: parentCart, loading: pa
   // ✅ Initialize and sync with parent cart state
   useEffect(() => {
     const initializeCart = () => {
-      let initialCart = {};
+      const initialCart = {};
       
       if (Array.isArray(parentCart)) {
-        // If parentCart is provided as prop
         parentCart.forEach(item => {
           const productId = item.productId?._id || item._id;
           initialCart[productId] = item.quantity;
         });
-      } else {
-        // If no parentCart provided, check localStorage directly
-        if (token) {
-          // For authenticated users, we need to fetch cart if not provided
-          // This is a fallback and might need additional implementation
-        } else {
-          // For guest users
-          const guestCart = JSON.parse(localStorage.getItem('guestCart')) || [];
-          guestCart.forEach(item => {
-            initialCart[item._id] = item.quantity;
-          });
-        }
       }
       
       setLocalCart(initialCart);
     };
 
     initializeCart();
-  }, [parentCart, token]);
+  }, [parentCart]);
 
   // ✅ Sync loading states
   useEffect(() => {
@@ -50,36 +37,20 @@ const RelatedProducts = ({ products, onCartUpdate, cart: parentCart, loading: pa
   // ✅ Fetch updated cart after any cart update
   const fetchCart = async () => {
     try {
-      if (token) {
-        const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/cart`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (response.data && onCartUpdate) {
-          const count = response.data.products?.reduce((sum, item) => sum + item.quantity, 0) || 0;
-          const total = response.data.itemsTotal || 0;
-          onCartUpdate(count, total);
-          
-          // Update localCart with fresh data
-          const updatedCart = {};
-          response.data.products.forEach(item => {
-            const productId = item.productId?._id || item._id;
-            updatedCart[productId] = item.quantity;
-          });
-          setLocalCart(updatedCart);
-        }
-      } else {
-        const guestCart = JSON.parse(localStorage.getItem('guestCart')) || [];
-        const count = guestCart.reduce((sum, item) => sum + item.quantity, 0);
-        const total = guestCart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/cart`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (response.data && onCartUpdate) {
+        const count = response.data.products?.reduce((sum, item) => sum + item.quantity, 0) || 0;
+        const total = response.data.itemsTotal || 0;
+        onCartUpdate(count, total);
         
-        if (onCartUpdate) {
-          onCartUpdate(count, total);
-        }
-        
-        // Update localCart with fresh guest cart data
+        // Update localCart with fresh data
         const updatedCart = {};
-        guestCart.forEach(item => {
-          updatedCart[item._id] = item.quantity;
+        response.data.products.forEach(item => {
+          const productId = item.productId?._id || item._id;
+          updatedCart[productId] = item.quantity;
         });
         setLocalCart(updatedCart);
       }
@@ -91,35 +62,13 @@ const RelatedProducts = ({ products, onCartUpdate, cart: parentCart, loading: pa
   // ✅ Update cart function
   const updateCart = async (productId, newQuantity) => {
     try {
-      if (token) {
-        const response = await axios.post(
-          `${import.meta.env.VITE_API_BASE_URL}/cart/add`,
-          { productId, quantity: newQuantity },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+      const response = await axios.post(
+        `${import.meta.env.VITE_API_BASE_URL}/cart/add`,
+        { productId, quantity: newQuantity },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
-        if (response.data.msg === 'Cart updated successfully') {
-          await fetchCart();
-          return true;
-        }
-      } else {
-        const guestCart = JSON.parse(localStorage.getItem('guestCart')) || [];
-        const existingItemIndex = guestCart.findIndex(item => item._id === productId);
-
-        if (existingItemIndex >= 0) {
-          if (newQuantity <= 0) {
-            guestCart.splice(existingItemIndex, 1);
-          } else {
-            guestCart[existingItemIndex].quantity = newQuantity;
-          }
-        } else if (newQuantity > 0) {
-          const productToAdd = products.find(p => p._id === productId);
-          if (productToAdd) {
-            guestCart.push({ ...productToAdd, quantity: 1 });
-          }
-        }
-
-        localStorage.setItem('guestCart', JSON.stringify(guestCart));
+      if (response.data.msg === 'Cart updated successfully') {
         await fetchCart();
         return true;
       }
