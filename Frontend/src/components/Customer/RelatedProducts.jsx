@@ -9,20 +9,38 @@ const RelatedProducts = ({ products, onCartUpdate, cart: parentCart, loading: pa
   const [localLoading, setLocalLoading] = useState({});
   const token = localStorage.getItem('token');
 
-  // ✅ Sync with parent cart state (safe for non-array)
+  // ✅ Initialize and sync with parent cart state
   useEffect(() => {
-    if (Array.isArray(parentCart)) {
-      const cartMap = {};
-      parentCart.forEach(item => {
-        const productId = item.productId?._id || item._id;
-        cartMap[productId] = item.quantity;
-      });
-      setLocalCart(cartMap);
-    } else {
-      setLocalCart({});
-    }
-  }, [parentCart]);
+    const initializeCart = () => {
+      let initialCart = {};
+      
+      if (Array.isArray(parentCart)) {
+        // If parentCart is provided as prop
+        parentCart.forEach(item => {
+          const productId = item.productId?._id || item._id;
+          initialCart[productId] = item.quantity;
+        });
+      } else {
+        // If no parentCart provided, check localStorage directly
+        if (token) {
+          // For authenticated users, we need to fetch cart if not provided
+          // This is a fallback and might need additional implementation
+        } else {
+          // For guest users
+          const guestCart = JSON.parse(localStorage.getItem('guestCart')) || [];
+          guestCart.forEach(item => {
+            initialCart[item._id] = item.quantity;
+          });
+        }
+      }
+      
+      setLocalCart(initialCart);
+    };
 
+    initializeCart();
+  }, [parentCart, token]);
+
+  // ✅ Sync loading states
   useEffect(() => {
     if (parentLoading && typeof parentLoading === 'object') {
       setLocalLoading(parentLoading);
@@ -40,14 +58,30 @@ const RelatedProducts = ({ products, onCartUpdate, cart: parentCart, loading: pa
           const count = response.data.products?.reduce((sum, item) => sum + item.quantity, 0) || 0;
           const total = response.data.itemsTotal || 0;
           onCartUpdate(count, total);
+          
+          // Update localCart with fresh data
+          const updatedCart = {};
+          response.data.products.forEach(item => {
+            const productId = item.productId?._id || item._id;
+            updatedCart[productId] = item.quantity;
+          });
+          setLocalCart(updatedCart);
         }
       } else {
         const guestCart = JSON.parse(localStorage.getItem('guestCart')) || [];
         const count = guestCart.reduce((sum, item) => sum + item.quantity, 0);
         const total = guestCart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        
         if (onCartUpdate) {
           onCartUpdate(count, total);
         }
+        
+        // Update localCart with fresh guest cart data
+        const updatedCart = {};
+        guestCart.forEach(item => {
+          updatedCart[item._id] = item.quantity;
+        });
+        setLocalCart(updatedCart);
       }
     } catch (err) {
       console.error('Error fetching updated cart:', err);
@@ -152,7 +186,7 @@ const RelatedProducts = ({ products, onCartUpdate, cart: parentCart, loading: pa
               key={product._id}
               product={product}
               quantity={localCart[product._id] || 0}
-              isLoading={localLoading[product._id]} // ✅ Used for animation
+              isLoading={localLoading[product._id]}
               handleAddToCart={handleAddToCart}
               handleChange={handleChange}
             />
