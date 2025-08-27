@@ -206,7 +206,7 @@ const Payment = () => {
         addressId: address?._id,
         paymentMethod: selectedPayment,
         items: cartItems.map(item => ({
-          productId: item.productId,
+          productId: item._id, // Map item._id to productId as per instruction
           name: item.name,
           image: item.image,
           variant: item.variant,
@@ -222,7 +222,7 @@ const Payment = () => {
         paymentStatus: 'pending'
       };
   
-      console.log('Order Data:', orderData);
+      console.log("Order payload to backend:", orderData); // Updated console.log message as per instruction
 
       const response = await axios.post(`${API_BASE_URL}/user-orders`, orderData, {
         headers: {

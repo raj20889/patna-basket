@@ -27,10 +27,6 @@ app.use(cors({
   credentials: true // if you are sending cookies/authentication headers
 }));
 
-app.use((req, res, next) => {
-  console.log('Before express.json - req.body:', req.body);
-  next();
-});
 app.use(express.json());
 
 // Routes
