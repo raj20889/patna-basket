@@ -192,67 +192,82 @@ const Payment = () => {
     await updateCartCharges(null, newDonationSelected);
   };
 
- const handlePaymentSubmit = async () => {
-  if (!selectedMethod) {
-    alert("Please select a payment method");
-    return;
-  }
-
-  // Validate UPI ID for UPI payments
-  if (selectedMethod === "UPI" && !upiId.trim()) {
-    alert("Please enter a valid UPI ID");
-    return;
-  }
-
-  // Validate card details for Card payments
-  if (selectedMethod === "Card") {
-    if (!cardNumber || !expiry || !cvv || !cardHolder) {
-      alert("Please fill all card details");
+  const handlePaymentSubmit = async () => {
+    if (!selectedPayment) {
+      toast.error('Please select a payment method');
       return;
     }
-  }
 
-  // Validate cash for Cash on Delivery (no extra validation needed)
 
-  try {
-    setLoading(true);
+  
+    try {
+      // First create the order
+      const orderData = {
+        addressId: address?._id,
+        paymentMethod: selectedPayment,
+        items: cartItems.map(item => ({
+          productId: item._id, // Map item._id to productId as per instruction
+          name: item.name,
+          image: item.image,
+          variant: item.variant,
+          price: item.price,
+          quantity: item.quantity
+        })),
+        itemsTotal: cartTotals.itemsTotal,
+        deliveryCharge: 0,
+        handlingCharge: cartTotals.handlingCharge,
+        tipAmount: cartTotals.tipAmount,
+        donationAmount: cartTotals.donationAmount,
+        grandTotal: cartTotals.grandTotal,
+        paymentStatus: 'pending'
+      };
+  
+      console.log("Order payload to backend:", orderData); // Updated console.log message as per instruction
 
-    // Example payload
-    const paymentData = {
-      method: selectedMethod,
-      upiId: selectedMethod === "UPI" ? upiId : null,
-      cardInfo:
-        selectedMethod === "Card"
-          ? { cardNumber, expiry, cvv, cardHolder }
-          : null,
-      amount: totalAmount, // Assume you have totalAmount from props or context
-    };
-
-    // API Call to process payment
-    const response = await fetch(`${process.env.REACT_APP_API_URL}/api/payments`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(paymentData),
-    });
-
-    const result = await response.json();
-
-    if (response.ok) {
-      alert("Payment successful!");
-      navigate("/order-confirmation"); // Redirect after success
-    } else {
-      alert(`Payment failed: ${result.message}`);
+      const response = await axios.post(`${API_BASE_URL}/user-orders`, orderData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+  
+      // Then clear the cart
+      try {
+        await axios.delete(`${API_BASE_URL}/cart`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        
+        setCartItems([]);
+      } catch (clearCartError) {
+        console.warn('Cart clearing failed:', clearCartError);
+      }
+  
+      // Redirect user
+      if (selectedPayment === 'COD') {
+        toast.success('Order placed successfully! Pay when your order arrives');
+        navigate('/order-confirmation', { 
+          state: { 
+            orderId: response.data.orderId,
+            paymentStatus: 'pending'
+          } 
+        });
+      } else {
+        window.location.href = response.data.paymentUrl;
+      }
+  
+    } catch (err) {
+      console.error('Order submission failed:', err);
+      const errorMessage = err.response?.data?.message || 
+                          'Error placing order. Please try again.';
+      toast.error(errorMessage);
+      
+      if (err.response?.status === 401 || err.response?.status === 403) {
+        navigate('/login');
+      }
     }
-  } catch (error) {
-    console.error("Payment Error:", error);
-    alert("Something went wrong while processing payment");
-  } finally {
-    setLoading(false);
-  }
-};
-
+  };
 
   if (loading) return (
     <div className="flex justify-center items-center h-screen">
