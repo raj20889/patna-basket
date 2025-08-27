@@ -152,7 +152,7 @@ const RelatedProducts = ({ products, onCartUpdate, cart: parentCart, loading: pa
               key={product._id}
               product={product}
               quantity={localCart[product._id] || 0}
-              isLoading={localLoading[product._id]}
+              isLoading={localLoading[product._id]} // ✅ Used for animation
               handleAddToCart={handleAddToCart}
               handleChange={handleChange}
             />
