@@ -1,16 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ProductCard from './ProductCard';
+import axios from 'axios';
 
 const RelatedProducts = ({ products, onCartUpdate, cart: parentCart, loading: parentLoading }) => {
   const navigate = useNavigate();
   const [localCart, setLocalCart] = useState({});
   const [localLoading, setLocalLoading] = useState({});
+  const token = localStorage.getItem('token');
 
   // Sync with parent cart state
   useEffect(() => {
     if (parentCart) {
-      setLocalCart(parentCart);
+      const cartMap = {};
+      parentCart.forEach(item => {
+        const productId = item.productId?._id || item._id;
+        cartMap[productId] = item.quantity;
+      });
+      setLocalCart(cartMap);
     }
   }, [parentCart]);
 
@@ -20,46 +27,71 @@ const RelatedProducts = ({ products, onCartUpdate, cart: parentCart, loading: pa
     }
   }, [parentLoading]);
 
-  const updateCart = async (productId, newQuantity) => {
+  // Fetch cart after update (only if authenticated)
+  const fetchCart = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const endpoint = token ? 'api/cart/add' : 'api/guest-cart/add';
-      
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/${endpoint}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': token ? `Bearer ${token}` : '',
-        },
-        body: JSON.stringify({ productId, quantity: newQuantity }),
-      });
-
-      const data = await response.json();
-      if (response.ok) {
-        setLocalCart(prev => ({
-          ...prev,
-          [productId]: newQuantity > 0 ? newQuantity : undefined
-        }));
-        
-        if (onCartUpdate) {
-          const cartResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/cart`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          if (cartResponse.ok) {
-            const cartData = await cartResponse.json();
-            const count = cartData.products?.reduce((sum, item) => sum + item.quantity, 0) || 0;
-            const total = cartData.products?.reduce((sum, item) => sum + (item.productId.price * item.quantity), 0) || 0;
-            onCartUpdate(count, total);
-          }
+      if (token) {
+        const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/cart`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (response.data && onCartUpdate) {
+          const count = response.data.products?.reduce((sum, item) => sum + item.quantity, 0) || 0;
+          const total = response.data.itemsTotal || 0;
+          onCartUpdate(count, total);
         }
-        
-        return true;
       } else {
-        console.error("Error updating cart:", data.msg);
-        return false;
+        // Guest cart update
+        const guestCart = JSON.parse(localStorage.getItem('guestCart')) || [];
+        const count = guestCart.reduce((sum, item) => sum + item.quantity, 0);
+        const total = guestCart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        if (onCartUpdate) {
+          onCartUpdate(count, total);
+        }
       }
     } catch (err) {
-      console.error("Error updating cart:", err);
+      console.error('Error fetching updated cart:', err);
+    }
+  };
+
+  // Update cart function (same as SearchResults)
+  const updateCart = async (productId, newQuantity) => {
+    try {
+      if (token) {
+        const response = await axios.post(
+          `${import.meta.env.VITE_API_BASE_URL}/cart/add`,
+          { productId, quantity: newQuantity },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        if (response.data.msg === 'Cart updated successfully') {
+          await fetchCart();
+          return true;
+        }
+      } else {
+        // Guest cart handling (same as SearchResults)
+        const guestCart = JSON.parse(localStorage.getItem('guestCart')) || [];
+        const existingItemIndex = guestCart.findIndex(item => item._id === productId);
+
+        if (existingItemIndex >= 0) {
+          if (newQuantity <= 0) {
+            guestCart.splice(existingItemIndex, 1);
+          } else {
+            guestCart[existingItemIndex].quantity = newQuantity;
+          }
+        } else if (newQuantity > 0) {
+          const productToAdd = products.find(p => p._id === productId);
+          if (productToAdd) {
+            guestCart.push({ ...productToAdd, quantity: 1 });
+          }
+        }
+
+        localStorage.setItem('guestCart', JSON.stringify(guestCart));
+        await fetchCart();
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error('Error updating cart:', err);
       return false;
     }
   };
@@ -67,7 +99,6 @@ const RelatedProducts = ({ products, onCartUpdate, cart: parentCart, loading: pa
   const handleChange = async (productId, change) => {
     const currentQty = localCart[productId] || 0;
     const newQty = currentQty + change;
-
     if (newQty < 0) return;
 
     setLocalLoading(prev => ({ ...prev, [productId]: true }));
@@ -79,7 +110,7 @@ const RelatedProducts = ({ products, onCartUpdate, cart: parentCart, loading: pa
         setLocalCart(prev => ({ ...prev, [productId]: currentQty }));
       }
     } catch (err) {
-      console.error("Error updating cart", err);
+      console.error('Error updating cart', err);
       setLocalCart(prev => ({ ...prev, [productId]: currentQty }));
     } finally {
       setLocalLoading(prev => ({ ...prev, [productId]: false }));
@@ -93,8 +124,8 @@ const RelatedProducts = ({ products, onCartUpdate, cart: parentCart, loading: pa
   // Filter dairy-related products
   const dairyProducts = products.filter(product => {
     const lowerName = product.category.toLowerCase();
-    return lowerName.includes('milk') || 
-           lowerName.includes('bread') || 
+    return lowerName.includes('milk') ||
+           lowerName.includes('bread') ||
            lowerName.includes('egg');
   });
 
@@ -106,14 +137,14 @@ const RelatedProducts = ({ products, onCartUpdate, cart: parentCart, loading: pa
     <div className="px-4 py-6 bg-white">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-bold">Dairy &amp; Bread</h2>
-        <button 
+        <button
           className="text-blue-500 text-sm font-medium"
           onClick={() => navigate('/category/dairy')}
         >
           See all
         </button>
       </div>
-      
+
       <div className="relative">
         <div className="flex space-x-4 overflow-x-auto pb-4 scrollbar-hide">
           {dairyProducts.map(product => (
