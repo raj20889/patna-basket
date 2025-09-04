@@ -10,6 +10,7 @@ import ColdDrinksJuices from "../components/ColdDrinksJuices";
 import RollingPaperTobacco from "../components/RollingPaper&Tobacco";
 import SnacksAndChips from "../components/SnacksAndChips";
 import CandiesAndGums from "../components/CandiesAndGums";
+import ProductsLoaderTemplate from "./Customer/ProductsLoaderTemplate";
 
 const Home = () => {
   const [products, setProducts] = useState([]);
@@ -161,7 +162,7 @@ const Home = () => {
     }
   };
 
-  return (
+  return products.length===0?<ProductsLoaderTemplate/>:(
     <div>
       <PublicNavbar cartCount={cartCount} totalPrice={totalPrice} />
       {role !== "admin" && (
