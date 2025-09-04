@@ -74,7 +74,7 @@ const Dashboard = () => {
   const updateCart = async (productId, newQuantity) => {
     try {
       const token = localStorage.getItem("token");
-      const endpoint = token ? "api/cart/add" : undefined;
+      const endpoint = token ? "cart/add" : undefined;
 
 
       const response = await fetch(`https://patna-basket-1.onrender.com/${endpoint}`, {
