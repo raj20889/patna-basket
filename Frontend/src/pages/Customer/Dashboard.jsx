@@ -10,6 +10,7 @@ import RollingPaperTobacco from "../../components/Customer/RollingPaperAndTobacc
 import AllProducts from "../../components/Customer/AllProducts";
 import SnacksAndChips from "../../components/Customer/SnacksAndChips";
 import CandiesAndChocolates from "../../components/Customer/CandiesAndChocolates";
+import ProductsLoaderTemplate from "./ProductsLoaderTemplate.jsx";
 
 const Dashboard = () => {
   const [products, setProducts] = useState([]);
@@ -152,7 +153,8 @@ const Dashboard = () => {
 
   if (loading) return <div className="text-center text-xl">Loading...</div>;
 
-  return products==0?"loading products ":(
+  return products.length===0?<ProductsLoaderTemplate/>:(
+
     <div className="min-h-screen bg-gray-100">
       <CustomerNavbar
         cartUpdated={cartUpdated}
@@ -165,7 +167,23 @@ const Dashboard = () => {
       <CategoryGrid />
 
       <div className="container mx-auto px-4 py-6">
-        <RelatedProducts
+//related products
+        {products.length===0?<ProductsLoaderTemplate/>:<RelatedProducts
+
+          products={products}
+          onCartUpdate={handleCartUpdate}
+          cart={cartItems}
+        />}
+
+        {/* Add the new component here */}
+      {products.length===0?<ProductsLoaderTemplate/>:<ColdDrinksAndJuices
+          products={products}
+          onCartUpdate={handleCartUpdate}
+          cart={cartItems}
+        />}
+
+        {/* Add the new component here */}
+        <ColdDrinksAndJuices
           products={products}
           onCartUpdate={handleCartUpdate}
           cart={cartItems}
