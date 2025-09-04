@@ -152,7 +152,7 @@ const Dashboard = () => {
 
   if (loading) return <div className="text-center text-xl">Loading...</div>;
 
-  return (
+  return products==0?"loading products ":(
     <div className="min-h-screen bg-gray-100">
       <CustomerNavbar
         cartUpdated={cartUpdated}

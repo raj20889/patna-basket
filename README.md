@@ -76,6 +76,7 @@ Patna Basket is a quick commerce application designed to provide a seamless shop
 - Address Management
 - Order Placement
 - Real-time communication (e.g., for order status updates, if implemented via Socket.io)
+<<<<<<< HEAD
 - Admin Panel
 
 ## Live Project Link: https://patna-basket.vercel.app/
@@ -98,3 +99,12 @@ reenshot 2025-08-28 183740" src="https://github.com/user-attachments/assets/d6fc
 <img width="1920" height="1008" alt="Screenshot 2025-08-28 184049" src="https://github.com/user-attachments/assets/48fbf8fe-94ba-45e3-808f-444f0bfd0e03" />
 <img width="1920" height="1008" alt="Screenshot 2025-08-28 184057" src="https://github.com/user-attachments/assets/9170bb1d-bfe7-4a76-9893-305cead06634" />
 <img width="1920" height="1008" alt="Screenshot 2025-08-28 184103" src="https://github.com/user-attachments/assets/bc119f9a-dd8c-4757-89f2-14ffe633df0a" />
+=======
+
+## Demo Login
+(If you have specific demo credentials, please add them here. Otherwise, you can leave this section as a placeholder or remove it.)
+
+- **Email**: `user@example.com`
+- **Password**: `password123`
+(Note: These are placeholder credentials. You will need to register a user after setting up the application.)
+>>>>>>> 8a8320e (adding loader when product loads)
