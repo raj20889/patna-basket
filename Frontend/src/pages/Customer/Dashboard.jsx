@@ -39,7 +39,9 @@ const Dashboard = () => {
       setProducts(productsData);
 
       if (cartRes.ok) {
+
         const cartData = await cartRes.json();
+        console.log(cartData);
         const initialQuantities = {};
         let count = 0;
         let total = 0;
@@ -64,7 +66,8 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchData();
-  }, [products, cartUpdated],);
+  }, [products, cartUpdated,cartItems,cartCount],);
+
 
 
   const updateCart = async (productId, newQuantity) => {
