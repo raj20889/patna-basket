@@ -14,7 +14,7 @@ import ProductsLoaderTemplate from "./ProductsLoaderTemplate.jsx";
 
 const Dashboard = () => {
   const [products, setProducts] = useState([]);
-
+const [loading, setLoading] = useState(true);
   const [cartItems, setCartItems] = useState({});
   const [cartUpdated, setCartUpdated] = useState(false);
   const [cartCount, setCartCount] = useState(0);
