@@ -167,13 +167,7 @@ const Dashboard = () => {
       <CategoryGrid />
 
       <div className="container mx-auto px-4 py-6">
-//related products
-        {products.length===0?<ProductsLoaderTemplate/>:<RelatedProducts
 
-          products={products}
-          onCartUpdate={handleCartUpdate}
-          cart={cartItems}
-        />}
 
         {/* Add the new component here */}
       {products.length===0?<ProductsLoaderTemplate/>:<ColdDrinksAndJuices
