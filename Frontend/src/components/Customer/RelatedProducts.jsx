@@ -25,7 +25,7 @@ const RelatedProducts = ({ products, onCartUpdate, cart: parentCart, loading: pa
     };
 
     initializeCart();
-  }, [parentCart,localCart]);
+  }, [parentCart]);
 
   // ✅ Sync loading states
  
