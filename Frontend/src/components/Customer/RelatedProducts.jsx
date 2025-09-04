@@ -3,7 +3,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import ProductCard from "./ProductCard";
 
-const RelatedProducts = ({ products, cart, handleAddToCart, handleChange }) => {
+const RelatedProducts = ({ products, cart, loadingProduct, handleAddToCart, handleChange }) => {
   const navigate = useNavigate();
 
   // ✅ Filter dairy-related products safely
@@ -39,6 +39,7 @@ const RelatedProducts = ({ products, cart, handleAddToCart, handleChange }) => {
               key={product._id}
               product={product}
               quantity={cart[product._id] || 0}
+              isLoading={loadingProduct === product._id} // 👈 check here
               handleAddToCart={handleAddToCart}
               handleChange={handleChange}
             />

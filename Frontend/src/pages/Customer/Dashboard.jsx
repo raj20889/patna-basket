@@ -14,7 +14,7 @@ import ProductsLoaderTemplate from "./ProductsLoaderTemplate.jsx";
 
 const Dashboard = () => {
   const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
+
   const [cartItems, setCartItems] = useState({});
   const [cartUpdated, setCartUpdated] = useState(false);
   const [cartCount, setCartCount] = useState(0);
@@ -39,7 +39,6 @@ const Dashboard = () => {
       setProducts(productsData);
 
       if (cartRes.ok) {
-
         const cartData = await cartRes.json();
         console.log(cartData);
         const initialQuantities = {};
@@ -67,24 +66,28 @@ const Dashboard = () => {
   useEffect(() => {
     fetchData();
     console.log(cartItems);
-  }, [],);
+  }, []);
 
-
+  const [loadingProduct, setLoadingProduct] = useState(null); // productId currently updating
 
   const updateCart = async (productId, newQuantity) => {
+    setLoadingProduct(productId); // set loading to true
+
     try {
       const token = localStorage.getItem("token");
       const endpoint = token ? "cart/add" : undefined;
 
-
-      const response = await fetch(`https://patna-basket-1.onrender.com/${endpoint}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: token ? `Bearer ${token}` : "",
-        },
-        body: JSON.stringify({ productId, quantity: newQuantity }),
-      });
+      const response = await fetch(
+        `https://patna-basket-1.onrender.com/${endpoint}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token ? `Bearer ${token}` : "",
+          },
+          body: JSON.stringify({ productId, quantity: newQuantity }),
+        }
+      );
 
       const data = await response.json();
       if (response.ok) {
@@ -95,9 +98,12 @@ const Dashboard = () => {
         }));
 
         // Fetch updated cart details
-        const cartResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/cart`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const cartResponse = await fetch(
+          `${import.meta.env.VITE_API_BASE_URL}/cart`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
 
         if (cartResponse.ok) {
           const cartData = await cartResponse.json();
@@ -123,6 +129,8 @@ const Dashboard = () => {
     } catch (err) {
       console.error("Error updating cart", err);
       return false;
+    } finally {
+      setLoadingProduct(null); // stop loading
     }
   };
 
@@ -157,9 +165,9 @@ const Dashboard = () => {
     setCartUpdated((prev) => !prev);
   };
 
-  if (loading) return <ProductsLoaderTemplate/>;
+  if (loading) return <ProductsLoaderTemplate />;
 
-  return(
+  return (
     <div className="min-h-screen bg-gray-100">
       <CustomerNavbar
         cartUpdated={cartUpdated}
@@ -172,29 +180,35 @@ const Dashboard = () => {
       <CategoryGrid />
 
       <div className="container mx-auto px-4 py-6">
+        {products.length === 0 ? (
+          <ProductsLoaderTemplate />
+        ) : (
+          <RelatedProducts
+            products={products}
+            cart={cartItems}
+            loadingProduct={loadingProduct}
 
-        {products.length===0?<ProductsLoaderTemplate/>:
-      <RelatedProducts
-  products={products}
-  cart={cartItems}
-  handleAddToCart={handleAddToCart}
-  handleChange={(productId, change) => {
-    if (change === 1) {
-      handleIncrease(productId);
-    } else {
-      handleDecrease(productId);
-    }
-  }}
-/>
-
-}
+            handleAddToCart={handleAddToCart}
+            handleChange={(productId, change) => {
+              if (change === 1) {
+                handleIncrease(productId);
+              } else {
+                handleDecrease(productId);
+              }
+            }}
+          />
+        )}
 
         {/* Add the new component here */}
-      {products.length===0?<ProductsLoaderTemplate/>:<ColdDrinksAndJuices
-          products={products}
-          onCartUpdate={handleCartUpdate}
-          cart={cartItems}
-        />}
+        {products.length === 0 ? (
+          <ProductsLoaderTemplate />
+        ) : (
+          <ColdDrinksAndJuices
+            products={products}
+            onCartUpdate={handleCartUpdate}
+            cart={cartItems}
+          />
+        )}
 
         {/* Add the new component here */}
         <ColdDrinksAndJuices
@@ -236,8 +250,6 @@ const Dashboard = () => {
           onCartUpdate={handleCartUpdate}
           cart={cartItems}
         />
-
-       
       </div>
     </div>
   );
