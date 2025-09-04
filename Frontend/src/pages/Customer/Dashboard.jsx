@@ -64,7 +64,8 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [products, cartUpdated],);
+
 
   const updateCart = async (productId, newQuantity) => {
     try {
