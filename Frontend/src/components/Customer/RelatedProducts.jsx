@@ -1,98 +1,67 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import ProductCard from './ProductCard';
-import axios from 'axios';
+// RelatedProducts.jsx
+import React from "react";
+import { useNavigate } from "react-router-dom";
+import ProductCard from "./ProductCard";
 
-const RelatedProducts = ({ products, onCartUpdate, cart: parentCart, loading: parentLoading }) => {
+const RelatedProducts = ({ products, onCartUpdate, cart }) => {
   const navigate = useNavigate();
-  const [localCart, setLocalCart] = useState({});
-  const [localLoading, setLocalLoading] = useState({});
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem("token");
 
-  // ✅ Initialize and sync with parent cart state
-  useEffect(() => {
-    const initializeCart = () => {
-      const initialCart = {};
-      
-      if (Array.isArray(parentCart)) {
-        parentCart.forEach(item => {
-          const productId = item.productId?._id || item._id;
-          initialCart[productId] = item.quantity;
-        });
-      }
-      
-      setLocalCart(initialCart);
-    };
-
-    initializeCart();
-  }, [parentCart]);
-
-  // ✅ Sync loading states
- 
   // ✅ Fetch updated cart after any cart update
   const fetchCart = async () => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/cart`, {
-        headers: { Authorization: `Bearer ${token}` }
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/cart`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
-      
-      if (response.data && onCartUpdate) {
-        const count = response.data.products?.reduce((sum, item) => sum + item.quantity, 0) || 0;
-        const total = response.data.itemsTotal || 0;
+
+      if (response.ok && onCartUpdate) {
+        const data = await response.json();
+        const count =
+          data.products?.reduce((sum, item) => sum + item.quantity, 0) || 0;
+        const total =
+          data.products?.reduce(
+            (sum, item) => sum + item.productId.price * item.quantity,
+            0
+          ) || 0;
+
         onCartUpdate(count, total);
-        
-        // Update localCart with fresh data
-        const updatedCart = {};
-        response.data.products.forEach(item => {
-          const productId = item.productId?._id || item._id;
-          updatedCart[productId] = item.quantity;
-        });
-        setLocalCart(updatedCart);
       }
     } catch (err) {
-      console.error('Error fetching updated cart:', err);
+      console.error("Error fetching updated cart:", err);
     }
   };
 
   // ✅ Update cart function
   const updateCart = async (productId, newQuantity) => {
     try {
-      const response = await axios.post(
+      const response = await fetch(
         `${import.meta.env.VITE_API_BASE_URL}/cart/add`,
-        { productId, quantity: newQuantity },
-        { headers: { Authorization: `Bearer ${token}` } }
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ productId, quantity: newQuantity }),
+        }
       );
 
-      if (response.data.msg === 'Cart updated successfully') {
+      if (response.ok) {
         await fetchCart();
         return true;
       }
       return false;
     } catch (err) {
-      console.error('Error updating cart:', err);
+      console.error("Error updating cart:", err);
       return false;
     }
   };
 
   const handleChange = async (productId, change) => {
-    const currentQty = localCart[productId] || 0;
+    const currentQty = cart[productId] || 0;
     const newQty = currentQty + change;
     if (newQty < 0) return;
-
-    setLocalLoading(prev => ({ ...prev, [productId]: true }));
-    setLocalCart(prev => ({ ...prev, [productId]: newQty }));
-
-    try {
-      const success = await updateCart(productId, newQty);
-      if (!success) {
-        setLocalCart(prev => ({ ...prev, [productId]: currentQty }));
-      }
-    } catch (err) {
-      console.error('Error updating cart', err);
-      setLocalCart(prev => ({ ...prev, [productId]: currentQty }));
-    } finally {
-      setLocalLoading(prev => ({ ...prev, [productId]: false }));
-    }
+    await updateCart(productId, newQty);
   };
 
   const handleAddToCart = (productId) => {
@@ -100,12 +69,16 @@ const RelatedProducts = ({ products, onCartUpdate, cart: parentCart, loading: pa
   };
 
   // ✅ Filter dairy-related products safely
-  const dairyProducts = (Array.isArray(products) ? products : []).filter(product => {
-    const lowerName = (product.category || '').toLowerCase();
-    return lowerName.includes('milk') ||
-           lowerName.includes('bread') ||
-           lowerName.includes('egg');
-  });
+  const dairyProducts = (Array.isArray(products) ? products : []).filter(
+    (product) => {
+      const lowerName = (product.category || "").toLowerCase();
+      return (
+        lowerName.includes("milk") ||
+        lowerName.includes("bread") ||
+        lowerName.includes("egg")
+      );
+    }
+  );
 
   if (dairyProducts.length === 0) {
     return null;
@@ -117,7 +90,7 @@ const RelatedProducts = ({ products, onCartUpdate, cart: parentCart, loading: pa
         <h2 className="text-xl font-bold">Dairy &amp; Bread</h2>
         <button
           className="text-blue-500 text-sm font-medium"
-          onClick={() => navigate('/category/dairy')}
+          onClick={() => navigate("/category/dairy")}
         >
           See all
         </button>
@@ -125,12 +98,11 @@ const RelatedProducts = ({ products, onCartUpdate, cart: parentCart, loading: pa
 
       <div className="relative">
         <div className="flex space-x-4 overflow-x-auto pb-4 scrollbar-hide">
-          {dairyProducts.map(product => (
+          {dairyProducts.map((product) => (
             <ProductCard
               key={product._id}
               product={product}
-              quantity={localCart[product._id] || 0}
-              isLoading={localLoading[product._id]}
+              quantity={cart[product._id] || 0} 
               handleAddToCart={handleAddToCart}
               handleChange={handleChange}
             />
