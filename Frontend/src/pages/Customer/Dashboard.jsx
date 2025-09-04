@@ -173,12 +173,16 @@ const Dashboard = () => {
 
       <div className="container mx-auto px-4 py-6">
 
-        {products.length===0?<ProductsLoaderTemplate/>:<RelatedProducts
-
-          products={products}
-          onCartUpdate={handleCartUpdate}
-          cart={cartItems}
-        />}
+        {products.length===0?<ProductsLoaderTemplate/>:
+        <RelatedProducts
+  products={products}
+  onCartUpdate={handleCartUpdate}
+  cart={cartItems}
+  handleAddToCart={handleAddToCart}
+  handleIncrease={handleIncrease}
+  handleDecrease={handleDecrease}
+/>
+}
 
         {/* Add the new component here */}
       {products.length===0?<ProductsLoaderTemplate/>:<ColdDrinksAndJuices

@@ -3,86 +3,15 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import ProductCard from "./ProductCard";
 
-const RelatedProducts = ({ products, onCartUpdate, cart }) => {
+const RelatedProducts = ({ products, cart, handleAddToCart, handleIncrease, handleDecrease }) => {
   const navigate = useNavigate();
-  const token = localStorage.getItem("token");
 
-  // ✅ Fetch updated cart after any cart update
-  const fetchCart = async () => {
-    try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/cart`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+  const dairyProducts = (Array.isArray(products) ? products : []).filter(product => {
+    const lowerName = (product.category || '').toLowerCase();
+    return lowerName.includes('milk') || lowerName.includes('bread') || lowerName.includes('egg');
+  });
 
-      if (response.ok && onCartUpdate) {
-        const data = await response.json();
-        const count =
-          data.products?.reduce((sum, item) => sum + item.quantity, 0) || 0;
-        const total =
-          data.products?.reduce(
-            (sum, item) => sum + item.productId.price * item.quantity,
-            0
-          ) || 0;
-
-        onCartUpdate(count, total);
-      }
-    } catch (err) {
-      console.error("Error fetching updated cart:", err);
-    }
-  };
-
-  // ✅ Update cart function
-  const updateCart = async (productId, newQuantity) => {
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/cart/add`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ productId, quantity: newQuantity }),
-        }
-      );
-
-      if (response.ok) {
-        await fetchCart();
-        return true;
-      }
-      return false;
-    } catch (err) {
-      console.error("Error updating cart:", err);
-      return false;
-    }
-  };
-
-  const handleChange = async (productId, change) => {
-    const currentQty = cart[productId] || 0;
-    const newQty = currentQty + change;
-    if (newQty < 0) return;
-    await updateCart(productId, newQty);
-  };
-
-  const handleAddToCart = (productId) => {
-    handleChange(productId, 1);
-  };
-
-  // ✅ Filter dairy-related products safely
-  const dairyProducts = (Array.isArray(products) ? products : []).filter(
-    (product) => {
-      const lowerName = (product.category || "").toLowerCase();
-      return (
-        lowerName.includes("milk") ||
-        lowerName.includes("bread") ||
-        lowerName.includes("egg")
-      );
-    }
-  );
-
-  if (dairyProducts.length === 0) {
-    return null;
-  }
+  if (dairyProducts.length === 0) return null;
 
   return (
     <div className="px-4 py-6 bg-white">
@@ -102,9 +31,11 @@ const RelatedProducts = ({ products, onCartUpdate, cart }) => {
             <ProductCard
               key={product._id}
               product={product}
-              quantity={cart[product._id] || 0} 
+              quantity={cart[product._id] || 0}
               handleAddToCart={handleAddToCart}
-              handleChange={handleChange}
+              handleChange={(id, change) =>
+                change === 1 ? handleIncrease(id) : handleDecrease(id)
+              }
             />
           ))}
         </div>
