@@ -25,15 +25,10 @@ const RelatedProducts = ({ products, onCartUpdate, cart: parentCart, loading: pa
     };
 
     initializeCart();
-  }, [parentCart]);
+  }, [parentCart,localCart]);
 
   // ✅ Sync loading states
-  useEffect(() => {
-    if (parentLoading && typeof parentLoading === 'object') {
-      setLocalLoading(parentLoading);
-    }
-  }, [parentLoading]);
-
+ 
   // ✅ Fetch updated cart after any cart update
   const fetchCart = async () => {
     try {
