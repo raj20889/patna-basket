@@ -66,7 +66,8 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchData();
-  }, [cartUpdated],);
+    console.log(cartItems);
+  }, [],);
 
 
 
