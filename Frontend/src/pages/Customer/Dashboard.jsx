@@ -151,10 +151,9 @@ const Dashboard = () => {
     setCartUpdated((prev) => !prev);
   };
 
-  if (loading) return <div className="text-center text-xl">Loading...</div>;
+  if (loading) return <ProductsLoaderTemplate/>;
 
-  return products.length===0?<ProductsLoaderTemplate/>:(
-
+  return(
     <div className="min-h-screen bg-gray-100">
       <CustomerNavbar
         cartUpdated={cartUpdated}
