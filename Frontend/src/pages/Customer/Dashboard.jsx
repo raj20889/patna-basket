@@ -221,38 +221,67 @@ const [loading, setLoading] = useState(true);
 
     
 
-        {/* Add the new component here */}
-        <ColdDrinksAndJuices
-          products={products}
-          onCartUpdate={handleCartUpdate}
-          cart={cartItems}
-        />
+      
 
         {/* Add the new component here */}
         <RollingPaperTobacco
-          products={products}
-          onCartUpdate={handleCartUpdate}
-          cart={cartItems}
+         products={products}
+            cart={cartItems}
+            loadingProduct={loadingProduct}
+
+            handleAddToCart={handleAddToCart}
+            handleChange={(productId, change) => {
+              if (change === 1) {
+                handleIncrease(productId);
+              } else {
+                handleDecrease(productId);
+              }
+            }}
         />
 
         <SnacksAndChips
-          products={products}
-          onCartUpdate={handleCartUpdate}
-          cart={cartItems}
-          loading={loading} // optional if you have loading states
+         products={products}
+            cart={cartItems}
+            loadingProduct={loadingProduct}
+
+            handleAddToCart={handleAddToCart}
+            handleChange={(productId, change) => {
+              if (change === 1) {
+                handleIncrease(productId);
+              } else {
+                handleDecrease(productId);
+              }
+            }}
         />
 
         <CandiesAndChocolates
-          products={products}
-          onCartUpdate={handleCartUpdate}
-          cart={cartItems}
-          loading={loading}
+         products={products}
+            cart={cartItems}
+            loadingProduct={loadingProduct}
+
+            handleAddToCart={handleAddToCart}
+            handleChange={(productId, change) => {
+              if (change === 1) {
+                handleIncrease(productId);
+              } else {
+                handleDecrease(productId);
+              }
+            }}
         />
         <h2 className="text-2xl  font-bold mb-6">All Products</h2>
         <AllProducts
-          products={products}
-          onCartUpdate={handleCartUpdate}
-          cart={cartItems}
+         products={products}
+            cart={cartItems}
+            loadingProduct={loadingProduct}
+
+            handleAddToCart={handleAddToCart}
+            handleChange={(productId, change) => {
+              if (change === 1) {
+                handleIncrease(productId);
+              } else {
+                handleDecrease(productId);
+              }
+            }}
         />
       </div>
     </div>
