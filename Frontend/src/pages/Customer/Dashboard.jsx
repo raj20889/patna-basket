@@ -204,18 +204,22 @@ const [loading, setLoading] = useState(true);
           <ProductsLoaderTemplate />
         ) : (
           <ColdDrinksAndJuices
-            products={products}
-            onCartUpdate={handleCartUpdate}
+           products={products}
             cart={cartItems}
+            loadingProduct={loadingProduct}
+
+            handleAddToCart={handleAddToCart}
+            handleChange={(productId, change) => {
+              if (change === 1) {
+                handleIncrease(productId);
+              } else {
+                handleDecrease(productId);
+              }
+            }}
           />
         )}
 
-        {/* Add the new component here */}
-        <ColdDrinksAndJuices
-          products={products}
-          onCartUpdate={handleCartUpdate}
-          cart={cartItems}
-        />
+    
 
         {/* Add the new component here */}
         <ColdDrinksAndJuices
