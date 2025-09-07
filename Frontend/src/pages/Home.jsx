@@ -1,16 +1,19 @@
-import React, { useState, useEffect } from "react";
+// Home.jsx
+import React, { useState, useEffect, useMemo, Suspense } from "react";
 import axios from "axios";
-import ProductComponent from "../components/ProductComponent";
 import PublicNavbar from "../components/Navbar/PublicNavbar";
 import BannerComponent from "../components/BannerComponent";
 import CategoryLinks from "../components/CategoryLinks";
 import CategoryGrid from "../components/CategoryGrid";
-import RelatedProducts from "../components/RelatedProducts";
-import ColdDrinksJuices from "../components/ColdDrinksJuices";
-import RollingPaperTobacco from "../components/RollingPaper&Tobacco";
-import SnacksAndChips from "../components/SnacksAndChips";
-import CandiesAndGums from "../components/CandiesAndGums";
 import ProductsLoaderTemplate from "./Customer/ProductsLoaderTemplate";
+
+// Lazy load heavy sections
+const RelatedProducts = React.lazy(() => import("../components/RelatedProducts"));
+const ColdDrinksJuices = React.lazy(() => import("../components/ColdDrinksJuices"));
+const RollingPaperTobacco = React.lazy(() => import("../components/RollingPaper&Tobacco"));
+const SnacksAndChips = React.lazy(() => import("../components/SnacksAndChips"));
+const CandiesAndGums = React.lazy(() => import("../components/CandiesAndGums"));
+const ProductComponent = React.lazy(() => import("../components/ProductComponent"));
 
 const Home = () => {
   const [products, setProducts] = useState([]);
@@ -20,6 +23,7 @@ const Home = () => {
   const [loading, setLoading] = useState({});
   const [cartUpdated, setCartUpdated] = useState(false);
   const [userIsLoggedIn, setUserIsLoggedIn] = useState(false);
+  const [loadingProducts, setLoadingProducts] = useState(true);
   const role = localStorage.getItem("role");
 
   // Check auth status on load
@@ -28,57 +32,73 @@ const Home = () => {
     setUserIsLoggedIn(!!token);
   }, []);
 
+  // Build product map for faster cart calculations
+  const productMap = useMemo(() => {
+    const map = {};
+    products.forEach((p) => (map[p._id] = p));
+    return map;
+  }, [products]);
+
   // Calculate totals from cart state
   const calculateTotals = (cartItems) => {
     const count = Object.values(cartItems).reduce((sum, qty) => sum + qty, 0);
     const total = Object.entries(cartItems).reduce((sum, [productId, qty]) => {
-      const product = products.find((p) => p._id === productId);
-      return sum + (product ? product.price * qty : 0);
+      return sum + (productMap[productId]?.price || 0) * qty;
     }, 0);
     return { count, total };
   };
 
-  // Initialize cart and products
+  // Fetch products first
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchProducts = async () => {
       try {
-        const [productsRes, cartRes] = await Promise.all([
-          axios.get(`${import.meta.env.VITE_API_BASE_URL}/products`),
-          userIsLoggedIn
-              ? axios.get(`${import.meta.env.VITE_API_BASE_URL}/cart`, {
-                headers: {
-                  Authorization: `Bearer ${localStorage.getItem("token")}`,
-                },
-              })
-            : Promise.resolve({ data: { products: [] } }),
-        ]);
+        const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/products`);
+        setProducts(res.data);
+      } catch (err) {
+        console.error("Products fetch error:", err);
+      } finally {
+        setLoadingProducts(false);
+      }
+    };
+    if (role !== "admin") fetchProducts();
+  }, [role]);
 
-        setProducts(productsRes.data);
-
-        // Initialize cart
-        const cartMap = {};
-        if (userIsLoggedIn && cartRes.data.products?.length > 0) {
-          cartRes.data.products.forEach((item) => {
+  // Fetch cart separately
+  useEffect(() => {
+    const fetchCart = async () => {
+      try {
+        if (userIsLoggedIn) {
+          const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/cart`, {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          });
+          const cartMap = {};
+          res.data.products?.forEach((item) => {
             cartMap[item.productId._id] = item.quantity;
           });
-        } else if (!userIsLoggedIn) {
+          setCart(cartMap);
+          const { count, total } = calculateTotals(cartMap);
+          setCartCount(count);
+          setTotalPrice(total);
+        } else {
           const guestCart = JSON.parse(localStorage.getItem("guestCart")) || [];
+          const cartMap = {};
           guestCart.forEach((item) => {
             cartMap[item.productId] = item.quantity;
           });
+          setCart(cartMap);
+          const { count, total } = calculateTotals(cartMap);
+          setCartCount(count);
+          setTotalPrice(total);
         }
-
-        setCart(cartMap);
-        const { count, total } = calculateTotals(cartMap);
-        setCartCount(count);
-        setTotalPrice(total);
       } catch (err) {
-        console.error("Initialization error:", err);
+        console.error("Cart fetch error:", err);
       }
     };
 
-    if (role !== "admin") fetchData();
-  }, [role, cartUpdated, userIsLoggedIn]);
+    if (role !== "admin") fetchCart();
+  }, [role, cartUpdated, userIsLoggedIn, productMap]);
 
   // Handle cart changes
   const handleCartChange = async (productId, change) => {
@@ -91,14 +111,12 @@ const Home = () => {
 
     try {
       if (!userIsLoggedIn) {
-        // Handle guest cart
-        const product = products.find((p) => p._id === productId);
+        // Guest cart
+        const product = productMap[productId];
         if (!product) return;
 
         let guestCart = JSON.parse(localStorage.getItem("guestCart")) || [];
-        const index = guestCart.findIndex(
-          (item) => item.productId === productId
-        );
+        const index = guestCart.findIndex((item) => item.productId === productId);
 
         if (index > -1) {
           if (newQty > 0) {
@@ -118,7 +136,6 @@ const Home = () => {
 
         localStorage.setItem("guestCart", JSON.stringify(guestCart));
 
-        // Update state
         const updatedCart = { ...cart };
         if (newQty > 0) {
           updatedCart[productId] = newQty;
@@ -131,7 +148,7 @@ const Home = () => {
         setCartCount(count);
         setTotalPrice(total);
       } else {
-        // Handle user cart
+        // User cart
         const res = await axios.post(
           `${import.meta.env.VITE_API_BASE_URL}/cart/add`,
           { productId, quantity: newQty },
@@ -162,7 +179,11 @@ const Home = () => {
     }
   };
 
-  return products.length===0?<ProductsLoaderTemplate/>:(
+  if (loadingProducts) {
+    return <ProductsLoaderTemplate />;
+  }
+
+  return (
     <div>
       <PublicNavbar cartCount={cartCount} totalPrice={totalPrice} />
       {role !== "admin" && (
@@ -171,52 +192,50 @@ const Home = () => {
           <CategoryLinks />
           <CategoryGrid />
 
-          <RelatedProducts
-            products={products}
-            cart={cart}
-            onCartChange={handleCartChange}
-            isLoggedIn={userIsLoggedIn}
-            key={cartUpdated}
-          />
-
-          <ColdDrinksJuices
-            products={products}
-            cart={cart}
-            onCartChange={handleCartChange}
-            isLoggedIn={userIsLoggedIn}
-            key={cartUpdated}
-          />
-
-          <RollingPaperTobacco
-            products={products}
-            cart={cart}
-            onCartChange={handleCartChange}
-            isLoggedIn={userIsLoggedIn}
-            key={cartUpdated}
-          />
-
-          <SnacksAndChips
-            products={products}
-            cart={cart}
-            onCartChange={handleCartChange}
-            isLoggedIn={userIsLoggedIn}
-            key={cartUpdated}
-          />
-
-          <CandiesAndGums
-            products={products}
-            cart={cart}
-            onCartChange={handleCartChange}
-            isLoggedIn={userIsLoggedIn}
-            key={cartUpdated}
-          />
-          <ProductComponent
-            products={products}
-            cart={cart}
-            onCartChange={handleCartChange}
-            cartUpdated={cartUpdated}
-            isLoggedIn={userIsLoggedIn}
-          />
+          <Suspense fallback={<div>Loading...</div>}>
+            <RelatedProducts
+              products={products}
+              cart={cart}
+              onCartChange={handleCartChange}
+              isLoggedIn={userIsLoggedIn}
+              cartUpdated={cartUpdated}
+            />
+            <ColdDrinksJuices
+              products={products}
+              cart={cart}
+              onCartChange={handleCartChange}
+              isLoggedIn={userIsLoggedIn}
+              cartUpdated={cartUpdated}
+            />
+            <RollingPaperTobacco
+              products={products}
+              cart={cart}
+              onCartChange={handleCartChange}
+              isLoggedIn={userIsLoggedIn}
+              cartUpdated={cartUpdated}
+            />
+            <SnacksAndChips
+              products={products}
+              cart={cart}
+              onCartChange={handleCartChange}
+              isLoggedIn={userIsLoggedIn}
+              cartUpdated={cartUpdated}
+            />
+            <CandiesAndGums
+              products={products}
+              cart={cart}
+              onCartChange={handleCartChange}
+              isLoggedIn={userIsLoggedIn}
+              cartUpdated={cartUpdated}
+            />
+            <ProductComponent
+              products={products}
+              cart={cart}
+              onCartChange={handleCartChange}
+              cartUpdated={cartUpdated}
+              isLoggedIn={userIsLoggedIn}
+            />
+          </Suspense>
         </>
       )}
     </div>
