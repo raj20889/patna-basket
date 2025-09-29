@@ -1,3 +1,4 @@
+// Home.jsx
 import React, { useState, useEffect, useMemo, Suspense } from "react";
 import axios from "axios";
 import PublicNavbar from "../components/Navbar/PublicNavbar";
@@ -6,6 +7,7 @@ import CategoryLinks from "../components/CategoryLinks";
 import CategoryGrid from "../components/CategoryGrid";
 import ProductsLoaderTemplate from "./Customer/ProductsLoaderTemplate";
 
+// Lazy load heavy sections
 const RelatedProducts = React.lazy(() => import("../components/RelatedProducts"));
 const ColdDrinksJuices = React.lazy(() => import("../components/ColdDrinksJuices"));
 const RollingPaperTobacco = React.lazy(() => import("../components/RollingPaper&Tobacco"));
@@ -15,29 +17,29 @@ const ProductComponent = React.lazy(() => import("../components/ProductComponent
 
 const Home = () => {
   const [products, setProducts] = useState([]);
-  const [cart, setCart] = useState({});
   const [cartCount, setCartCount] = useState(0);
   const [totalPrice, setTotalPrice] = useState(0);
+  const [cart, setCart] = useState({});
   const [loading, setLoading] = useState({});
   const [cartUpdated, setCartUpdated] = useState(false);
   const [userIsLoggedIn, setUserIsLoggedIn] = useState(false);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const role = localStorage.getItem("role");
 
-  // Check auth status
+  // Check auth status on load
   useEffect(() => {
     const token = localStorage.getItem("token");
     setUserIsLoggedIn(!!token);
   }, []);
 
-  // Product map for fast lookup
+  // Build product map for faster cart calculations
   const productMap = useMemo(() => {
     const map = {};
     products.forEach((p) => (map[p._id] = p));
     return map;
   }, [products]);
 
-  // Helper: calculate totals
+  // Calculate totals from cart state
   const calculateTotals = (cartItems) => {
     const count = Object.values(cartItems).reduce((sum, qty) => sum + qty, 0);
     const total = Object.entries(cartItems).reduce((sum, [productId, qty]) => {
@@ -46,54 +48,63 @@ const Home = () => {
     return { count, total };
   };
 
-  // Fetch products progressively (in background)
+  // Fetch products first
   useEffect(() => {
-    let ignore = false;
     const fetchProducts = async () => {
       try {
         const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/products`);
-        if (!ignore) setProducts(res.data);
+        setProducts(res.data);
       } catch (err) {
         console.error("Products fetch error:", err);
       } finally {
-        if (!ignore) setLoadingProducts(false);
+        setLoadingProducts(false);
       }
     };
     if (role !== "admin") fetchProducts();
-    return () => { ignore = true; };
   }, [role]);
 
-  // Fetch cart (parallel to product fetch)
+  // Fetch cart separately
   useEffect(() => {
     const fetchCart = async () => {
       try {
-        let cartMap = {};
         if (userIsLoggedIn) {
           const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/cart`, {
-            headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
           });
+          const cartMap = {};
           res.data.products?.forEach((item) => {
             cartMap[item.productId._id] = item.quantity;
           });
+          setCart(cartMap);
+          const { count, total } = calculateTotals(cartMap);
+          setCartCount(count);
+          setTotalPrice(total);
         } else {
           const guestCart = JSON.parse(localStorage.getItem("guestCart")) || [];
-          guestCart.forEach((item) => (cartMap[item.productId] = item.quantity));
+          const cartMap = {};
+          guestCart.forEach((item) => {
+            cartMap[item.productId] = item.quantity;
+          });
+          setCart(cartMap);
+          const { count, total } = calculateTotals(cartMap);
+          setCartCount(count);
+          setTotalPrice(total);
         }
-        setCart(cartMap);
-        const { count, total } = calculateTotals(cartMap);
-        setCartCount(count);
-        setTotalPrice(total);
       } catch (err) {
         console.error("Cart fetch error:", err);
       }
     };
+
     if (role !== "admin") fetchCart();
   }, [role, cartUpdated, userIsLoggedIn, productMap]);
 
-  // Handle cart changes (unchanged)
+  // Handle cart changes
   const handleCartChange = async (productId, change) => {
     const currentQty = cart[productId] || 0;
     const newQty = currentQty + change;
+
     if (newQty < 0) return;
 
     setLoading((prev) => ({ ...prev, [productId]: true }));
@@ -108,17 +119,29 @@ const Home = () => {
         const index = guestCart.findIndex((item) => item.productId === productId);
 
         if (index > -1) {
-          if (newQty > 0) guestCart[index].quantity = newQty;
-          else guestCart.splice(index, 1);
+          if (newQty > 0) {
+            guestCart[index].quantity = newQty;
+          } else {
+            guestCart.splice(index, 1);
+          }
         } else if (newQty > 0) {
-          guestCart.push({ productId, name: product.name, price: product.price, image: product.image, quantity: newQty });
+          guestCart.push({
+            productId,
+            name: product.name,
+            price: product.price,
+            image: product.image,
+            quantity: newQty,
+          });
         }
 
         localStorage.setItem("guestCart", JSON.stringify(guestCart));
 
         const updatedCart = { ...cart };
-        if (newQty > 0) updatedCart[productId] = newQty;
-        else delete updatedCart[productId];
+        if (newQty > 0) {
+          updatedCart[productId] = newQty;
+        } else {
+          delete updatedCart[productId];
+        }
 
         setCart(updatedCart);
         const { count, total } = calculateTotals(updatedCart);
@@ -129,12 +152,19 @@ const Home = () => {
         const res = await axios.post(
           `${import.meta.env.VITE_API_BASE_URL}/cart/add`,
           { productId, quantity: newQty },
-          { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
         );
 
         if (res.data.products) {
           const cartMap = {};
-          res.data.products.forEach((item) => (cartMap[item.productId._id] = item.quantity));
+          res.data.products.forEach((item) => {
+            cartMap[item.productId._id] = item.quantity;
+          });
+
           setCart(cartMap);
           const { count, total } = calculateTotals(cartMap);
           setCartCount(count);
@@ -149,6 +179,10 @@ const Home = () => {
     }
   };
 
+  if (loadingProducts) {
+    return <ProductsLoaderTemplate />;
+  }
+
   return (
     <div>
       <PublicNavbar cartCount={cartCount} totalPrice={totalPrice} />
@@ -158,28 +192,44 @@ const Home = () => {
           <CategoryLinks />
           <CategoryGrid />
 
-          {/* Show skeleton loaders while products are coming */}
-          {loadingProducts && <ProductsLoaderTemplate />}
-
-          {/* Lazy load sections independently so first one shows ASAP */}
-          <Suspense fallback={<div>Loading Related Products...</div>}>
-            <RelatedProducts products={products} cart={cart} onCartChange={handleCartChange} isLoggedIn={userIsLoggedIn} cartUpdated={cartUpdated} />
-          </Suspense>
-
-          <Suspense fallback={<div>Loading Cold Drinks...</div>}>
-            <ColdDrinksJuices products={products} cart={cart} onCartChange={handleCartChange} isLoggedIn={userIsLoggedIn} cartUpdated={cartUpdated} />
-          </Suspense>
-
-          <Suspense fallback={<div>Loading Snacks...</div>}>
-            <SnacksAndChips products={products} cart={cart} onCartChange={handleCartChange} isLoggedIn={userIsLoggedIn} cartUpdated={cartUpdated} />
-          </Suspense>
-
-          <Suspense fallback={<div>Loading Candies...</div>}>
-            <CandiesAndGums products={products} cart={cart} onCartChange={handleCartChange} isLoggedIn={userIsLoggedIn} cartUpdated={cartUpdated} />
-          </Suspense>
-
-          <Suspense fallback={<div>Loading All Products...</div>}>
-            <ProductComponent products={products} cart={cart} onCartChange={handleCartChange} cartUpdated={cartUpdated} isLoggedIn={userIsLoggedIn} />
+          <Suspense fallback={<div>Loading...</div>}>
+            <RelatedProducts
+              products={products}
+              cart={cart}
+              onCartChange={handleCartChange}
+              isLoggedIn={userIsLoggedIn}
+              cartUpdated={cartUpdated}
+            />
+            <ColdDrinksJuices
+              products={products}
+              cart={cart}
+              onCartChange={handleCartChange}
+              isLoggedIn={userIsLoggedIn}
+              cartUpdated={cartUpdated}
+            />
+         
+         
+            <SnacksAndChips
+              products={products}
+              cart={cart}
+              onCartChange={handleCartChange}
+              isLoggedIn={userIsLoggedIn}
+              cartUpdated={cartUpdated}
+            />
+            <CandiesAndGums
+              products={products}
+              cart={cart}
+              onCartChange={handleCartChange}
+              isLoggedIn={userIsLoggedIn}
+              cartUpdated={cartUpdated}
+            />
+            <ProductComponent
+              products={products}
+              cart={cart}
+              onCartChange={handleCartChange}
+              cartUpdated={cartUpdated}
+              isLoggedIn={userIsLoggedIn}
+            />
           </Suspense>
         </>
       )}
