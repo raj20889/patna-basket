@@ -207,13 +207,7 @@ const Home = () => {
               isLoggedIn={userIsLoggedIn}
               cartUpdated={cartUpdated}
             />
-            <RollingPaperTobacco
-              products={products}
-              cart={cart}
-              onCartChange={handleCartChange}
-              isLoggedIn={userIsLoggedIn}
-              cartUpdated={cartUpdated}
-            />
+         
             <SnacksAndChips
               products={products}
               cart={cart}
