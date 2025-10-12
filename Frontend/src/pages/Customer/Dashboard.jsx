@@ -13,9 +13,7 @@ const RelatedProducts = lazy(() =>
 const ColdDrinksAndJuices = lazy(() =>
   import("../../components/Customer/ColdDrinksAndJuices")
 );
-const RollingPaperTobacco = lazy(() =>
-  import("../../components/Customer/RollingPaperAndTobacco.jsx")
-);
+
 const AllProducts = lazy(() =>
   import("../../components/Customer/AllProducts")
 );
