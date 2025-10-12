@@ -193,7 +193,7 @@ const Dashboard = () => {
           <Suspense fallback={<ProductsLoaderTemplate />}>
             <RelatedProducts {...sectionProps} />
             <ColdDrinksAndJuices {...sectionProps} />
-            <RollingPaperTobacco {...sectionProps} />
+          
             <SnacksAndChips {...sectionProps} />
             <CandiesAndChocolates {...sectionProps} />
             <h2 className="text-2xl font-bold mb-6">All Products</h2>
