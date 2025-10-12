@@ -41,6 +41,8 @@ const App = () => {
           <Route path="/search" element={<SearchResults />} />
           <Route path="/cart" element={<CartPage />} />
           <Route path="/:category" element={<SubcategoryWithProducts />} />
+          //product details route
+          <Route path="/product/:productId" element={<ProductDetails />} />
 
           {/* Protected Admin Routes */}
           <Route
@@ -151,6 +153,10 @@ const App = () => {
               </PrivateRoute>
             }
           />
+
+
+          //product details route
+
 
           <Route
             path="/c/:category"
