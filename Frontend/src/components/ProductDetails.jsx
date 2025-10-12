@@ -9,7 +9,7 @@ function ProductDetails() {
   useEffect(() => {
     async function fetchProduct() {
       try {
-        const res = await axios.get(`${API_BASE_URL}/products/${id}`);
+        const res = await axios.get(`${API_BASE_URL}/product/${id}`);
         setProduct(res.data);
       } catch (err) {
         console.error("Error fetching product:", err);

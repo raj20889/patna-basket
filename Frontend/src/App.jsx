@@ -28,6 +28,7 @@ import CustomerManager from "./pages/Admin/CustomerManagement";
 import OrderManagement from "./pages/Admin/OrderManagement";
 import NotificationPanel from "./pages/Admin/NotificationPanel";
 import DeliveryManagement from "./pages/Admin/DeliveryManagement";
+import ProductDetails from "./components/ProductDetails.jsx";
 
 const App = () => {
   return (
@@ -42,7 +43,7 @@ const App = () => {
           <Route path="/cart" element={<CartPage />} />
           <Route path="/:category" element={<SubcategoryWithProducts />} />
           //product details route
-          <Route path="/product/:productId" element={<ProductDetails />} />
+          <Route path="/product/:id" element={<ProductDetails />} />
 
           {/* Protected Admin Routes */}
           <Route
