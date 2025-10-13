@@ -9,7 +9,7 @@ function ProductDetails() {
   useEffect(() => {
     async function fetchProduct() {
       try {
-        const res = await axios.get(`${API_BASE_URL}/product/${id}`);
+        const res = await axios.get(`${API_BASE_URL}/products/${id}`);
         setProduct(res.data);
       } catch (err) {
         console.error("Error fetching product:", err);
@@ -19,7 +19,7 @@ function ProductDetails() {
     fetchProduct();
   }, [id]);
 
-  if (!product) return <div>Loading...</div>;
+  if (!product) return <div>Loading.........</div>;
 
   return (
     <div className="p-4 flex flex-col md:flex-row gap-6">
