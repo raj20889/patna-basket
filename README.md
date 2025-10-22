@@ -1,5 +1,5 @@
-````
 
+````
 
 # Patna Basket 🛒
 
@@ -9,10 +9,6 @@
 
 ---
 
-<img width="958" height="443" alt="image" src="https://github.com/user-attachments/assets/3addec17-9b5d-42a4-bfab-7826d58c7e56" />
-<img width="960" height="392" alt="image" src="https://github.com/user-attachments/assets/e066e938-5b66-419c-ab23-34aefbc65ca0" />
-
-<img width="948" height="400" alt="image" src="https://github.com/user-attachments/assets/160f20d9-32d1-403a-8e7b-f2933fbefe9b" />
 
 
 
@@ -45,6 +41,9 @@
 - **Database:** MongoDB  
 - **Real-time:** Socket.IO  
 - **Maps & Location:** Google Maps API
+
+## Project Structure
+
 
 ---
 ├── .github/
