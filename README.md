@@ -44,25 +44,21 @@
 - **Maps & Location:** Google Maps API
 
 ---
-
-## Project Structure
-
-├── .github/ # Optional: GitHub Actions / CI workflows
+├── .github/
 │ └── workflows/
 │ └── deploy.yml
-├── public/ # Static assets served directly
+├── public/
 │ ├── index.html
 │ └── logo.png
-├── src/ # Main application source code
-│ ├── api/ # API service definitions
+├── src/
+│ ├── api/
 │ │ ├── OrderService.js
 │ │ ├── product.js
 │ │ └── users.js
-│ ├── assets/ # Images, icons, fonts
+│ ├── assets/
 │ │ ├── Banner/
-│ │ │ └── ...
 │ │ └── logo.png
-│ ├── components/ # Reusable UI components
+│ ├── components/
 │ │ ├── Admin/
 │ │ │ └── ...
 │ │ ├── Customer/
@@ -145,6 +141,7 @@
 └── vercel.json
 
 Backend
+
 ├── server/
 │ ├── config/
 │ │ └── db.js
@@ -179,8 +176,7 @@ Backend
 │ ├── package.json
 │ ├── package-lock.json
 │ └── server.js
-└── docker-compose.yml # Optional
-
+└── docker-compose.yml
 ---
 
 ## Installation
