@@ -5,7 +5,7 @@
 **Patna Basket** is a Quick Commerce grocery delivery platform based in Indrapuri, Patna. It allows users to order groceries online and get them delivered within **30 minutes**. The platform also supports self-pickup and local delivery via WhatsApp notifications.
 
 ---
-Photos
+
 <img width="958" height="443" alt="image" src="https://github.com/user-attachments/assets/3addec17-9b5d-42a4-bfab-7826d58c7e56" />
 <img width="960" height="392" alt="image" src="https://github.com/user-attachments/assets/e066e938-5b66-419c-ab23-34aefbc65ca0" />
 
