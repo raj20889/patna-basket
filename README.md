@@ -1,17 +1,18 @@
-
-````
-
 # Patna Basket 🛒
 
 [Live Demo](https://patna-basket.vercel.app/)
 
-**Patna Basket** is a Quick Commerce grocery delivery platform based in Indrapuri, Patna. It allows users to order groceries online and get them delivered within **30 minutes**. The platform also supports self-pickup and local delivery via WhatsApp notifications.
+**Patna Basket** is a Quick Commerce grocery delivery platform based in Indrapuri, Patna. Users can order groceries online and get them delivered within **30 minutes**. The platform also supports self-pickup and local delivery via WhatsApp notifications.
 
 ---
 
+## Screenshots
 
+<img width="958" height="443" alt="Homepage" src="https://github.com/user-attachments/assets/3addec17-9b5d-42a4-bfab-7826d58c7e56" />
+<img width="960" height="392" alt="Products" src="https://github.com/user-attachments/assets/e066e938-5b66-419c-ab23-34aefbc65ca0" />
+<img width="948" height="400" alt="Cart & Checkout" src="https://github.com/user-attachments/assets/160f20d9-32d1-403a-8e7b-f2933fbefe9b" />
 
-
+---
 
 ## Features
 
@@ -41,6 +42,14 @@
 - **Database:** MongoDB  
 - **Real-time:** Socket.IO  
 - **Maps & Location:** Google Maps API
+
+---
+
+## Project Structure
+
+### Frontend (`frontend/`)
+
+
 
 ## Project Structure
 
@@ -193,4 +202,3 @@ cd frontend
 npm install
 npm run dev
 
-````
