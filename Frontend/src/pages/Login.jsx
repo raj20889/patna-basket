@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 
@@ -6,6 +6,7 @@ const Login = () => {
   const [credentials, setCredentials] = useState({ phone: '', password: '' })
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
+  const googleButtonRef = useRef(null)
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -71,6 +72,70 @@ const Login = () => {
     setLoading(false)
   }
 
+  // Handle Google ID token response from Google Identity Services
+  const handleGoogleCredential = async (credentialResponse) => {
+    try {
+      const idToken = credentialResponse?.credential
+      if (!idToken) return
+
+      const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/auth/google`, { idToken })
+
+      const token = res.data.token
+      const user = res.data.user
+
+      localStorage.setItem('token', token)
+      localStorage.setItem('user', JSON.stringify(user))
+      localStorage.setItem('role', user.role)
+
+      // Redirect same as regular login
+      if (user.role === 'admin') {
+        navigate('/admin/dashboard')
+      } else if (user.role === 'delivery') {
+        navigate('/delivery/orders')
+      } else {
+        navigate('/Customer/dashboard')
+      }
+    } catch (err) {
+      console.error('Google login failed', err)
+      alert(err?.response?.data?.msg || 'Google login failed')
+    }
+  }
+
+  // Initialize Google button
+  useEffect(() => {
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
+    if (!clientId) {
+      console.warn('VITE_GOOGLE_CLIENT_ID is not set. Google Sign-In will not be initialized.')
+      return
+    }
+
+    const tryInit = () => {
+      if (window.google && window.google.accounts && window.google.accounts.id) {
+        window.google.accounts.id.initialize({
+          client_id: clientId,
+          callback: handleGoogleCredential,
+        })
+
+        if (googleButtonRef.current) {
+          window.google.accounts.id.renderButton(googleButtonRef.current, { theme: 'outline', size: 'large' })
+        }
+      }
+    }
+
+    // In case the script hasn't loaded yet, poll briefly
+    if (!window.google) {
+      const interval = setInterval(() => {
+        if (window.google) {
+          tryInit()
+          clearInterval(interval)
+        }
+      }, 200)
+      return () => clearInterval(interval)
+    }
+
+    tryInit()
+  }, [])
+
   return (
     <div className="max-w-md mx-auto mt-10 p-6 bg-white shadow-lg rounded-md">
       <h2 className="text-2xl font-bold text-center mb-6">Login</h2>
@@ -123,6 +188,17 @@ const Login = () => {
           </button>
         </div>
       </form>
+
+      <div className="mt-6 text-center">
+        <div ref={googleButtonRef} />
+        {!import.meta.env.VITE_GOOGLE_CLIENT_ID && (
+          <div className="mt-3 text-sm text-gray-500">
+            Google sign-in is not configured for this environment. To enable it, add
+            <code className="mx-1 px-1 bg-gray-100 rounded">VITE_GOOGLE_CLIENT_ID</code> to
+            <strong className="mx-1">Frontend/.env.local</strong> and restart the dev server.
+          </div>
+        )}
+      </div>
     </div>
   )
 }

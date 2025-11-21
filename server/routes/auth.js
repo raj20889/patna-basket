@@ -5,6 +5,9 @@ const User = require('../models/User')
 
 const router = express.Router()
 
+const { OAuth2Client } = require('google-auth-library')
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
+
 // Register
 
 
@@ -57,6 +60,48 @@ router.post('/login', async (req, res) => {
         res.status(200).json({ token, user })
     } catch (err) {
         res.status(500).json(err)
+    }
+})
+
+
+// Google OAuth (frontend sends idToken from Google Identity Services)
+router.post('/google', async (req, res) => {
+    try {
+        const { idToken } = req.body
+        if (!idToken) return res.status(400).json({ msg: 'ID token required' })
+
+        const ticket = await googleClient.verifyIdToken({ idToken, audience: process.env.GOOGLE_CLIENT_ID })
+        const payload = ticket.getPayload()
+        const { sub: googleId, email, name, picture } = payload
+
+        // Try to find existing user by googleId or email
+        let user = await User.findOne({ googleId })
+        if (!user && email) user = await User.findOne({ email })
+
+        if (!user) {
+            // Create a placeholder phone and a random password hash to satisfy schema
+            const randomPassword = Math.random().toString(36).slice(-8)
+            const hashPass = await bcrypt.hash(randomPassword, 10)
+
+            const phonePlaceholder = `google_${googleId}`
+
+            const newUser = new User({
+                name: name || 'Google User',
+                email,
+                googleId,
+                phone: phonePlaceholder,
+                password: hashPass,
+                role: 'customer',
+            })
+
+            user = await newUser.save()
+        }
+
+        const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1h' })
+        res.status(200).json({ token, user })
+    } catch (err) {
+        console.error('Google auth error:', err)
+        res.status(500).json({ msg: 'Google auth failed' })
     }
 })
 
