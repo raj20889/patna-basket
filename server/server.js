@@ -2,6 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const compression = require('compression');
 const app = express();
 const authRoute = require('./routes/auth');
 const productRoute = require('./routes/product');
@@ -20,12 +21,31 @@ const userRoutes = require('./routes/users');
 
 dotenv.config();
 
+// Enable gzip/brotli compression to reduce payload sizes
+app.use(compression());
+
 // Configure CORS to allow requests from your frontend's domain
-// Replace 'https://your-frontend-domain.com' with the actual domain of your deployed frontend
-app.use(cors({
-  origin: 'https://patna-basket.vercel.app', 
-  credentials: true // if you are sending cookies/authentication headers
-}));
+// Use FRONTEND_URL env to keep deployment behavior unchanged and allow common local dev origins
+const DEPLOYED_FRONTEND = process.env.FRONTEND_URL || 'https://patna-basket.vercel.app';
+const DEV_ORIGINS = [
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+];
+const ALLOWED_ORIGINS = new Set([DEPLOYED_FRONTEND, ...DEV_ORIGINS]);
+
+app.use(
+    cors({
+        origin: (origin, callback) => {
+            // Allow server-to-server or CLI requests where origin is undefined
+            if (!origin) return callback(null, true);
+            if (ALLOWED_ORIGINS.has(origin)) return callback(null, true);
+            return callback(new Error('CORS policy: Origin not allowed'));
+        },
+        credentials: true, // if you are sending cookies/authentication headers
+    })
+);
 
 app.use(express.json());
 
@@ -49,7 +69,8 @@ app.get('/', (req, res) => {
     res.send('E-Commerce API Running...');
 });
 
-const PORT = process.env.PORT;
+// Use a sensible default port for local development if PORT is not set
+const PORT = process.env.PORT || 5000;
 
 mongoose.connect(process.env.MONGO_URL)
     .then(() => {

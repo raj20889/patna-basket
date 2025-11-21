@@ -104,12 +104,16 @@ const ProductComponent = ({
                       {product.discountPercentage}% OFF
                     </div>
                   )}
-                <img 
-  src={product.image || '/placeholder-product.jpg'} 
-  alt={product.name}
-  className="h-full w-full object-contain"
-
-/>
+                <img
+                  src={product.image || '/placeholder-product.jpg'}
+                  alt={product.name}
+                  loading="lazy"
+                  decoding="async"
+                  className="h-full w-full object-contain"
+                  onError={(e) => {
+                    e.target.src = '/placeholder-product.jpg';
+                  }}
+                />
                 </div>
                 
                 <div className="p-2">
