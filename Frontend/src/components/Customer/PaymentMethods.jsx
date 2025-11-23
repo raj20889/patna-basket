@@ -1,3 +1,5 @@
+import RazorpayOption from './RazorpayOption';
+
 const PaymentMethods = ({ selectedPayment, setSelectedPayment }) => {
   return (
     <div className="lg:w-2/3">
@@ -32,6 +34,12 @@ const PaymentMethods = ({ selectedPayment, setSelectedPayment }) => {
               </div>
             </div>
           </div>
+
+          {/* Razorpay Option */}
+          <RazorpayOption
+            selectedPayment={selectedPayment}
+            setSelectedPayment={setSelectedPayment}
+          />
 
           {/* Credit/Debit Card Option */}
           <div 

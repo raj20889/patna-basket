@@ -24,7 +24,7 @@ const CustomerOrders = () => {
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const response = await getUserOrders(); // Use the new function
+        const response = await getUserOrders({ page: 1, limit: 10, status: activeFilter === 'all' ? undefined : activeFilter }); // Use the new function
         
         if (response.success && Array.isArray(response.orders)) {
           setOrders(response.orders);
@@ -41,7 +41,7 @@ const CustomerOrders = () => {
     };
 
     fetchOrders();
-  }, []);
+  }, [activeFilter]);
 
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';

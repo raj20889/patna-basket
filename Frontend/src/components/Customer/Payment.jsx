@@ -198,6 +198,12 @@ const Payment = () => {
       return;
     }
 
+    if (!cartItems || cartItems.length === 0) {
+      toast.error('Your cart is empty. Please add items before placing an order.');
+      navigate('/cart'); // Redirect to cart if empty
+      return;
+    }
+
 
   
     try {
@@ -222,6 +228,7 @@ const Payment = () => {
   paymentStatus: 'pending'
 };
       console.log("Order payload to backend:", orderData); // Updated console.log message as per instruction
+      console.log("Cart items before order submission:", cartItems);
 
       const response = await axios.post(`${API_BASE_URL}/user-orders`, orderData, {
         headers: {
@@ -272,28 +279,13 @@ const Payment = () => {
             return;
           }
 
-          // Create Razorpay order on backend
-          const { data: rzpData } = await axios.post(`${API_BASE_URL}/payment/razorpay/create-order`, {
-            orderId: response.data.orderId,
-          }, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-          });
-
-          if (!rzpData.success) {
-            toast.error('Failed to initiate Razorpay payment.');
-            return;
-          }
-
           const options = {
-            key: rzpData.key, // Razorpay Key ID
-            amount: rzpData.amount, // in paise
-            currency: rzpData.currency,
+            key: response.data.key, // Razorpay Key ID
+            amount: response.data.amount, // in paise
+            currency: response.data.currency,
             name: 'Patna Basket',
             description: 'Order Payment',
-            order_id: rzpData.razorpayOrderId,
+            order_id: response.data.razorpayOrderId,
             handler: async function (paymentResponse) {
               try {
                 // Verify payment on backend

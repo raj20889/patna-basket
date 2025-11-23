@@ -17,7 +17,7 @@ const OrderSchema = new mongoose.Schema({
   },
   paymentMethod: {
     type: String,
-    enum: ['COD', 'CARD', 'UPI', 'NETBANKING'],
+    enum: ['COD', 'CARD', 'UPI', 'NETBANKING', 'RAZORPAY'],
     required: [true, 'Payment method is required']
   },
   // Supporting both field names
