@@ -230,19 +230,6 @@ const Payment = () => {
         },
       });
   
-      // Then clear the cart
-      try {
-        await axios.delete(`${API_BASE_URL}/cart`, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
-        
-        setCartItems([]);
-      } catch (clearCartError) {
-        console.warn('Cart clearing failed:', clearCartError);
-      }
-  
       // Redirect user
       if (selectedPayment === 'COD') {
         toast.success('Order placed successfully! Pay when your order arrives');
@@ -252,8 +239,120 @@ const Payment = () => {
             paymentStatus: 'pending'
           } 
         });
-      } else {
-        window.location.href = response.data.paymentUrl;
+        // Clear cart only after successful COD order placement
+        try {
+          await axios.delete(`${API_BASE_URL}/cart`, {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          });
+          setCartItems([]);
+        } catch (clearCartError) {
+          console.warn('Cart clearing failed:', clearCartError);
+        }
+      } else if (selectedPayment === 'RAZORPAY') {
+        try {
+          // Dynamically load Razorpay script if not already loaded
+          const loadRazorpayScript = () => {
+            return new Promise((resolve) => {
+              if (document.querySelector('script[src="https://checkout.razorpay.com/v1/checkout.js"]')) {
+                return resolve(true);
+              }
+              const script = document.createElement('script');
+              script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+              script.onload = () => resolve(true);
+              script.onerror = () => resolve(false);
+              document.body.appendChild(script);
+            });
+          };
+
+          const scriptLoaded = await loadRazorpayScript();
+          if (!scriptLoaded) {
+            toast.error('Failed to load Razorpay SDK. Please try again.');
+            return;
+          }
+
+          // Create Razorpay order on backend
+          const { data: rzpData } = await axios.post(`${API_BASE_URL}/payment/razorpay/create-order`, {
+            orderId: response.data.orderId,
+          }, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          });
+
+          if (!rzpData.success) {
+            toast.error('Failed to initiate Razorpay payment.');
+            return;
+          }
+
+          const options = {
+            key: rzpData.key, // Razorpay Key ID
+            amount: rzpData.amount, // in paise
+            currency: rzpData.currency,
+            name: 'Patna Basket',
+            description: 'Order Payment',
+            order_id: rzpData.razorpayOrderId,
+            handler: async function (paymentResponse) {
+              try {
+                // Verify payment on backend
+                await axios.post(`${API_BASE_URL}/payment/razorpay/verify`, {
+                  orderId: response.data.orderId,
+                  razorpayOrderId: paymentResponse.razorpay_order_id,
+                  razorpayPaymentId: paymentResponse.razorpay_payment_id,
+                  razorpaySignature: paymentResponse.razorpay_signature,
+                }, {
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                  },
+                });
+
+                toast.success('Payment successful!');
+                console.log('Order ID before navigation:', response.data.orderId);
+                navigate('/order-confirmation', {
+                  state: {
+                    orderId: response.data.orderId,
+                    paymentStatus: 'paid',
+                  },
+                });
+                // Clear cart only after successful Razorpay payment
+                try {
+                  await axios.delete(`${API_BASE_URL}/cart`, {
+                    headers: {
+                      Authorization: `Bearer ${token}`
+                    }
+                  });
+                  setCartItems([]);
+                } catch (clearCartError) {
+                  console.warn('Cart clearing failed:', clearCartError);
+                }
+              } catch (verifyErr) {
+                console.error('Payment verification failed:', verifyErr);
+                toast.error('Payment verification failed. Please contact support.');
+                navigate('/orders');
+              }
+            },
+            prefill: {
+              name: user?.name || '',
+              email: user?.email || '',
+              contact: user?.phone || '',
+            },
+            theme: {
+              color: '#3399cc',
+            },
+          };
+
+          const rzp = new window.Razorpay(options);
+          rzp.on('payment.failed', function (resp) {
+            toast.error(resp.error.description || 'Payment failed');
+          });
+          rzp.open();
+        } catch (paymentErr) {
+          console.error('Razorpay payment error:', paymentErr);
+          toast.error('Failed to process payment. Please try again.');
+        }
       }
   
     } catch (err) {
