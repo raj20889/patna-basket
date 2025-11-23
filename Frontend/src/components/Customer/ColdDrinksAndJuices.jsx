@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import ProductCard from "./ProductCard";
 
-const ColdDrinksAndJuices = ({ products, cart, loadingProduct, handleAddToCart, handleChange }) => {
+const ColdDrinksAndJuices = ({ products, cart, productLoadingStates, handleAddToCart, handleChange }) => {
   const navigate = useNavigate();
 
   // ✅ Filter cold drinks and juices products
@@ -47,7 +47,7 @@ const ColdDrinksAndJuices = ({ products, cart, loadingProduct, handleAddToCart, 
               key={product._id}
               product={product}
               quantity={cart[product._id] || 0}
-              isLoading={loadingProduct === product._id}
+              isProductLoading={productLoadingStates[product._id] || false}
               handleAddToCart={handleAddToCart}
               handleChange={handleChange}
             />

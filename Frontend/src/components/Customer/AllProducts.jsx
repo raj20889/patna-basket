@@ -4,7 +4,7 @@ import ProductCard from "./ProductCard";
 const AllProducts = ({
   products = [],
   cart = {},
-  loadingProduct,
+  productLoadingStates,
   handleAddToCart,
   handleChange,
 }) => {
@@ -139,7 +139,7 @@ const AllProducts = ({
               key={product._id}
               product={product}
               quantity={cart[product._id] || 0}
-              isLoading={loadingProduct === product._id} // ✅ same as RelatedProducts
+              isProductLoading={productLoadingStates[product._id] || false}
               handleAddToCart={handleAddToCart}
               handleChange={handleChange}
             />

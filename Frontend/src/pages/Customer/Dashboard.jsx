@@ -31,7 +31,7 @@ const Dashboard = () => {
   const [cartUpdated, setCartUpdated] = useState(false);
   const [cartCount, setCartCount] = useState(0);
   const [cartTotal, setCartTotal] = useState(0);
-  const [loadingProduct, setLoadingProduct] = useState(null);
+  const [productLoadingStates, setProductLoadingStates] = useState({});
 
   // Fetch products and cart
   const fetchData = async () => {
@@ -78,7 +78,7 @@ const Dashboard = () => {
 
   // Update cart API
   const updateCart = async (productId, newQuantity) => {
-    setLoadingProduct(productId);
+    setProductLoadingStates(prev => ({ ...prev, [productId]: true }));
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
@@ -132,7 +132,7 @@ const Dashboard = () => {
       console.error("Error updating cart", err);
       return false;
     } finally {
-      setLoadingProduct(null);
+      setProductLoadingStates(prev => ({ ...prev, [productId]: false }));
     }
   };
 
@@ -166,7 +166,7 @@ const Dashboard = () => {
   const sectionProps = {
     products,
     cart: cartItems,
-    loadingProduct,
+    productLoadingStates,
     handleAddToCart,
     handleChange: (productId, change) =>
       change === 1 ? handleIncrease(productId) : handleDecrease(productId),

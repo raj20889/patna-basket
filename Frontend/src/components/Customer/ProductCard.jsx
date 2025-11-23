@@ -8,6 +8,7 @@ const ProductCard = ({
   handleAddToCart,
   handleChange,
 }) => {
+  console.log(`Product ${product._id} isProductLoading: ${isProductLoading}`);
   const navigate = useNavigate();
 
   return (
