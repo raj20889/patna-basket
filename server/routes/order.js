@@ -5,6 +5,14 @@ const Address = require('../models/Address');
 const Product = require('../models/Product');
 const verifyToken = require('../middlewares/verifyToken');
 const { check, validationResult } = require('express-validator');
+const Razorpay = require('razorpay');
+const { RAZORPAY } = require('../config/payment');
+
+// Initialize Razorpay instance
+const razorpay = new Razorpay({
+  key_id: RAZORPAY.KEY_ID,
+  key_secret: RAZORPAY.KEY_SECRET,
+});
 
 // Create new order with validation
 router.post(
@@ -83,7 +91,7 @@ router.post(
         grandTotal: parseFloat(grandTotal),
         orderNotes,
         status: paymentMethod === 'COD' ?  'confirmed' :  'pending_payment',
-        paymentStatus: paymentMethod === 'COD' ? 'pending':'completed'  
+        paymentStatus: paymentMethod === 'COD' ? 'pending':'pending'  
       });
 
       await newOrder.save();
@@ -102,8 +110,19 @@ router.post(
       };
 
       if (paymentMethod !== 'COD') {
-        // In a real app, generate a real payment URL
-        response.paymentUrl = await generatePaymentGatewayUrl(newOrder._id, newOrder.grandTotal);
+        const amountInPaise = Math.round((newOrder.grandTotal || 0) * 100);
+        const rzpOrder = await razorpay.orders.create({
+          amount: amountInPaise,
+          currency: 'INR',
+          receipt: String(newOrder._id),
+        });
+        newOrder.razorpayOrderId = rzpOrder.id;
+        await newOrder.save();
+
+        response.razorpayOrderId = rzpOrder.id;
+        response.amount = rzpOrder.amount;
+        response.currency = rzpOrder.currency;
+        response.key = RAZORPAY.KEY_ID;
       }
 
       res.status(201).json(response);
