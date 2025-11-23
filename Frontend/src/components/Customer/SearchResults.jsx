@@ -12,7 +12,7 @@ const SearchResults = () => {
     const [cartTotal, setCartTotal] = useState(0);
     const [cartItems, setCartItems] = useState([]);
     const [cartUpdated, setCartUpdated] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
+    const [productLoadingStates, setProductLoadingStates] = useState({});
     const location = useLocation();
     const navigate = useNavigate();
     const token = localStorage.getItem('token');
@@ -56,7 +56,7 @@ const SearchResults = () => {
 
     // Unified cart update function
     const handleCartChange = async (productId, change) => {
-        setIsLoading(true);
+        setProductLoadingStates(prev => ({ ...prev, [productId]: true }));
         try {
             if (token) {
                 // Calculate new quantity
@@ -75,7 +75,6 @@ const SearchResults = () => {
 
                 if (response.data.msg === 'Cart updated successfully') {
                     await fetchCart();
-                    setCartUpdated(prev => !prev);
                 }
             } else {
                 // Guest cart handling
@@ -107,7 +106,7 @@ const SearchResults = () => {
             console.error('Cart update error:', err);
             alert('Failed to update cart. Please try again.');
         } finally {
-            setIsLoading(false);
+            setProductLoadingStates(prev => ({ ...prev, [productId]: false }));
         }
     };
 
@@ -205,7 +204,7 @@ const SearchResults = () => {
                             )?.quantity || 0}
                             handleAddToCart={handleAddToCart}
                             handleChange={handleChange}
-                         
+                            isProductLoading={productLoadingStates[product._id] || false}
                             isAuthenticated={!!token}
                         />
                     ))}

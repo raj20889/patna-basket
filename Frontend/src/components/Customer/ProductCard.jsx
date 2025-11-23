@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 const ProductCard = ({
   product,
   quantity,
-  isLoading,
+  isProductLoading,
   handleAddToCart,
   handleChange,
 }) => {
@@ -73,12 +73,12 @@ const ProductCard = ({
                   e.stopPropagation();
                   handleAddToCart(product._id);
                 }}
-                disabled={isLoading}
+                disabled={isProductLoading}
                 className={`bg-blue-50 border-green-600 text-green-600 text-xs font-bold px-4 py-1.5 rounded hover:bg-blue-100 ${
-                  isLoading ? "opacity-50 cursor-not-allowed" : ""
+                  isProductLoading ? "opacity-50 cursor-not-allowed" : ""
                 }`}
               >
-                {isLoading ? (
+                {isProductLoading ? (
                   <div className="h-3 w-8 bg-gray-300 animate-pulse rounded"></div>
                 ) : (
                   "ADD"
@@ -90,7 +90,7 @@ const ProductCard = ({
               className="flex items-center space-x-2 bg-green-600 rounded px-2 py-1"
               onClick={(e) => e.stopPropagation()}
             >
-              {isLoading ? (
+              {isProductLoading ? (
                 <>
                   <div className="h-4 w-4 bg-gray-300 animate-pulse rounded"></div>
                   <div className="h-4 w-6 bg-gray-300 animate-pulse rounded"></div>
@@ -100,7 +100,7 @@ const ProductCard = ({
                 <>
                   <button
                     onClick={() => handleChange(product._id, -1)}
-                    disabled={isLoading}
+                    disabled={isProductLoading}
                     className="text-white font-bold"
                   >
                     -
@@ -110,7 +110,7 @@ const ProductCard = ({
                   </span>
                   <button
                     onClick={() => handleChange(product._id, 1)}
-                    disabled={isLoading}
+                    disabled={isProductLoading}
                     className="text-white font-bold"
                   >
                     +

@@ -289,6 +289,12 @@ const Payment = () => {
             handler: async function (paymentResponse) {
               try {
                 // Verify payment on backend
+                console.log('Verifying payment with:', {
+                  orderId: response.data.orderId,
+                  razorpayOrderId: paymentResponse.razorpay_order_id,
+                  razorpayPaymentId: paymentResponse.razorpay_payment_id,
+                  razorpaySignature: paymentResponse.razorpay_signature,
+                });
                 await axios.post(`${API_BASE_URL}/payment/razorpay/verify`, {
                   orderId: response.data.orderId,
                   razorpayOrderId: paymentResponse.razorpay_order_id,
