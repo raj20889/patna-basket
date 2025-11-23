@@ -5,6 +5,8 @@ import axios from 'axios';
 const CartPage = () => {
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [productLoadingStates, setProductLoadingStates] = useState({});
+  const [proceedLoading, setProceedLoading] = useState(false);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [selectedTip, setSelectedTip] = useState(0); // Default tip set to 0
   const [donationSelected, setDonationSelected] = useState(true);
@@ -119,6 +121,7 @@ const CartPage = () => {
   }, [token, cartItems, selectedTip, donationSelected, cartTotals.itemsTotal]);
 
   const updateQuantity = async (productId, newQuantity) => {
+    setProductLoadingStates(prev => ({ ...prev, [productId]: true }));
     try {
       if (!token) {
         const updatedCart = cartItems.map(item => 
@@ -148,6 +151,8 @@ const CartPage = () => {
       }
     } catch (err) {
       console.error('Error updating cart:', err);
+    } finally {
+      setProductLoadingStates(prev => ({ ...prev, [productId]: false }));
     }
   };
 
@@ -167,11 +172,16 @@ const CartPage = () => {
   };
 
   const handleProceedToCheckout = async () => {
-    if (!token) {
-      setShowLoginPrompt(true);
-    } else {
-      await updateCartCharges(selectedTip, donationSelected);
-      navigate('/checkout');
+    setProceedLoading(true);
+    try {
+      if (!token) {
+        setShowLoginPrompt(true);
+      } else {
+        await updateCartCharges(selectedTip, donationSelected);
+        navigate('/checkout');
+      }
+    } finally {
+      setProceedLoading(false);
     }
   };
 
@@ -242,13 +252,21 @@ const CartPage = () => {
                         <button 
                           onClick={() => updateQuantity(item.productId, item.quantity - 1)}
                           className="px-3 py-1 text-gray-600 hover:bg-gray-100 transition-colors"
+                          disabled={productLoadingStates[item.productId]}
                         >
                           -
                         </button>
-                        <span className="px-2 text-gray-700">{item.quantity}</span>
+                        <span className="px-2 text-gray-700">
+                          {productLoadingStates[item.productId] ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-blue-500"></div>
+                          ) : (
+                            item.quantity
+                          )}
+                        </span>
                         <button 
                           onClick={() => updateQuantity(item.productId, item.quantity + 1)}
                           className="px-3 py-1 text-gray-600 hover:bg-gray-100 transition-colors"
+                          disabled={productLoadingStates[item.productId]}
                         >
                           +
                         </button>
@@ -419,13 +437,20 @@ const CartPage = () => {
               <button
                 onClick={handleProceedToCheckout}
                 className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex justify-between items-center px-6"
+                disabled={proceedLoading}
               >
                 <span className="text-left">
                   <span className="block text-sm">Total</span>
                   <span className="font-bold">₹{cartTotals.grandTotal.toFixed(2)}</span>
                 </span>
                 <span className="flex items-center">
-                  Proceed <span className="ml-2 text-xl">→</span>
+                  {proceedLoading ? (
+                    <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-blue-500"></div>
+                  ) : (
+                    <>
+                      Proceed <span className="ml-2 text-xl">→</span>
+                    </>
+                  )}
                 </span>
               </button>
             </div>
