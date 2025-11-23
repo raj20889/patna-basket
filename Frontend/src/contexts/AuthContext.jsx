@@ -39,7 +39,23 @@ export const AuthProvider = ({ children }) => {
       api.defaults.headers.common['Authorization'] = `Bearer ${res.data.token}`;
       setUser(res.data.user);
       
-      return res.data.user;
+      const user = res.data.user;
+
+      // Merge guest cart if it exists
+      const guestCart = JSON.parse(localStorage.getItem('guestCart')) || [];
+      if (guestCart.length > 0) {
+        try {
+          await api.post('/cart/merge', { guestCart });
+          localStorage.removeItem('guestCart');
+          window.dispatchEvent(new Event('storage')); // Notify other components about cart change
+          window.dispatchEvent(new CustomEvent('cartUpdated'));
+        } catch (mergeErr) {
+          console.error('Failed to merge guest cart:', mergeErr);
+          // Optionally, handle merge error (e.g., notify user, retry)
+        }
+      }
+      
+      return user;
     } catch (err) {
       throw err;
     }

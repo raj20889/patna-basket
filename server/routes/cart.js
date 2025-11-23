@@ -198,4 +198,65 @@ router.delete('/', verifyToken, async (req, res) => {
     }
 });
 
+// Merge guest cart with user cart
+router.post('/merge', verifyToken, async (req, res) => {
+    const { guestCart } = req.body;
+
+    if (!guestCart || !Array.isArray(guestCart)) {
+        return res.status(400).json({ msg: 'Invalid guest cart data' });
+    }
+
+    try {
+        let cart = await Cart.findOne({ userId: req.user.id });
+
+        if (!cart) {
+            // If user has no cart, create one from guest cart
+            cart = new Cart({
+                userId: req.user.id,
+                products: [],
+                deliveryCharge: 0,
+                handlingCharge: 2,
+                tipAmount: 0,
+                donationAmount: 0
+            });
+        }
+
+        for (const guestItem of guestCart) {
+            const { productId, quantity } = guestItem;
+            if (!productId || quantity === undefined) continue; // Skip invalid items
+
+            const itemIndex = cart.products.findIndex(p => p.productId.toString() === productId);
+
+            if (itemIndex > -1) {
+                // Update quantity if product already in cart
+                cart.products[itemIndex].quantity += quantity;
+            } else {
+                // Add new product to cart
+                cart.products.push({ productId, quantity });
+            }
+        }
+
+        // Recalculate totals with populated products
+        const { itemsTotal, populatedProducts } = await calculateCartTotals(cart.products);
+        cart.grandTotal = itemsTotal + cart.deliveryCharge + cart.handlingCharge + cart.tipAmount + cart.donationAmount;
+
+        await cart.save();
+
+        return res.status(200).json({
+            msg: 'Guest cart merged successfully',
+            products: populatedProducts,
+            itemsTotal,
+            deliveryCharge: cart.deliveryCharge,
+            handlingCharge: cart.handlingCharge,
+            tipAmount: cart.tipAmount,
+            donationAmount: cart.donationAmount,
+            grandTotal: cart.grandTotal
+        });
+
+    } catch (error) {
+        console.error('Cart Merge Error:', error);
+        return res.status(500).json({ msg: 'Server error' });
+    }
+});
+
 module.exports = router;
