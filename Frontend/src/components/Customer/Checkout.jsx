@@ -15,6 +15,7 @@ const Checkout = () => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [paymentLoading, setPaymentLoading] = useState(false);
   const [addresses, setAddresses] = useState([]);
   const navigate = useNavigate();
 
@@ -109,7 +110,7 @@ const Checkout = () => {
       showNotification('Please select an address', 'error');
       return;
     }
-  
+    setPaymentLoading(true);
     try {
       // Get the selected address from local state first
       let address = addresses.find(addr => addr._id === selectedAddress);
@@ -174,6 +175,8 @@ const Checkout = () => {
           } 
         });
       }
+    } finally {
+      setPaymentLoading(false);
     }
   };
 
@@ -241,10 +244,15 @@ const Checkout = () => {
         <div className="fixed bottom-0 left-0 right-0 bg-white p-4 shadow-lg border-t border-gray-200">
           {selectedAddress ? (
             <button 
-              className="w-full bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 text-lg font-medium transition-colors"
+              className="w-full bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 text-lg font-medium transition-colors flex items-center justify-center"
               onClick={proceedToPayment}
+              disabled={paymentLoading}
             >
-              Proceed to Payment
+              {paymentLoading ? (
+                <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-white"></div>
+              ) : (
+                "Proceed to Payment"
+              )}
             </button>
           ) : (
             <button 
