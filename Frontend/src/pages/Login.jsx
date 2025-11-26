@@ -87,6 +87,31 @@ const Login = () => {
       localStorage.setItem('user', JSON.stringify(user))
       localStorage.setItem('role', user.role)
 
+      // ✅ Sync guestCart to logged-in user's cart
+      const guestCart = JSON.parse(localStorage.getItem('guestCart')) || []
+
+      if (guestCart.length > 0) {
+        for (const item of guestCart) {
+          await axios.post(
+            `${import.meta.env.VITE_API_BASE_URL}/cart/add`,
+            {
+              productId: item.productId,
+              quantity: item.quantity,
+            },
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+              },
+            }
+          )
+        }
+
+        // ✅ Clear guestCart after syncing
+        localStorage.removeItem('guestCart')
+        console.log("Guest cart synced to user cart.")
+      }
+
       // Redirect same as regular login
       if (user.role === 'admin') {
         navigate('/admin/dashboard')

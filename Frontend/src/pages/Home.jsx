@@ -1,5 +1,5 @@
 // Home.jsx
-import React, { useState, useEffect, useMemo, Suspense } from "react";
+import React, { useState, useEffect, useMemo, useCallback, Suspense } from "react";
 import axios from "axios";
 import PublicNavbar from "../components/Navbar/PublicNavbar";
 import BannerComponent from "../components/BannerComponent";
@@ -97,8 +97,8 @@ const Home = () => {
       }
     };
 
-    if (role !== "admin") fetchCart();
-  }, [role, cartUpdated, userIsLoggedIn, productMap]);
+    if (role !== "admin" && (userIsLoggedIn || products.length > 0)) fetchCart();
+  }, [role, cartUpdated, userIsLoggedIn, products]);
 
   // Handle cart changes
   const handleCartChange = async (productId, change) => {
