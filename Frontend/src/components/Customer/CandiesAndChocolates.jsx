@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import ProductCard from "./ProductCard";
 
-const CandiesAndChocolates = ({ products, cart, productLoadingStates, handleAddToCart, handleChange }) => {
+const CandiesAndChocolates = ({ products, cartItems, productLoadingStates, handleAddToCart, handleIncrease, handleDecrease }) => {
   const navigate = useNavigate();
 
   // ✅ Filter candies & chocolates products
@@ -48,10 +48,11 @@ const CandiesAndChocolates = ({ products, cart, productLoadingStates, handleAddT
             <ProductCard
               key={product._id}
               product={product}
-              quantity={cart[product._id] || 0}
+              cartItems={cartItems}
               isProductLoading={productLoadingStates[product._id] || false}
               handleAddToCart={handleAddToCart}
-              handleChange={handleChange}
+              handleIncrease={handleIncrease}
+              handleDecrease={handleDecrease}
             />
           ))}
         </div>

@@ -3,10 +3,11 @@ import ProductCard from "./ProductCard";
 
 const AllProducts = ({
   products = [],
-  cart = {},
+  cartItems,
   productLoadingStates,
   handleAddToCart,
-  handleChange,
+  handleIncrease,
+  handleDecrease,
 }) => {
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -138,10 +139,11 @@ const AllProducts = ({
             <ProductCard
               key={product._id}
               product={product}
-              quantity={cart[product._id] || 0}
+              cartItems={cartItems}
               isProductLoading={productLoadingStates[product._id] || false}
               handleAddToCart={handleAddToCart}
-              handleChange={handleChange}
+              handleIncrease={handleIncrease}
+              handleDecrease={handleDecrease}
             />
           ))}
         </div>

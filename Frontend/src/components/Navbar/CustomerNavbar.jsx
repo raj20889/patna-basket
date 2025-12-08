@@ -51,7 +51,6 @@ const CustomerNavbar = ({
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     localStorage.removeItem('role');
-    localStorage.clear();
     navigate('/');
     setIsMobileMenuOpen(false);
   };
@@ -434,6 +433,7 @@ const CustomerNavbar = ({
                 <div className="font-medium">Cart Total:</div>
                 <div className="font-bold">₹{totalPrice.toFixed(2)}</div>
               </div>
+              
               
               <button 
                 onClick={handleLogout}

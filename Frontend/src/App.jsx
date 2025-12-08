@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { CartProvider } from "./contexts/CartContext";
+import useCartLoader from "./hooks/useCartLoader";
 
 import Home from "./pages/Home";
 import AddProduct from "./pages/AddProduct";
@@ -31,6 +32,7 @@ import DeliveryManagement from "./pages/Admin/DeliveryManagement";
 import ProductDetails from "./components/ProductDetails.jsx";
 
 const App = () => {
+  useCartLoader();
   return (
     <CartProvider>
       <Router>

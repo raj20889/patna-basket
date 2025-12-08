@@ -2,10 +2,62 @@ import React, { useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import ProductComponent from './ProductComponent';
+import { useSelector, useDispatch } from 'react-redux';
+import { addToCart, removeFromCart, setCart } from '../redux/cartSlice';
+import axios from 'axios';
 
-const ColdDrinksJuices = ({ products = [], onCartChange, cart = [], loading, isLoggedIn }) => {
+const ColdDrinksJuices = ({ products = [] }) => {
   const navigate = useNavigate();
   const scrollRef = useRef(null);
+  const dispatch = useDispatch();
+  const cartItems = useSelector((state) => state.cart.items);
+  const userIsLoggedIn = !!localStorage.getItem("token");
+
+  const productMap = products.reduce((map, product) => {
+    map[product._id] = product;
+    return map;
+  }, {});
+
+  const handleCartChange = async (productId, change) => {
+    const currentQty = cartItems.find(item => item.productId === productId)?.quantity || 0;
+    const newQty = currentQty + change;
+
+    if (newQty < 0) return;
+
+    try {
+      if (!userIsLoggedIn) {
+        const product = productMap[productId];
+        if (!product) return;
+
+        if (newQty > 0) {
+          dispatch(addToCart({ productId, name: product.name, price: product.price, image: product.image, quantity: newQty }));
+        } else {
+          dispatch(removeFromCart({ productId }));
+        }
+      } else {
+        const res = await axios.post(
+          `${import.meta.env.VITE_API_BASE_URL}/cart/add`,
+          { productId, quantity: newQty },
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+
+        if (res.data.products) {
+          const serverCartMap = {};
+          res.data.products.forEach((item) => {
+            serverCartMap[item.productId._id] = item.quantity;
+          });
+
+          dispatch(setCart(serverCartMap));
+        }
+      }
+    } catch (err) {
+      console.error("Cart update error:", err);
+    }
+  };
 
   // Filter drinks products
   const drinksProducts = products.filter(product => {
@@ -27,22 +79,6 @@ const ColdDrinksJuices = ({ products = [], onCartChange, cart = [], loading, isL
       });
     }
   };
-
-  if (loading) {
-    return (
-      <div className="px-4 py-6 bg-white">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold">Cold Drinks & Juices</h2>
-          <button className="text-blue-500 text-sm font-medium">See all</button>
-        </div>
-        <div className="flex overflow-x-auto scrollbar-hide gap-4 pb-4">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="flex-shrink-0 w-48 h-64 bg-gray-200 rounded-lg animate-pulse" />
-          ))}
-        </div>
-      </div>
-    );
-  }
 
   if (drinksProducts.length === 0) return null;
 
@@ -69,9 +105,9 @@ const ColdDrinksJuices = ({ products = [], onCartChange, cart = [], loading, isL
         >
           <ProductComponent 
             products={drinksProducts}
-            cart={cart}
-            onCartChange={onCartChange}
-            isLoggedIn={isLoggedIn}
+            cart={cartItems}
+            onCartChange={handleCartChange}
+            isLoggedIn={userIsLoggedIn}
             horizontalScroll
           />
         </div>

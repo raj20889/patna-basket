@@ -1,6 +1,8 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import api from '../utils/api';
 import { useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { saveCartToLocalStorage, clearCart } from '../../redux/cartSlice';
 
 const AuthContext = createContext();
 
@@ -46,7 +48,7 @@ export const AuthProvider = ({ children }) => {
       if (guestCart.length > 0) {
         try {
           await api.post('/cart/merge', { guestCart });
-          localStorage.removeItem('guestCart');
+
           window.dispatchEvent(new Event('storage')); // Notify other components about cart change
           window.dispatchEvent(new CustomEvent('cartUpdated'));
         } catch (mergeErr) {

@@ -1,85 +1,25 @@
 import { useEffect, useState, useCallback } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { setCart, removeFromCart, updateQuantity, clearCart } from '../redux/cartSlice';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 const CartPage = () => {
-  const [cartItems, setCartItems] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [productLoadingStates, setProductLoadingStates] = useState({});
   const [proceedLoading, setProceedLoading] = useState(false);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [selectedTip, setSelectedTip] = useState(0); // Default tip set to 0
   const [donationSelected, setDonationSelected] = useState(true);
-  const [cartTotals, setCartTotals] = useState({
-    itemsTotal: 0,
-    deliveryCharge: 0,
-    handlingCharge: 2,
-    tipAmount: 0,
-    donationAmount: 1,
-    grandTotal: 0
+
+  const dispatch = useDispatch();
+  const cartState = useSelector((state) => {
+    
+    return state.cart;
   });
+  const { items: cartItems = [], totalQuantity, totalPrice } = cartState;
   
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
-
-  const fetchCart = useCallback(async () => {
-    try {
-      if (!token) {
-        const guestCart = JSON.parse(localStorage.getItem('guestCart')) || [];
-        setCartItems(guestCart);
-        
-        // Calculate guest totals
-        const itemsTotal = guestCart.reduce((total, item) => total + (item.price * item.quantity), 0);
-        const grandTotal = itemsTotal + 2 + selectedTip + (donationSelected ? 1 : 0);
-        
-        setCartTotals({
-          itemsTotal,
-          deliveryCharge: 0,
-          handlingCharge: 2,
-          tipAmount: selectedTip,
-          donationAmount: donationSelected ? 1 : 0,
-          grandTotal
-        });
-      } else {
-        const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/cart`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        
-        if (res.data) {
-          setCartItems(res.data.products?.map(item => ({
-            productId: item.productId._id,
-            name: item.productId.name,
-            price: item.productId.price,
-            quantity: item.quantity,
-            image: item.productId.image,
-            variant: item.productId.variant || '1 unit'
-          })) || []);
-
-          // Use server-side calculated totals
-          setCartTotals({
-            itemsTotal: res.data.itemsTotal || 0,
-            deliveryCharge: res.data.deliveryCharge || 0,
-            handlingCharge: res.data.handlingCharge || 2,
-            tipAmount: res.data.tipAmount || 0,
-            donationAmount: res.data.donationAmount || 0,
-            grandTotal: res.data.grandTotal || 0
-          });
-
-          // Sync local state
-          setSelectedTip(res.data.tipAmount || 0);
-          setDonationSelected(res.data.donationAmount ? true : false);
-        }
-      }
-    } catch (err) {
-      console.error('Error fetching cart:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, [token, selectedTip, donationSelected]);
-
-  useEffect(() => {
-    fetchCart();
-  }, [fetchCart]);
 
   const updateCartCharges = useCallback(async (tip, donation) => {
     const newTip = tip ?? selectedTip;
@@ -99,55 +39,48 @@ const CartPage = () => {
       }
       
       // Calculate new totals
-      const itemsTotal = token ? cartTotals.itemsTotal : 
+      const itemsTotal = token ? totalPrice : 
         cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
       
       const newGrandTotal = itemsTotal + 2 + newTip + newDonationAmount;
       
-      setCartTotals({
+      dispatch(setCart({
+        cartItems: cartItems,
         itemsTotal,
         deliveryCharge: 0,
         handlingCharge: 2,
         tipAmount: newTip,
         donationAmount: newDonationAmount,
         grandTotal: newGrandTotal
-      });
+      }));
       
       return newGrandTotal;
     } catch (error) {
       console.error('Error updating cart charges:', error);
       throw error;
     }
-  }, [token, cartItems, selectedTip, donationSelected, cartTotals.itemsTotal]);
+  }, [token, cartItems, selectedTip, donationSelected, totalPrice]);
 
-  const updateQuantity = async (productId, newQuantity) => {
+  const handleUpdateQuantity = async (productId, newQuantity) => {
+    // If the new quantity would be zero or less, remove the item instead
+    if (newQuantity <= 0) {
+      await handleRemoveFromCart(productId);
+      return;
+    }
+
     setProductLoadingStates(prev => ({ ...prev, [productId]: true }));
     try {
       if (!token) {
-        const updatedCart = cartItems.map(item => 
-          item.productId === productId ? { ...item, quantity: newQuantity } : item
-        ).filter(item => item.quantity > 0);
-        
-        localStorage.setItem('guestCart', JSON.stringify(updatedCart));
-        setCartItems(updatedCart);
-        
-        // Update local totals
-        const itemsTotal = updatedCart.reduce((total, item) => total + (item.price * item.quantity), 0);
-        const newGrandTotal = itemsTotal + 2 + selectedTip + (donationSelected ? 1 : 0);
-        
-        setCartTotals(prev => ({
-          ...prev,
-          itemsTotal,
-          grandTotal: newGrandTotal
-        }));
+        dispatch(updateQuantity({ productId, quantity: newQuantity }));
       } else {
         await axios.post(`${import.meta.env.VITE_API_BASE_URL}/cart/add`, 
           { productId, quantity: newQuantity },
           { headers: { Authorization: `Bearer ${token}` } }
         );
-        
-        // Refetch cart to get updated totals
-        await fetchCart();
+        // Update Redux so UI reflects change immediately
+        dispatch(updateQuantity({ productId, quantity: newQuantity }));
+        // Notify other parts of the app to re-fetch if needed
+        window.dispatchEvent(new Event('cartUpdated'));
       }
     } catch (err) {
       console.error('Error updating cart:', err);
@@ -172,24 +105,67 @@ const CartPage = () => {
   };
 
   const handleProceedToCheckout = async () => {
+    if (!token) {
+      setShowLoginPrompt(true);
+      return;
+    }
     setProceedLoading(true);
     try {
-      if (!token) {
-        setShowLoginPrompt(true);
-      } else {
-        await updateCartCharges(selectedTip, donationSelected);
-        navigate('/checkout');
-      }
+      // Additional logic before navigating to checkout if needed
+      navigate('/checkout');
+    } catch (error) {
+      console.error('Error during checkout process:', error);
     } finally {
       setProceedLoading(false);
     }
   };
 
-  if (loading) return (
-    <div className="flex justify-center items-center h-screen">
-      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-    </div>
-  );
+  const handleRemoveFromCart = async (productId) => {
+    console.log(`handleRemoveFromCart called for productId: ${productId}`);
+    setProductLoadingStates(prev => ({ ...prev, [productId]: true }));
+    try {
+      if (!token) {
+        console.log("handleRemoveFromCart: Guest user, dispatching removeFromCart action.");
+        dispatch(removeFromCart({ productId }));
+      } else {
+        console.log("handleRemoveFromCart: Logged-in user, making API call to remove item.");
+        await axios.delete(`${import.meta.env.VITE_API_BASE_URL}/cart/remove/${productId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        // Remove from Redux so UI updates immediately
+        dispatch(removeFromCart({ productId }));
+        console.log("handleRemoveFromCart: API call successful, removed from Redux and dispatching cartUpdated event.");
+        window.dispatchEvent(new Event('cartUpdated'));
+      }
+    } catch (err) {
+      console.error('Error removing item from cart:', err);
+    } finally {
+      setProductLoadingStates(prev => ({ ...prev, [productId]: false }));
+    }
+  };
+
+  const handleClearCart = async () => {
+    try {
+      if (!token) {
+        console.log("handleClearCart: Guest user, dispatching clearCart action.");
+        dispatch(clearCart());
+      } else {
+        console.log("handleClearCart: Logged-in user, making API call to clear cart.");
+        await axios.delete(`${import.meta.env.VITE_API_BASE_URL}/cart`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        console.log("handleClearCart: API call successful, dispatching cartUpdated event.");
+        window.dispatchEvent(new Event('cartUpdated'));
+      }
+      // Reset local state for totals
+      setSelectedTip(0);
+      setDonationSelected(false);
+    } catch (err) {
+      console.error('Error clearing cart:', err);
+    }
+  };
+
+
 
   return (
     <div className="max-w-md mx-auto bg-gray-50 min-h-screen">
@@ -197,7 +173,14 @@ const CartPage = () => {
         {/* Header */}
         <div className="flex justify-between items-center p-4">
           <h1 className="text-xl font-bold text-gray-800">My Cart</h1>
-          <div className="text-gray-500"></div>
+          {cartItems.length > 0 && (
+            <button
+              onClick={handleClearCart}
+              className="text-sm text-blue-600 hover:text-blue-800 transition-colors"
+            >
+              Clear Cart
+            </button>
+          )}
         </div>
 
         {cartItems.length === 0 ? (
@@ -205,7 +188,7 @@ const CartPage = () => {
             <div className="text-4xl mb-4">🛒</div>
             <p className="text-lg text-gray-700 mb-6">Your cart is empty</p>
             <button 
-              onClick={() => navigate('/')}
+              onClick={() => navigate(token ? '/customer/dashboard' : '/')}
               className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               Continue Shopping
@@ -248,28 +231,37 @@ const CartPage = () => {
                     <p className="text-sm text-gray-500 mb-2">{item.variant}</p>
                     <div className="flex justify-between items-center">
                       <p className="font-semibold text-gray-800">₹{item.price}</p>
-                      <div className="flex items-center bg-white rounded-lg overflow-hidden">
-                        <button 
-                          onClick={() => updateQuantity(item.productId, item.quantity - 1)}
-                          className="px-3 py-1 text-gray-600 hover:bg-gray-100 transition-colors"
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleRemoveFromCart(item.productId)}
+                          className="text-sm text-red-600 hover:text-red-800 transition-colors"
                           disabled={productLoadingStates[item.productId]}
                         >
-                          -
+                          Remove
                         </button>
-                        <span className="px-2 text-gray-700">
-                          {productLoadingStates[item.productId] ? (
-                            <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-blue-500"></div>
-                          ) : (
-                            item.quantity
-                          )}
-                        </span>
-                        <button 
-                          onClick={() => updateQuantity(item.productId, item.quantity + 1)}
-                          className="px-3 py-1 text-gray-600 hover:bg-gray-100 transition-colors"
-                          disabled={productLoadingStates[item.productId]}
-                        >
-                          +
-                        </button>
+                        <div className="flex items-center bg-white rounded-lg overflow-hidden">
+                          <button
+                            onClick={() => handleUpdateQuantity(item.productId, item.quantity - 1)}
+                            className="px-3 py-1 text-gray-600 hover:bg-gray-100 transition-colors"
+                            disabled={productLoadingStates[item.productId]}
+                          >
+                            -
+                          </button>
+                          <span className="px-2 text-gray-700">
+                            {productLoadingStates[item.productId] ? (
+                              <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-blue-500"></div>
+                            ) : (
+                              item.quantity
+                            )}
+                          </span>
+                          <button
+                            onClick={() => handleUpdateQuantity(item.productId, item.quantity + 1)}
+                            className="px-3 py-1 text-gray-600 hover:bg-gray-100 transition-colors"
+                            disabled={productLoadingStates[item.productId]}
+                          >
+                            +
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -287,7 +279,7 @@ const CartPage = () => {
                     <span className="text-gray-500">📦</span>
                     <span>Items total</span>
                   </div>
-                  <span className="font-medium">₹{cartTotals.itemsTotal.toFixed(2)}</span>
+                  <span className="font-medium">₹{cartItems.reduce((total, item) => total + (item.price * item.quantity), 0).toFixed(2)}</span>
                 </div>
                 
                 <div className="flex justify-between">
@@ -316,7 +308,7 @@ const CartPage = () => {
                     <span className="text-gray-500">👤</span>
                     <span>Tip for delivery partner</span>
                   </div>
-                  <span className="font-medium">₹{cartTotals.tipAmount.toFixed(2)}</span>
+                  <span className="font-medium">₹{selectedTip.toFixed(2)}</span>
                 </div>
                 
                 <div className="flex justify-between items-center py-3">
@@ -346,7 +338,7 @@ const CartPage = () => {
                 
                 <div className="flex justify-between pt-3 mt-3 border-t border-gray-100">
                   <span className="font-bold text-gray-800">Grand total</span>
-                  <span className="font-bold text-lg text-gray-800">₹{cartTotals.grandTotal.toFixed(2)}</span>
+                  <span className="font-bold text-lg text-gray-800">₹{totalPrice.toFixed(2)}</span>
                 </div>
               </div>
             </div>
@@ -441,7 +433,7 @@ const CartPage = () => {
               >
                 <span className="text-left">
                   <span className="block text-sm">Total</span>
-                  <span className="font-bold">₹{cartTotals.grandTotal.toFixed(2)}</span>
+                  <span className="font-bold">₹{totalPrice.toFixed(2)}</span>
                 </span>
                 <span className="flex items-center">
                   {proceedLoading ? (

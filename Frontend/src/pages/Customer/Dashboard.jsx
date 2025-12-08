@@ -1,5 +1,7 @@
 // Dashboard.jsx
 import React, { useEffect, useState, lazy, Suspense } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import { setCart, addToCart, removeFromCart } from "../../redux/cartSlice";
 import CustomerNavbar from "../../components/Navbar/CustomerNavbar";
 import BannerComponent from "../../components/BannerComponent";
 import CategoryLinks from "../../components/CategoryLinks";
@@ -27,60 +29,63 @@ const CandiesAndChocolates = lazy(() =>
 const Dashboard = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [cartItems, setCartItems] = useState({});
-  const [cartUpdated, setCartUpdated] = useState(false);
-  const [cartCount, setCartCount] = useState(0);
-  const [cartTotal, setCartTotal] = useState(0);
+  
   const [productLoadingStates, setProductLoadingStates] = useState({});
+  const dispatch = useDispatch();
+  const { items: cartItems, totalQuantity: cartCount, totalPrice: cartTotal } = useSelector((state) => state.cart);
+
+  const token = localStorage.getItem("token");
+
+  const fetchUserCart = async () => {
+    if (!token) return;
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/cart`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        const formattedCartItems = data.products.map(item => ({
+          productId: item.productId._id,
+          name: item.productId.name,
+          price: item.productId.price,
+          image: item.productId.images[0],
+          quantity: item.quantity,
+        }));
+        dispatch(setCart(formattedCartItems));
+      }
+    } catch (error) {
+      console.error("Error fetching user cart:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchUserCart();
+  }, [token, dispatch]);
 
   // Fetch products and cart
-  const fetchData = async () => {
+  const fetchProducts = async () => {
     try {
       const token = localStorage.getItem("token");
-      const [productsRes, cartRes] = await Promise.all([
-        fetch(`${import.meta.env.VITE_API_BASE_URL}/products`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-        fetch(`${import.meta.env.VITE_API_BASE_URL}/cart`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-      ]);
-
+      const productsRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/products`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       const productsData = await productsRes.json();
       setProducts(productsData);
-
-      if (cartRes.ok) {
-        const cartData = await cartRes.json();
-        const initialQuantities = {};
-        let count = 0;
-        let total = 0;
-
-        cartData.products?.forEach((item) => {
-          initialQuantities[item.productId._id] = item.quantity;
-          count += item.quantity;
-          total += item.productId.price * item.quantity;
-        });
-
-        setCartItems(initialQuantities);
-        setCartCount(count);
-        setCartTotal(total);
-      }
     } catch (err) {
-      console.error("Error fetching data", err);
+      console.error("Error fetching products", err);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchData();
+    fetchProducts();
   }, []);
 
   // Update cart API
-  const updateCart = async (productId, newQuantity) => {
+  const updateCartOnServer = async (productId, newQuantity) => {
     setProductLoadingStates(prev => ({ ...prev, [productId]: true }));
     try {
-      const token = localStorage.getItem("token");
       const response = await fetch(
         `${import.meta.env.VITE_API_BASE_URL}/cart/add`,
         {
@@ -94,82 +99,87 @@ const Dashboard = () => {
       );
 
       const data = await response.json();
-      if (response.ok) {
-        // update cartItems state
-        setCartItems((prev) => ({
-          ...prev,
-          [productId]: newQuantity > 0 ? newQuantity : undefined,
-        }));
-
-        // fetch updated cart details
-        const cartResponse = await fetch(
-          `${import.meta.env.VITE_API_BASE_URL}/cart`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-
-        if (cartResponse.ok) {
-          const cartData = await cartResponse.json();
-          const count =
-            cartData.products?.reduce((sum, item) => sum + item.quantity, 0) ||
-            0;
-          const total =
-            cartData.products?.reduce(
-              (sum, item) => sum + item.productId.price * item.quantity,
-              0
-            ) || 0;
-
-          setCartCount(count);
-          setCartTotal(total);
-        }
-
-        setCartUpdated((prev) => !prev);
-        return true;
-      } else {
+      if (!response.ok) {
         alert(data.msg || "Failed to update cart");
         return false;
       }
+      return true;
     } catch (err) {
-      console.error("Error updating cart", err);
+      console.error("Error updating cart on server", err);
       return false;
     } finally {
       setProductLoadingStates(prev => ({ ...prev, [productId]: false }));
     }
   };
 
-  // Cart Handlers
-  const handleAddToCart = async (productId) => {
-    await updateCart(productId, 1);
+  const handleAddToCart = async (product) => {
+    const { _id: productId, name, price, images } = product;
+    const currentItem = cartItems.find(item => item.productId === productId);
+    const newQuantity = (currentItem ? currentItem.quantity : 0) + 1;
+
+    const previousCartItems = JSON.parse(JSON.stringify(cartItems)); // Deep copy for rollback
+
+    // Optimistic update
+    dispatch(addToCart({ productId, name, price, image: product.image, quantity: newQuantity }));
+
+    const success = await updateCartOnServer(productId, newQuantity);
+    if (!success) {
+      // Rollback if server update fails
+      dispatch(setCart(previousCartItems));
+      alert("Failed to add item to cart. Please try again.");
+    }
   };
 
-  const handleIncrease = async (productId) => {
-    const currentQty = cartItems[productId] || 0;
-    await updateCart(productId, currentQty + 1);
+  const handleIncrease = async (product) => {
+    const { _id: productId, name, price, images } = product;
+    const currentItem = cartItems.find(item => item.productId === productId);
+    const newQuantity = (currentItem ? currentItem.quantity : 0) + 1;
+
+    const previousCartItems = JSON.parse(JSON.stringify(cartItems)); // Deep copy for rollback
+
+    // Optimistic update
+    dispatch(addToCart({ productId, name, price, image: product.image, quantity: newQuantity }));
+
+    const success = await updateCartOnServer(productId, newQuantity);
+    if (!success) {
+      // Rollback if server update fails
+      dispatch(setCart(previousCartItems));
+      alert("Failed to increase item quantity. Please try again.");
+    }
   };
 
-  const handleDecrease = async (productId) => {
-    const currentQty = cartItems[productId] || 0;
-    if (currentQty > 1) {
-      await updateCart(productId, currentQty - 1);
+  const handleDecrease = async (product) => {
+    const { _id: productId, name, price, images } = product;
+    const currentItem = cartItems.find(item => item.productId === productId);
+    if (!currentItem) return;
+
+    const newQuantity = currentItem.quantity - 1;
+
+    const previousCartItems = JSON.parse(JSON.stringify(cartItems)); // Deep copy for rollback
+
+    // Optimistic update
+    if (newQuantity > 0) {
+      dispatch(addToCart({ productId, name, price, image: product.image, quantity: newQuantity }));
     } else {
-      const success = await updateCart(productId, 0);
-      if (success) {
-        setCartItems((prev) => {
-          const newItems = { ...prev };
-          delete newItems[productId];
-          return newItems;
-        });
-      }
+      dispatch(removeFromCart({ productId }));
+    }
+
+    const success = await updateCartOnServer(productId, newQuantity);
+    if (!success) {
+      // Rollback if server update fails
+      dispatch(setCart(previousCartItems));
+      alert("Failed to decrease item quantity. Please try again.");
     }
   };
 
   // Common props for product sections
   const sectionProps = {
     products,
-    cart: cartItems,
+    cartItems,
     productLoadingStates,
     handleAddToCart,
-    handleChange: (productId, change) =>
-      change === 1 ? handleIncrease(productId) : handleDecrease(productId),
+    handleIncrease,
+    handleDecrease,
   };
 
   if (loading) return <ProductsLoaderTemplate />;
@@ -177,7 +187,6 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-gray-100">
       <CustomerNavbar
-        cartUpdated={cartUpdated}
         cartCount={cartCount}
         totalPrice={cartTotal}
       />

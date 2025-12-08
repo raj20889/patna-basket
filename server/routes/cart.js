@@ -7,6 +7,7 @@ const router = express.Router();
 
 // Helper function to calculate cart totals
 const calculateCartTotals = async (products) => {
+    console.log("calculateCartTotals: Incoming products:", products);
     let itemsTotal = 0;
     const populatedProducts = [];
     
@@ -18,9 +19,11 @@ const calculateCartTotals = async (products) => {
                 ...item.toObject(),
                 productId: product
             });
+        } else {
+            console.warn("calculateCartTotals: Product not found for ID:", item.productId);
         }
     }
-    
+    console.log("calculateCartTotals: Populated products:", populatedProducts);
     return { itemsTotal, populatedProducts };
 };
 
@@ -36,16 +39,17 @@ router.post('/add', verifyToken, async (req, res) => {
         let cart = await Cart.findOne({ userId: req.user.id });
 
         if (cart) {
+            console.log("POST /cart/add: Cart found for user:", cart.userId);
+            console.log("POST /cart/add: Current cart products before update:", cart.products);
             const itemIndex = cart.products.findIndex(p => p.productId.toString() === productId);
 
             if (itemIndex > -1) {
-                if (quantity <= 0) {
-                    cart.products.splice(itemIndex, 1);
-                } else {
-                    cart.products[itemIndex].quantity = quantity;
-                }
+                // Do not remove item when quantity is 0, just set the quantity to 0
+                // The frontend ProductDetails component will handle displaying the "Add to Cart" button when quantity is 0
+                cart.products[itemIndex].quantity = quantity;
             } else if (quantity > 0) {
                 cart.products.push({ productId, quantity });
+                console.log("POST /cart/add: New product added to cart. New products:", cart.products);
             }
 
             // Calculate totals with populated products
@@ -54,6 +58,7 @@ router.post('/add', verifyToken, async (req, res) => {
             cart.grandTotal = itemsTotal + cart.deliveryCharge + cart.handlingCharge + cart.tipAmount + cart.donationAmount;
             
             await cart.save();
+            console.log("POST /cart/add: Cart saved. Final cart products:", cart.products);
             
             return res.status(200).json({ 
                 msg: 'Cart updated successfully',
@@ -66,6 +71,7 @@ router.post('/add', verifyToken, async (req, res) => {
                 grandTotal: cart.grandTotal
             });
         } else {
+            console.log("POST /cart/add: No cart found for user. Creating new cart.");
             const newCart = new Cart({
                 userId: req.user.id,
                 products: quantity > 0 ? [{ productId, quantity }] : [],
@@ -79,6 +85,7 @@ router.post('/add', verifyToken, async (req, res) => {
             newCart.grandTotal = itemsTotal + newCart.deliveryCharge + newCart.handlingCharge;
             
             await newCart.save();
+            console.log("POST /cart/add: New cart created and saved. Products:", newCart.products);
             
             return res.status(201).json({ 
                 msg: 'Cart created',
@@ -173,18 +180,60 @@ router.get('/', verifyToken, async (req, res) => {
     }
 });
 
+// Remove item from cart
+router.delete('/remove/:productId', verifyToken, async (req, res) => {
+    try {
+        const { productId } = req.params;
+        let cart = await Cart.findOne({ userId: req.user.id });
+
+        if (!cart) {
+            return res.status(404).json({ msg: 'Cart not found' });
+        }
+
+        const initialProductCount = cart.products.length;
+        cart.products = cart.products.filter(item => item.productId.toString() !== productId);
+
+        if (cart.products.length === initialProductCount) {
+            return res.status(404).json({ msg: 'Product not found in cart' });
+        }
+
+        // Recalculate totals with populated products
+        const { itemsTotal, populatedProducts } = await calculateCartTotals(cart.products);
+        cart.grandTotal = itemsTotal + cart.deliveryCharge + cart.handlingCharge + cart.tipAmount + cart.donationAmount;
+
+        await cart.save();
+
+        return res.status(200).json({
+            msg: 'Item removed from cart successfully',
+            products: populatedProducts,
+            itemsTotal,
+            deliveryCharge: cart.deliveryCharge,
+            handlingCharge: cart.handlingCharge,
+            tipAmount: cart.tipAmount,
+            donationAmount: cart.donationAmount,
+            grandTotal: cart.grandTotal
+        });
+    } catch (error) {
+        console.error('Remove Item from Cart Error:', error);
+        return res.status(500).json({ msg: 'Server error' });
+    }
+});
+
 // Clear cart
 router.delete('/', verifyToken, async (req, res) => {
     try {
+        console.log("DELETE /cart: Clear cart request received for user:", req.user.id);
         const result = await Cart.findOneAndDelete({ userId: req.user.id });
         
         if (!result) {
+            console.log("DELETE /cart: Cart was already empty for user:", req.user.id);
             return res.status(200).json({ 
                 success: true, 
                 message: 'Cart was already empty' 
             });
         }
         
+        console.log("DELETE /cart: Cart cleared successfully for user:", req.user.id);
         res.json({ 
             success: true, 
             message: 'Cart cleared successfully' 

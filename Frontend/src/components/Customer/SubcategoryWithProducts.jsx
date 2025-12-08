@@ -1,6 +1,8 @@
 // SubcategoryWithProducts.js
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { addToCart, updateQuantity } from '../../redux/cartSlice';
 import axios from 'axios';
 import CustomerNavbar from '../Navbar/CustomerNavbar';
 import ProductCard from './ProductCard'; // ✅ use the same ProductCard
@@ -9,11 +11,7 @@ const SubcategoryWithProducts = () => {
   const { category } = useParams();
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
-  const [localCart, setLocalCart] = useState({});
-  const [localLoading, setLocalLoading] = useState({});
   const [subcategoryName, setSubcategoryName] = useState('');
-  const [cartCount, setCartCount] = useState(0);
-  const [totalPrice, setTotalPrice] = useState(0);
 
   // 🔹 Fetch products by category
   useEffect(() => {
@@ -31,110 +29,51 @@ const SubcategoryWithProducts = () => {
     };
 
     fetchProducts();
-    fetchCartData();
   }, [category]);
 
   // 🔹 Fetch cart data (guest or logged-in)
-  const fetchCartData = async () => {
-    const token = localStorage.getItem("token");
-    try {
-      let res;
-      if (!token) {
-        res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/guest-cart`, {
-          headers: { 'Guest-Token': localStorage.getItem('guestToken') || '' }
-        });
-      } else {
-        res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/cart`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-      }
+  const fetchCartData = useCallback(async () => {
+    // Cart data is now managed by Redux and useCartLoader.js
+    // This function can be removed or adapted if specific local cart data is still needed
+  }, []);
 
-      const cartData = res.data;
-      const serverCartMap = {};
-      let count = 0;
-      let total = 0;
 
-      if (cartData.products?.length > 0) {
-        cartData.products.forEach(item => {
-          serverCartMap[item.productId._id] = item.quantity;
-          count += item.quantity;
-          total += item.productId.price * item.quantity;
-        });
-      }
 
-      setLocalCart(serverCartMap);
-      setCartCount(count);
-      setTotalPrice(total);
-
-      if (!token && cartData.guestToken) {
-        localStorage.setItem('guestToken', cartData.guestToken);
-      }
-    } catch (err) {
-      console.error('Error fetching cart:', err);
-    }
-  };
-
-  // 🔹 Update Cart (same style as RelatedProducts)
-  const updateCart = async (productId, newQuantity) => {
-    try {
-      const token = localStorage.getItem('token');
-      const guestToken = localStorage.getItem('guestToken');
-      const endpoint = token ? 'cart/add' : 'guest-cart/add';
-
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/${endpoint}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token 
-            ? { 'Authorization': `Bearer ${token}` }
-            : { 'Guest-Token': guestToken || '' }),
-        },
-        body: JSON.stringify({ productId, quantity: newQuantity }),
-      });
-
-      const data = await response.json();
-      if (response.ok) {
-        setLocalCart(prev => ({
-          ...prev,
-          [productId]: newQuantity > 0 ? newQuantity : undefined
-        }));
-
-        // Refresh cart data (count + total)
-        fetchCartData();
-
-        if (!token && data.guestToken) {
-          localStorage.setItem('guestToken', data.guestToken);
-        }
-
-        return true;
-      } else {
-        console.error("Error updating cart:", data.msg);
-        return false;
-      }
-    } catch (err) {
-      console.error("Error updating cart:", err);
-      return false;
-    }
-  };
+  const dispatch = useDispatch();
+  const cartItems = useSelector((state) => state.cart.items);
 
   // 🔹 Handle cart change (+/- buttons)
   const handleChange = async (productId, change) => {
-    const currentQty = localCart[productId] || 0;
+    const existingItem = cartItems.find(item => item.productId === productId);
+    const currentQty = existingItem ? existingItem.quantity : 0;
     const newQty = currentQty + change;
 
     if (newQty < 0) return;
 
     setLocalLoading(prev => ({ ...prev, [productId]: true }));
-    setLocalCart(prev => ({ ...prev, [productId]: newQty }));
 
     try {
-      const success = await updateCart(productId, newQty);
-      if (!success) {
-        setLocalCart(prev => ({ ...prev, [productId]: currentQty }));
+      if (newQty === 0) {
+        dispatch(removeFromCart({ productId }));
+      } else if (currentQty === 0 && newQty > 0) {
+        // This assumes you have enough product info to add to cart
+        // You might need to fetch product details here or pass them down
+        const productToAdd = products.find(p => p._id === productId);
+        if (productToAdd) {
+          dispatch(addToCart({ 
+            productId: productToAdd._id,
+            name: productToAdd.name,
+            price: productToAdd.price,
+            quantity: newQty,
+            image: productToAdd.image,
+            variant: productToAdd.variant || '1 unit'
+          }));
+        }
+      } else {
+        dispatch(updateQuantity({ productId, quantity: newQty }));
       }
     } catch (err) {
       console.error("Error updating cart", err);
-      setLocalCart(prev => ({ ...prev, [productId]: currentQty }));
     } finally {
       setLocalLoading(prev => ({ ...prev, [productId]: false }));
     }
@@ -145,10 +84,12 @@ const SubcategoryWithProducts = () => {
     handleChange(productId, 1);
   };
 
+  const { totalQuantity, totalPrice } = useSelector((state) => state.cart);
+
   return (
     <div>
       <CustomerNavbar 
-        cartCount={cartCount} 
+        cartCount={totalQuantity} 
         totalPrice={totalPrice} 
       />
 
@@ -161,7 +102,7 @@ const SubcategoryWithProducts = () => {
               <ProductCard
                 key={product._id}
                 product={product}
-                quantity={localCart[product._id] || 0}
+                quantity={cartItems.find(item => item.productId === product._id)?.quantity || 0}
                 isLoading={localLoading[product._id]}
                 handleAddToCart={handleAddToCart}
                 handleChange={handleChange}

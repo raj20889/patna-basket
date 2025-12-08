@@ -1,94 +1,32 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useSelector, useDispatch } from 'react-redux';
+import { addToCart, removeFromCart, updateQuantity, setCart } from '../redux/cartSlice';
+import axios from 'axios';
 
-const ProductComponent = ({ 
-  products, 
-  cart: propCart, 
-  onCartChange,
-  isLoggedIn = false
+const ProductComponent = ({
+  products,
+  onCartUpdate,       // function(productId, changeOrQuantity) for logged-in flows
+  onCartChange,       // function(count, total) for guest flows
+  isAuthenticated,    // optional explicit flag
 }) => {
-  const [localCart, setLocalCart] = useState({});
-  const [loading, setLoading] = useState({});
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const cartItems = useSelector((state) => state.cart.items);
+  const userIsLoggedIn = !!localStorage.getItem("token");
 
-  useEffect(() => {
-    if (isLoggedIn) {
-      setLocalCart(propCart || {});
-    } else {
-      const guestCart = JSON.parse(localStorage.getItem("guestCart")) || [];
-      const guestCartMap = {};
-      guestCart.forEach(item => {
-        guestCartMap[item.productId] = item.quantity;
-      });
-      setLocalCart(guestCartMap);
-    }
-  }, [propCart, isLoggedIn]);
 
-  const updateGuestCart = (productId, quantity) => {
-    let guestCart = JSON.parse(localStorage.getItem("guestCart")) || [];
-    const product = products.find(p => p._id === productId);
-    
-    if (!product) return;
 
-    const index = guestCart.findIndex(item => item.productId === productId);
 
-    if (index > -1) {
-      if (quantity > 0) {
-        guestCart[index].quantity = quantity;
-      } else {
-        guestCart.splice(index, 1);
-      }
-    } else if (quantity > 0) {
-      guestCart.push({
-        productId,
-        name: product.name,
-        price: product.price,
-        image: product.image,
-        quantity,
-      });
-    }
-
-    localStorage.setItem("guestCart", JSON.stringify(guestCart));
-    window.dispatchEvent(new Event('storage'));
-    window.dispatchEvent(new CustomEvent('cartUpdated'));
-    setLocalCart(prev => ({ ...prev, [productId]: quantity }));
-  };
-
-  const handleChange = async (productId, change) => {
-    const currentQty = localCart[productId] || 0;
-    const newQty = currentQty + change;
-
-    if (newQty < 0) return;
-
-    setLoading(prev => ({ ...prev, [productId]: true }));
-
-    try {
-      setLocalCart(prev => ({ ...prev, [productId]: newQty }));
-      
-      if (!isLoggedIn) {
-        updateGuestCart(productId, newQty);
-      } else if (onCartChange) {
-        await onCartChange(productId, change);
-      }
-    } catch (err) {
-      console.error("Error updating cart", err);
-      setLocalCart(prev => ({ ...prev, [productId]: currentQty }));
-    } finally {
-      setLoading(prev => ({ ...prev, [productId]: false }));
-    }
-  };
-
-  const handleAddToCart = (productId) => {
-    handleChange(productId, 1);
-  };
 
   return (
+
     <div className="px-4 py-6 bg-white">
       <div className="relative">
       <div className="flex overflow-x-auto pb-4 -mx-4 px-4 scrollbar-hide space-x-4">
           {products.map(product => {
-            const quantity = localCart[product._id] || 0;
-            const isLoading = loading[product._id];
+            const quantity = cartItems.find(item => item.productId === product._id)?.quantity || 0;
+
 
             return (
               <div 
@@ -142,16 +80,63 @@ const ProductComponent = ({
                     {quantity === 0 ? (
                       <div className='border-green-600 rounded-md border-[1.5px] mb-2'>
                         <button
-                          onClick={(e) => {
+                          onClick={async (e) => {
                             e.stopPropagation();
-                            handleAddToCart(product._id);
+                            const token = localStorage.getItem('token');
+                            if (token) {
+                              try {
+                                // Call server to add item to logged-in user's cart
+                                await axios.post(`${import.meta.env.VITE_API_BASE_URL}/cart/add`, {
+                                  productId: product._id,
+                                  quantity: 1
+                                }, { headers: { Authorization: `Bearer ${token}` } });
+
+                                // Update Redux immediately for responsive UI
+                                dispatch(addToCart({
+                                  productId: product._id,
+                                  name: product.name,
+                                  price: product.price,
+                                  image: product.image,
+                                  quantity: 1
+                                }));
+
+                                // Notify other parts to re-fetch if they want authoritative server state
+                                window.dispatchEvent(new Event('cartUpdated'));
+
+                                // Inform parent/search page about add (logged-in)
+                                if (typeof onCartUpdate === 'function') {
+                                  try { onCartUpdate(product._id, 1); } catch (e) { /* ignore */ }
+                                }
+                              } catch (err) {
+                                console.error('Error adding to cart (logged-in):', err);
+                                alert('Failed to add to cart. Please try again.');
+                              }
+                            } else {
+                              // Guest user: local Redux/localStorage
+                              dispatch(addToCart({
+                                productId: product._id,
+                                name: product.name,
+                                price: product.price,
+                                image: product.image,
+                                quantity: 1
+                              }));
+                              // Notify parent about guest cart change
+                              if (typeof onCartChange === 'function') {
+                                try {
+                                  const guestCart = JSON.parse(localStorage.getItem('guestCart')) || [];
+                                  const count = guestCart.reduce((s, it) => s + it.quantity, 0);
+                                  const total = guestCart.reduce((s, it) => s + it.quantity * it.price, 0);
+                                  onCartChange(count, total);
+                                } catch (e) { /* ignore */ }
+                              }
+                            }
                           }}
-                          disabled={isLoading}
+                          disabled={false}
                           className={`bg-blue-50 border-green-600 text-green-600 text-xs font-bold px-4 py-1.5 cursor-pointer rounded hover:bg-blue-100 ${
-                            isLoading ? 'opacity-50 cursor-not-allowed' : ''
+                          ''
                           }`}
                         >
-                          {isLoading ? '...' : 'ADD'}
+                          ADD
                         </button>
                       </div>
                     ) : (
@@ -160,8 +145,57 @@ const ProductComponent = ({
                         onClick={(e) => e.stopPropagation()}
                       >
                         <button
-                          onClick={() => handleChange(product._id, -1)}
-                          disabled={isLoading}
+                          onClick={async () => {
+                            const token = localStorage.getItem('token');
+                              if (quantity === 1) {
+                                if (token) {
+                                  try {
+                                    await axios.delete(`${import.meta.env.VITE_API_BASE_URL}/cart/remove/${product._id}`, {
+                                      headers: { Authorization: `Bearer ${token}` }
+                                    });
+                                    dispatch(removeFromCart({ productId: product._id }));
+                                    window.dispatchEvent(new Event('cartUpdated'));
+                                    if (typeof onCartUpdate === 'function') { try { onCartUpdate(product._id, -1); } catch(e){} }
+                                  } catch (err) {
+                                    console.error('Error removing item (logged-in):', err);
+                                    alert('Failed to remove item.');
+                                  }
+                                } else {
+                                  dispatch(removeFromCart({ productId: product._id }));
+                                  if (typeof onCartChange === 'function') {
+                                    try {
+                                      const guestCart = JSON.parse(localStorage.getItem('guestCart')) || [];
+                                      const count = guestCart.reduce((s, it) => s + it.quantity, 0);
+                                      const total = guestCart.reduce((s, it) => s + it.quantity * it.price, 0);
+                                      onCartChange(count, total);
+                                    } catch (e) {}
+                                  }
+                                }
+                              } else {
+                                if (token) {
+                                  try {
+                                    await axios.post(`${import.meta.env.VITE_API_BASE_URL}/cart/add`, { productId: product._id, quantity: quantity - 1 }, { headers: { Authorization: `Bearer ${token}` } });
+                                    dispatch(updateQuantity({ productId: product._id, quantity: quantity - 1 }));
+                                    window.dispatchEvent(new Event('cartUpdated'));
+                                    if (typeof onCartUpdate === 'function') { try { onCartUpdate(product._id, -1); } catch(e){} }
+                                  } catch (err) {
+                                    console.error('Error decreasing quantity (logged-in):', err);
+                                    alert('Failed to update quantity.');
+                                  }
+                                } else {
+                                  dispatch(updateQuantity({ productId: product._id, quantity: quantity - 1 }));
+                                  if (typeof onCartChange === 'function') {
+                                    try {
+                                      const guestCart = JSON.parse(localStorage.getItem('guestCart')) || [];
+                                      const count = guestCart.reduce((s, it) => s + it.quantity, 0);
+                                      const total = guestCart.reduce((s, it) => s + it.quantity * it.price, 0);
+                                      onCartChange(count, total);
+                                    } catch (e) {}
+                                  }
+                                }
+                              }
+                          }}
+                          disabled={false}
                           className="text-white cursor-pointer font-size-xs font-bold"
                         >
                           -
@@ -170,8 +204,31 @@ const ProductComponent = ({
                           <span className="text-sm text-white font-medium">{quantity}</span>
                         </div>
                         <button
-                          onClick={() => handleChange(product._id, 1)}
-                          disabled={isLoading}
+                          onClick={async () => {
+                            const token = localStorage.getItem('token');
+                            if (token) {
+                              try {
+                                await axios.post(`${import.meta.env.VITE_API_BASE_URL}/cart/add`, { productId: product._id, quantity: quantity + 1 }, { headers: { Authorization: `Bearer ${token}` } });
+                                dispatch(updateQuantity({ productId: product._id, quantity: quantity + 1 }));
+                                window.dispatchEvent(new Event('cartUpdated'));
+                                if (typeof onCartUpdate === 'function') { try { onCartUpdate(product._id, 1); } catch(e){} }
+                              } catch (err) {
+                                console.error('Error increasing quantity (logged-in):', err);
+                                alert('Failed to update quantity.');
+                              }
+                            } else {
+                              dispatch(updateQuantity({ productId: product._id, quantity: quantity + 1 }));
+                              if (typeof onCartChange === 'function') {
+                                try {
+                                  const guestCart = JSON.parse(localStorage.getItem('guestCart')) || [];
+                                  const count = guestCart.reduce((s, it) => s + it.quantity, 0);
+                                  const total = guestCart.reduce((s, it) => s + it.quantity * it.price, 0);
+                                  onCartChange(count, total);
+                                } catch (e) {}
+                              }
+                            }
+                          }}
+                          disabled={false}
                           className="text-white cursor-pointer font-bold"
                         >
                           +

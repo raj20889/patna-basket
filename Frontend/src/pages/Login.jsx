@@ -51,8 +51,8 @@ const Login = () => {
         }
 
         // ✅ Clear guestCart after syncing
-        localStorage.removeItem('guestCart')
-        console.log("Guest cart synced to user cart.")
+    //    localStorage.removeItem('guestCart')
+    //    console.log("Guest cart synced to user cart.")
       }
 
       // ✅ Redirect based on role
@@ -108,7 +108,7 @@ const Login = () => {
         }
 
         // ✅ Clear guestCart after syncing
-        localStorage.removeItem('guestCart')
+        // localStorage.removeItem('guestCart')
         console.log("Guest cart synced to user cart.")
       }
 

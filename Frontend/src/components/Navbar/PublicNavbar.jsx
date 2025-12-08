@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useSelector } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
 import { TypeAnimation } from 'react-type-animation';
 import LocationSelector from '../Customer/LocationSelector';
@@ -7,11 +8,10 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import Button from '@mui/material/Button';
 
-const PublicNavbar = ({ cartCount, totalPrice, cartUpdated }) => {
+const PublicNavbar = () => {
   const [blink, setBlink] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [displayCount, setDisplayCount] = useState(0);
-  const [displayTotal, setDisplayTotal] = useState(0);
+  
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [isPatnaLocation, setIsPatnaLocation] = useState(false);
@@ -24,6 +24,9 @@ const PublicNavbar = ({ cartCount, totalPrice, cartUpdated }) => {
     return savedAddress ? savedAddress : 'Select your location';
   });
   const navigate = useNavigate();
+
+  const cartTotalQuantity = useSelector((state) => state.cart.totalQuantity);
+  const cartTotalPrice = useSelector((state) => state.cart.totalPrice);
 
   const handleLocationChange = (address) => {
     setCurrentAddress(address);
@@ -38,40 +41,6 @@ const PublicNavbar = ({ cartCount, totalPrice, cartUpdated }) => {
       setShowSorryDialog(true);
     }
   };
-
-  const updateCartDisplay = () => {
-    const guestCart = JSON.parse(localStorage.getItem("guestCart")) || [];
-    const count = guestCart.reduce((sum, item) => sum + item.quantity, 0);
-    const total = guestCart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    setDisplayCount(count);
-    setDisplayTotal(total);
-  };
-
-  useEffect(() => {
-    updateCartDisplay();
-
-    const handleStorageChange = (e) => {
-      if (e.key === "guestCart" || e.key === "selectedAddress") {
-        updateCartDisplay();
-        if (e.key === "selectedAddress") {
-          const address = localStorage.getItem('selectedAddress') || 'Select your location';
-          setCurrentAddress(address);
-          const isPatna = address.toLowerCase().includes('patna');
-          setIsPatnaLocation(isPatna);
-        }
-      }
-    };
-
-    const handleCartUpdate = () => updateCartDisplay();
-
-    window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('cartUpdated', handleCartUpdate);
-
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('cartUpdated', handleCartUpdate);
-    };
-  }, [cartUpdated]);
 
   const handleCartClick = () => {
     if (!isPatnaLocation) return;
@@ -172,10 +141,10 @@ const PublicNavbar = ({ cartCount, totalPrice, cartUpdated }) => {
             <span className="text-white text-lg">🛒</span>
             <div className="flex flex-col text-white">
               <div className="text-xs font-medium leading-none">
-                {displayCount} items
+                {cartTotalQuantity} items
               </div>
               <div className="text-sm font-bold">
-                ₹{displayTotal.toFixed(2)}
+                ₹{cartTotalPrice.toFixed(2)}
               </div>
             </div>
           </button>
@@ -211,9 +180,9 @@ const PublicNavbar = ({ cartCount, totalPrice, cartUpdated }) => {
               disabled={!isPatnaLocation}
             >
               <span className="text-lg">🛒</span>
-              {displayCount > 0 && (
+              {cartTotalQuantity > 0 && (
                 <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                  {displayCount}
+                  {cartTotalQuantity}
                 </span>
               )}
             </button>
@@ -275,7 +244,7 @@ const PublicNavbar = ({ cartCount, totalPrice, cartUpdated }) => {
             
             <div className="px-4 py-2 flex items-center justify-between">
               <div className="text-gray-700 font-medium">Cart Total:</div>
-              <div className="font-bold">₹{displayTotal.toFixed(2)}</div>
+              <div className="font-bold">₹{cartTotalPrice.toFixed(2)}</div>
             </div>
           </div>
         )}

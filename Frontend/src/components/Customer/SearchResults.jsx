@@ -3,6 +3,8 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import ProductComponent from './ProductCard';
 import CustomerNavbar from '../Navbar/CustomerNavbar';
+import { useDispatch } from 'react-redux';
+import { setCart } from '../../redux/cartSlice';
 
 const SearchResults = () => {
     const [results, setResults] = useState([]);
@@ -17,6 +19,8 @@ const SearchResults = () => {
     const navigate = useNavigate();
     const token = localStorage.getItem('token');
 
+    const dispatch = useDispatch();
+
     // Fetch cart data
     const fetchCart = async () => {
         try {
@@ -26,9 +30,21 @@ const SearchResults = () => {
                 });
                 
                 if (response.data) {
-                    setCartCount(response.data.products?.reduce((sum, item) => sum + item.quantity, 0) || 0);
+                    const products = response.data.products || [];
+                    setCartCount(products.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0);
                     setCartTotal(response.data.itemsTotal || 0);
-                    setCartItems(response.data.products || []);
+                    setCartItems(products);
+
+                    // Update Redux so ProductCard (which reads from Redux) stays in sync
+                    const mapped = products.map(item => ({
+                        productId: item.productId?._id || item.productId,
+                        name: item.productId?.name || item.name,
+                        price: item.productId?.price || item.price,
+                        quantity: item.quantity,
+                        image: item.productId?.image || item.image,
+                        variant: item.productId?.variant || item.variant
+                    }));
+                    dispatch(setCart({ cartItems: mapped }));
                 }
             } else {
                 // Guest cart handling
@@ -38,6 +54,15 @@ const SearchResults = () => {
                 const total = guestCart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
                 setCartCount(count);
                 setCartTotal(total);
+                // Update Redux for guest as well so ProductCard shows correct qty
+                const mappedGuest = guestCart.map(item => ({
+                    productId: item._id || item.productId,
+                    name: item.name,
+                    price: item.price,
+                    quantity: item.quantity,
+                    image: item.image
+                }));
+                dispatch(setCart({ cartItems: mappedGuest }));
             }
         } catch (err) {
             console.error('Error fetching cart:', err);
@@ -45,12 +70,16 @@ const SearchResults = () => {
     };
 
     // Handle initial add to cart
-    const handleAddToCart = async (productId) => {
+    const handleAddToCart = async (productOrId) => {
+        const productId = typeof productOrId === 'string' ? productOrId : (productOrId?._id || productOrId?.productId?._id);
+        if (!productId) return;
         await handleCartChange(productId, 1); // Add 1 quantity
     };
 
-    // Handle quantity changes (+/-)
-    const handleChange = async (productId, change) => {
+    // Handle quantity changes (+/-) by accepting product object or id
+    const handleChange = async (productOrId, change) => {
+        const productId = typeof productOrId === 'string' ? productOrId : (productOrId?._id || productOrId?.productId?._id);
+        if (!productId) return;
         await handleCartChange(productId, change);
     };
 
@@ -202,8 +231,9 @@ const SearchResults = () => {
                             quantity={cartItems.find(item => 
                                 item.productId?._id === product._id || item._id === product._id
                             )?.quantity || 0}
-                            handleAddToCart={handleAddToCart}
-                            handleChange={handleChange}
+                            handleAddToCart={() => handleAddToCart(product)}
+                            handleIncrease={() => handleChange(product, 1)}
+                            handleDecrease={() => handleChange(product, -1)}
                             isProductLoading={productLoadingStates[product._id] || false}
                             isAuthenticated={!!token}
                         />

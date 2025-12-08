@@ -1,14 +1,22 @@
 import React from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { addToCart, removeFromCart } from "../../redux/cartSlice";
 import { useNavigate } from "react-router-dom";
 
 const ProductCard = ({
   product,
-  quantity,
   isProductLoading,
   handleAddToCart,
-  handleChange,
+  handleIncrease,
+  handleDecrease,
 }) => {
-  console.log(`Product ${product._id} isProductLoading: ${isProductLoading}`);
+  const dispatch = useDispatch();
+  const cartItem = useSelector((state) =>
+    state.cart.items.find((item) => item.productId === product._id)
+  );
+  const quantity = cartItem ? cartItem.quantity : 0;
+
+
   const navigate = useNavigate();
 
   return (
@@ -72,11 +80,11 @@ const ProductCard = ({
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleAddToCart(product._id);
+                  handleAddToCart(product);
                 }}
                 disabled={isProductLoading}
                 className={`bg-blue-50 border-green-600 text-green-600 text-xs font-bold px-4 py-1.5 rounded hover:bg-blue-100 ${
-                  isProductLoading ? "opacity-50 cursor-not-allowed" : ""
+                  isProductLoading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
                 }`}
               >
                 {isProductLoading ? (
@@ -100,7 +108,7 @@ const ProductCard = ({
               ) : (
                 <>
                   <button
-                    onClick={() => handleChange(product._id, -1)}
+                    onClick={() => handleDecrease(product)}
                     disabled={isProductLoading}
                     className="text-white font-bold"
                   >
@@ -110,7 +118,7 @@ const ProductCard = ({
                     {quantity}
                   </span>
                   <button
-                    onClick={() => handleChange(product._id, 1)}
+                    onClick={() => handleIncrease(product)}
                     disabled={isProductLoading}
                     className="text-white font-bold"
                   >

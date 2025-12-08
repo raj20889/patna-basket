@@ -18,27 +18,46 @@ const SearchResults = () => {
     const handleCartUpdate = async (productId, change) => {
         try {
             if (token) {
-                // For logged-in users - update server cart
-                const response = await axios.put(
-                    `${import.meta.env.VITE_API_BASE_URL}/cart/update`,
-                    { productId, change },
-                    { headers: { Authorization: `Bearer ${token}` } }
-                );
+                // Instead of relying on a non-existing /cart/update endpoint,
+                // fetch current cart from server after ProductComponent changes it.
+                const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/cart`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
 
-                if (response.data.success) {
-                    // Update local cart counts based on server response
-                    setCartCount(response.data.count || 0);
-                    setCartTotal(response.data.total || 0);
-                }
+                const products = res.data.products || [];
+                const count = products.reduce((s, p) => s + (p.quantity || 0), 0);
+                const total = res.data.itemsTotal || products.reduce((s, p) => s + (p.productId?.price || 0) * (p.quantity || 0), 0);
+                setCartCount(count);
+                setCartTotal(total);
             } else {
-                // For guest users - ProductComponent handles localStorage directly
-                // We'll just update our local counts based on what ProductComponent reports
-                // This part will be handled by the handleCartCountUpdate function
+                // Guest users: ProductComponent will call onCartChange with updated counts
             }
         } catch (err) {
             console.error('Cart update error:', err);
         }
     };
+
+    // Listen for global cartUpdated events (emitted by components after server ops)
+    useEffect(() => {
+        if (!token) return;
+        const handler = async () => {
+            try {
+                const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/cart`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                const products = res.data.products || [];
+                const count = products.reduce((s, p) => s + (p.quantity || 0), 0);
+                const total = res.data.itemsTotal || products.reduce((s, p) => s + (p.productId?.price || 0) * (p.quantity || 0), 0);
+                setCartCount(count);
+                setCartTotal(total);
+            } catch (err) {
+                console.error('Error fetching cart on cartUpdated event:', err);
+            }
+        };
+
+        window.addEventListener('cartUpdated', handler);
+        return () => window.removeEventListener('cartUpdated', handler);
+    }, [token]);
 
     // This function handles the count/total updates from ProductComponent
     const handleCartCountUpdate = (count, total) => {
