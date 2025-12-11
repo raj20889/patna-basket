@@ -10,8 +10,15 @@ const cartRoute = require('./routes/cart');
 const addressRoutes = require('./routes/addressRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const userOrderRoutes = require('./routes/order'); // Renamed for clarity
-// In your main app file (app.js/server.js)
 const userRoutes = require('./routes/users');
+const categoryRoute = require('./routes/category');
+const subcategoryRoute = require('./routes/subcategory');
+const homeSectionRoute = require('./routes/homeSection');
+const bannerRoute = require('./routes/banner');
+const deliveryPromiseRoute = require('./routes/deliveryPromise');
+const quickSearchRoute = require('./routes/quickSearch');
+const trendingSearchRoute = require('./routes/virtualStores');
+const storesRoute = require('./routes/stores');
 
 
 
@@ -59,6 +66,14 @@ app.use('/user-orders', userOrderRoutes);
 const notificationRoutes = require('./routes/notificationRoutes');
 app.use('/notifications', notificationRoutes); // For user orders
 app.use('/users', userRoutes);
+app.use('/categories', categoryRoute);
+app.use('/subcategories', subcategoryRoute);
+app.use('/home-sections', homeSectionRoute);
+app.use('/banners', bannerRoute);
+app.use('/delivery-promise', deliveryPromiseRoute);
+app.use('/quick-searches', quickSearchRoute);
+app.use('/trending-searches', trendingSearchRoute);
+app.use('/stores', storesRoute);
 
 
 

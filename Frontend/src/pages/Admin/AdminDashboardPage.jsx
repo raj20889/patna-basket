@@ -6,7 +6,7 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
 
   const navItems = [
-    { name: 'Product Management', route: '/admin/add-product' },
+    { name: 'Product Management', route: '/admin/product-management' },
     { name: 'User Management', route: '/admin/user-management' },
     { name: 'Order Management', route: '/admin/order-management' },
     { name: 'Invoice & Transaction', route: '/admin/transaction-management' },

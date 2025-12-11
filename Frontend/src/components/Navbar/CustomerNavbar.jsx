@@ -2,11 +2,12 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { TypeAnimation } from 'react-type-animation';
-import LocationSelector from '../Customer/LocationSelector';
+import LocationSelector from '../Customer/Address/LocationSelector';
 import Dialog from '@mui/material/Dialog';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import Button from '@mui/material/Button';
+import { useSelector } from 'react-redux';
 
 const CustomerNavbar = ({ 
   cartUpdated, 
@@ -15,6 +16,7 @@ const CustomerNavbar = ({
   forceUpdate 
 }) => {
   const [showDropdown, setShowDropdown] = useState(false);
+  const reduxCart = useSelector((state) => state.cart);
   const [cartCount, setCartCount] = useState(propCartCount || 0);
   const [totalPrice, setTotalPrice] = useState(propTotalPrice || 0);
   const [searchQuery, setSearchQuery] = useState('');
@@ -33,6 +35,16 @@ const CustomerNavbar = ({
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
   const user = JSON.parse(localStorage.getItem('user')) || {};
+
+  // Update cart count and total from Redux
+  useEffect(() => {
+    if (reduxCart && reduxCart.items) {
+      const count = reduxCart.items.reduce((sum, item) => sum + item.quantity, 0);
+      const total = reduxCart.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      setCartCount(count);
+      setTotalPrice(total);
+    }
+  }, [reduxCart]);
 
   const handleLocationChange = (address) => {
     setCurrentAddress(address);
@@ -120,6 +132,17 @@ const CustomerNavbar = ({
 
   useEffect(() => {
     fetchCartDetails();
+    
+    // Listen for cart updates from ProductCard
+    const handleCartUpdate = () => {
+      fetchCartDetails();
+    };
+    
+    window.addEventListener('cartUpdated', handleCartUpdate);
+    
+    return () => {
+      window.removeEventListener('cartUpdated', handleCartUpdate);
+    };
   }, [cartUpdated, forceUpdate]);
 
   useEffect(() => {

@@ -1,0 +1,127 @@
+import { useState, useCallback } from 'react';
+import { productService } from '../services/apiService';
+
+export const useProducts = () => {
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalProducts: 0,
+  });
+
+  // Fetch all products
+  const fetchProducts = useCallback(async (page = 1, search = '') => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await productService.getAllProducts(page, 10, search);
+      setProducts(data.products || []);
+      setPagination({
+        currentPage: page,
+        totalPages: data.totalPages || 1,
+        totalProducts: data.totalProducts || 0,
+      });
+    } catch (err) {
+      setError(err.response?.data?.msg || 'Failed to fetch products');
+      console.error('Fetch products error:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Add product
+  const addProduct = useCallback(async (productData) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const newProduct = await productService.addProduct(productData);
+      setProducts([newProduct, ...products]);
+      return newProduct;
+    } catch (err) {
+      const errorMsg = err.response?.data?.msg || 'Failed to add product';
+      setError(errorMsg);
+      throw new Error(errorMsg);
+    } finally {
+      setLoading(false);
+    }
+  }, [products]);
+
+  // Update product
+  const updateProduct = useCallback(async (id, productData) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const updatedProduct = await productService.updateProduct(id, productData);
+      setProducts(products.map(p => p._id === id ? updatedProduct : p));
+      return updatedProduct;
+    } catch (err) {
+      const errorMsg = err.response?.data?.msg || 'Failed to update product';
+      setError(errorMsg);
+      throw new Error(errorMsg);
+    } finally {
+      setLoading(false);
+    }
+  }, [products]);
+
+  // Delete product
+  const deleteProduct = useCallback(async (id) => {
+    try {
+      setLoading(true);
+      setError(null);
+      await productService.deleteProduct(id);
+      setProducts(products.filter(p => p._id !== id));
+    } catch (err) {
+      const errorMsg = err.response?.data?.msg || 'Failed to delete product';
+      setError(errorMsg);
+      throw new Error(errorMsg);
+    } finally {
+      setLoading(false);
+    }
+  }, [products]);
+
+  // Bulk delete products
+  const bulkDeleteProducts = useCallback(async (productIds) => {
+    try {
+      setLoading(true);
+      setError(null);
+      await productService.bulkDeleteProducts(productIds);
+      setProducts(products.filter(p => !productIds.includes(p._id)));
+    } catch (err) {
+      const errorMsg = err.response?.data?.msg || 'Failed to delete products';
+      setError(errorMsg);
+      throw new Error(errorMsg);
+    } finally {
+      setLoading(false);
+    }
+  }, [products]);
+
+  // Search products
+  const searchProducts = useCallback(async (query) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await productService.searchProducts(query);
+      setProducts(data);
+    } catch (err) {
+      setError(err.response?.data?.msg || 'Failed to search products');
+      console.error('Search error:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return {
+    products,
+    loading,
+    error,
+    pagination,
+    fetchProducts,
+    addProduct,
+    updateProduct,
+    deleteProduct,
+    bulkDeleteProducts,
+    searchProducts,
+  };
+};

@@ -1,0 +1,174 @@
+/* QuickSearchChips.css - Modern Animations */
+
+/* Hide scrollbar but keep functionality */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Main chip button with staggered fade-in animation */
+.quick-search-chip {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border: 1.5px solid #bae6fd;
+  border-radius: 9999px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  
+  /* Staggered fade-in animation */
+  opacity: 0;
+  transform: translateY(10px);
+  animation: fadeInUp 0.5s ease-out forwards;
+  animation-delay: var(--animation-delay);
+}
+
+@keyframes fadeInUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Hover effect - lift and glow */
+.quick-search-chip:hover {
+  transform: translateY(-2px) scale(1.02);
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  border-color: #93c5fd;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+}
+
+/* Active/Click effect */
+.quick-search-chip:active {
+  transform: translateY(0) scale(0.98);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+/* Icon with bounce animation on hover */
+.chip-icon {
+  font-size: 1.25rem;
+  transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  display: inline-block;
+}
+
+.quick-search-chip:hover .chip-icon {
+  transform: scale(1.2) rotate(5deg);
+  animation: iconBounce 0.6s ease-in-out;
+}
+
+@keyframes iconBounce {
+  0%, 100% {
+    transform: scale(1.2) rotate(5deg);
+  }
+  50% {
+    transform: scale(1.35) rotate(-5deg);
+  }
+}
+
+/* Text styling */
+.chip-text {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #0c4a6e;
+  transition: color 0.3s ease;
+}
+
+.quick-search-chip:hover .chip-text {
+  color: #1e40af;
+}
+
+/* Shine effect on hover */
+.chip-shine {
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.6),
+    transparent
+  );
+  transition: left 0.5s ease;
+}
+
+.quick-search-chip:hover .chip-shine {
+  left: 100%;
+}
+
+/* Pulse animation for the first chip to draw attention */
+.quick-search-chip:first-child {
+  animation: fadeInUp 0.5s ease-out forwards, gentlePulse 2s ease-in-out 1s infinite;
+}
+
+@keyframes gentlePulse {
+  0%, 100% {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  }
+  50% {
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+  }
+}
+
+/* Snap scroll for mobile */
+.snap-x {
+  scroll-snap-type: x mandatory;
+}
+
+.snap-mandatory {
+  scroll-snap-type: x mandatory;
+}
+
+.quick-search-chip {
+  scroll-snap-align: start;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .quick-search-chip {
+    padding: 0.5rem 0.875rem;
+  }
+  
+  .chip-icon {
+    font-size: 1.125rem;
+  }
+  
+  .chip-text {
+    font-size: 0.8125rem;
+  }
+}
+
+/* Alternative color schemes for variety (optional) */
+.quick-search-chip:nth-child(3n + 1) {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border-color: #fcd34d;
+}
+
+.quick-search-chip:nth-child(3n + 1):hover {
+  background: linear-gradient(135deg, #fde68a 0%, #fcd34d 100%);
+  border-color: #fbbf24;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);
+}
+
+.quick-search-chip:nth-child(3n + 2) {
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  border-color: #6ee7b7;
+}
+
+.quick-search-chip:nth-child(3n + 2):hover {
+  background: linear-gradient(135deg, #a7f3d0 0%, #6ee7b7 100%);
+  border-color: #34d399;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+}

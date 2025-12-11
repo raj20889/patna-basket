@@ -3,31 +3,23 @@ import React, { useEffect, useState, lazy, Suspense } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { setCart, addToCart, removeFromCart } from "../../redux/cartSlice";
 import CustomerNavbar from "../../components/Navbar/CustomerNavbar";
-import BannerComponent from "../../components/BannerComponent";
-import CategoryLinks from "../../components/CategoryLinks";
-import CategoryGrid from "../../components/CategoryGrid";
+import BannerComponent from "../../components/Shared/BannerComponent";
+import QuickSearchChips from "../../components/Shared/QuickSearchChips";
+import VirtualStoresSection from "../../components/Shared/VirtualStoresSection";
+import CategoryGrid from "../../components/Shared/CategoryGrid";
 import ProductsLoaderTemplate from "./ProductsLoaderTemplate.jsx";
 
 // Lazy load category/product sections
-const RelatedProducts = lazy(() =>
-  import("../../components/Customer/RelatedProducts")
+const SubcategorySection = lazy(() =>
+  import("../../components/Customer/CustomerCategory/SubcategorySection")
 );
-const ColdDrinksAndJuices = lazy(() =>
-  import("../../components/Customer/ColdDrinksAndJuices")
-);
-
 const AllProducts = lazy(() =>
-  import("../../components/Customer/AllProducts")
-);
-const SnacksAndChips = lazy(() =>
-  import("../../components/Customer/SnacksAndChips")
-);
-const CandiesAndChocolates = lazy(() =>
-  import("../../components/Customer/CandiesAndChocolates")
+  import("../../components/Customer/CustomerCategory/AllProducts")
 );
 
 const Dashboard = () => {
   const [products, setProducts] = useState([]);
+  const [homeSections, setHomeSections] = useState([]);
   const [loading, setLoading] = useState(true);
   
   const [productLoadingStates, setProductLoadingStates] = useState({});
@@ -35,6 +27,7 @@ const Dashboard = () => {
   const { items: cartItems, totalQuantity: cartCount, totalPrice: cartTotal } = useSelector((state) => state.cart);
 
   const token = localStorage.getItem("token");
+  const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
   const fetchUserCart = async () => {
     if (!token) return;
@@ -48,7 +41,7 @@ const Dashboard = () => {
           productId: item.productId._id,
           name: item.productId.name,
           price: item.productId.price,
-          image: item.productId.images[0],
+          image: item.productId.image || (item.productId.images && item.productId.images[0]) || '',
           quantity: item.quantity,
         }));
         dispatch(setCart(formattedCartItems));
@@ -66,7 +59,7 @@ const Dashboard = () => {
   const fetchProducts = async () => {
     try {
       const token = localStorage.getItem("token");
-      const productsRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/products`, {
+      const productsRes = await fetch(`${API_URL}/products`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const productsData = await productsRes.json();
@@ -78,8 +71,21 @@ const Dashboard = () => {
     }
   };
 
+  // Fetch home sections
+  const fetchHomeSections = async () => {
+    try {
+      const res = await fetch(`${API_URL}/home-sections`);
+      const data = await res.json();
+      console.log('Home sections fetched:', data);
+      setHomeSections(data);
+    } catch (err) {
+      console.error("Error fetching home sections", err);
+    }
+  };
+
   useEffect(() => {
     fetchProducts();
+    fetchHomeSections();
   }, []);
 
   // Update cart API
@@ -87,7 +93,7 @@ const Dashboard = () => {
     setProductLoadingStates(prev => ({ ...prev, [productId]: true }));
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/cart/add`,
+        `${API_URL}/cart/add`,
         {
           method: "POST",
           headers: {
@@ -175,11 +181,6 @@ const Dashboard = () => {
   // Common props for product sections
   const sectionProps = {
     products,
-    cartItems,
-    productLoadingStates,
-    handleAddToCart,
-    handleIncrease,
-    handleDecrease,
   };
 
   if (loading) return <ProductsLoaderTemplate />;
@@ -191,20 +192,31 @@ const Dashboard = () => {
         totalPrice={cartTotal}
       />
 
+      <QuickSearchChips />
       <BannerComponent />
-      <CategoryLinks />
       <CategoryGrid />
+      <VirtualStoresSection />
 
       <div className="container mx-auto px-4 py-6">
         {products.length === 0 ? (
           <ProductsLoaderTemplate />
         ) : (
           <Suspense fallback={<ProductsLoaderTemplate />}>
-            <RelatedProducts {...sectionProps} />
-            <ColdDrinksAndJuices {...sectionProps} />
-          
-            <SnacksAndChips {...sectionProps} />
-            <CandiesAndChocolates {...sectionProps} />
+            <SubcategorySection 
+              {...sectionProps}
+              sectionTitle="Dairy & Bread"
+              subcategoryFilter="milk|bread|egg"
+              navigatePath="dairy"
+            />
+            {homeSections.map((section) => (
+              <SubcategorySection 
+                key={section._id}
+                {...sectionProps}
+                sectionTitle={section.title}
+                subcategoryFilter={section.subcategoryFilter}
+                navigatePath={section.categoryPath}
+              />
+            ))}
             <h2 className="text-2xl font-bold mb-6">All Products</h2>
             <AllProducts {...sectionProps} />
           </Suspense>

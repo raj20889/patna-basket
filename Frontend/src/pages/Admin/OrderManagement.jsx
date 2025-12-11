@@ -6,7 +6,7 @@ import {
   updateOrderStatus, 
   updatePaymentStatus
 } from '../../api/OrderService';
-import ErrorBoundary from '../../components/ErrorBoundary';
+import ErrorBoundary from '../../components/Shared/ErrorBoundary';
 
 const OrderManagement = () => {
   const [orders, setOrders] = useState([]);

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { getUsers, updateUser, deleteUser } from '../../api/users';
 import AdminNavbar from '../../components/Navbar/AdminNavbar';
 import { useNavigate } from 'react-router-dom';
-import ErrorBoundary from '../../components/ErrorBoundary';
+import ErrorBoundary from '../../components/Shared/ErrorBoundary';
 
 const CustomerManager = () => {
   const [users, setUsers] = useState([]);

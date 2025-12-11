@@ -2,34 +2,44 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { CartProvider } from "./contexts/CartContext";
 import useCartLoader from "./hooks/useCartLoader";
 
-import Home from "./pages/Home";
-import AddProduct from "./pages/AddProduct";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import PrivateRoute from "./components/PrivateRoute";
+// Guest Pages
+import Home from "./pages/Guest/Home";
+import AddProduct from "./components/Product/AddProduct";
+import Login from "./pages/Guest/Login";
+import Register from "./pages/Guest/Register";
+import SearchResults from "./components/Shared/SearchResultsPage";
+import SubcategoryWithProducts from "./components/Product/SubcategoryWithProducts";
+import CategoryWithSubcategories from "./components/Product/CategoryWithSubcategories";
+import ProductDetails from "./components/Product/ProductDetails";
+
+// Shared Components
+import PrivateRoute from "./components/Shared/PrivateRoute";
+import CartPage from "./components/Shared/Cart";
+
+// Navbar Components
 import CustomerNavbar from "./components/Navbar/CustomerNavbar";
 import DeliveryNavbar from "./components/Navbar/DeliveryNavbar";
 import AdminNavbar from "./components/Navbar/AdminNavbar";
+
+// Customer Pages
 import Dashboard from "./pages/Customer/Dashboard.jsx";
-import CartPage from "./components/Cart";
-import SearchResults from "./components/SearchResultsPage";
-import SubcategoryWithProducts from "./components/SubcategoryWithProducts";
-import CustomerSubCategory from "./components/Customer/SubcategoryWithProducts";
-import Checkout from "./components/Customer/Checkout";
-import Payment from "./components/Customer/Payment";
-import OrderConfirmation from "./components/Customer/OrderConfirmation";
-import OrderDetails from "../src/components/Customer/OrderDetails";
-import CustomerOrders from "./components/Customer/CustomerOrders.jsx";
-import RollingPaperTobacco from "./components/Customer/RollingPaperAndTobacco.jsx";
-import AddressManager from "./components/Customer/AddressManager";
-import CustomerSearch from "./components/Customer/SearchResults";
-import AddressForm from "./components/Customer/AddressForm";
+
+// Customer Components
+import Checkout from "./components/Customer/Payment/Checkout";
+import Payment from "./components/Customer/Payment/Payment";
+import OrderConfirmation from "./components/Customer/Order/OrderConfirmation";
+import OrderDetails from "./components/Customer/Order/OrderDetails";
+import CustomerOrders from "./components/Customer/Order/CustomerOrders.jsx";
+import AddressManager from "./components/Customer/Address/AddressManager";
+import AddressForm from "./components/Customer/Address/AddressForm";
+
+// Admin Pages
 import AdminDashboard from "./pages/Admin/AdminDashboardPage";
 import CustomerManager from "./pages/Admin/CustomerManagement";
 import OrderManagement from "./pages/Admin/OrderManagement";
 import NotificationPanel from "./pages/Admin/NotificationPanel";
 import DeliveryManagement from "./pages/Admin/DeliveryManagement";
-import ProductDetails from "./components/ProductDetails.jsx";
+import ProductManagement from "./pages/Admin/ProductManagement/index";
 
 const App = () => {
   useCartLoader();
@@ -43,11 +53,20 @@ const App = () => {
           <Route path="/register" element={<Register />} />
           <Route path="/search" element={<SearchResults />} />
           <Route path="/cart" element={<CartPage />} />
-          <Route path="/:category" element={<SubcategoryWithProducts />} />
+          <Route path="/:category" element={<CategoryWithSubcategories />} />
           //product details route
           <Route path="/product/:id" element={<ProductDetails />} />
 
           {/* Protected Admin Routes */}
+          <Route
+            path="/admin/product-management"
+            element={
+              <PrivateRoute allowedRoles={["admin"]}>
+                <ProductManagement />
+              </PrivateRoute>
+            }
+          />
+
           <Route
             path="admin/add-product"
             element={
@@ -150,8 +169,7 @@ const App = () => {
             element={
               <PrivateRoute allowedRoles={["customer"]}>
                 <>
-                  
-                  <CustomerSearch />
+                  <SearchResults />
                 </>
               </PrivateRoute>
             }
@@ -165,9 +183,7 @@ const App = () => {
             path="/c/:category"
             element={
               <PrivateRoute allowedRoles={["customer"]}>
-                <>
-                  <CustomerSubCategory />
-                </>
+                <CategoryWithSubcategories />
               </PrivateRoute>
             }
           />

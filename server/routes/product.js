@@ -4,12 +4,24 @@ const verifyToken = require('../middlewares/verifyToken');
 
 const router = express.Router();
 
+const normalizeToArray = (value) => {
+    if (!value) return [];
+    if (Array.isArray(value)) return value.filter(Boolean);
+    return [value].filter(Boolean);
+};
+
 // Add Product (Admin Only)
 router.post('/add', verifyToken, async (req, res) => {
     if (req.user.role !== 'admin') return res.status(403).json({ msg: 'Access Denied' });
 
     try {
-        const newProduct = new Product(req.body);
+        const payload = {
+            ...req.body,
+            category: normalizeToArray(req.body.category),
+            subcategory: normalizeToArray(req.body.subcategory),
+        };
+
+        const newProduct = new Product(payload);
         await newProduct.save();
         res.status(201).json({ msg: 'Product Added', product: newProduct });
     } catch (err) {
@@ -91,10 +103,87 @@ router.get('/:id', async (req, res) => {
 router.get('/category/:category', async (req, res) => {
     try {
       const category = req.params.category;
-      const products = await Product.find({ category: new RegExp(category, 'i') });
+      // Convert slug to searchable format (e.g., "dairy" or "fresh-dairy" matches "Dairy", "Fresh Dairy")
+      const searchTerm = category.replace(/-/g, ' ');
+      const regex = new RegExp(searchTerm, 'i');
+      
+      const products = await Product.find({
+        $or: [
+          { category: { $elemMatch: { $regex: regex } } },
+          { category: { $regex: regex } } // Fallback for non-array category
+        ]
+      });
+      
+      console.log(`Category search for "${category}":`, products.length, 'products found');
       res.status(200).json(products);
     } catch (err) {
+      console.error('Error fetching products by category:', err);
       res.status(500).json(err);
     }
-  });
+});
+
+// Update Product (Admin Only)
+router.put('/:id', verifyToken, async (req, res) => {
+    if (req.user.role !== 'admin') return res.status(403).json({ msg: 'Access Denied' });
+
+    try {
+        const payload = {
+            ...req.body,
+        };
+
+        if (req.body.category !== undefined) {
+            payload.category = normalizeToArray(req.body.category);
+        }
+
+        if (req.body.subcategory !== undefined) {
+            payload.subcategory = normalizeToArray(req.body.subcategory);
+        }
+
+        const updatedProduct = await Product.findByIdAndUpdate(
+            req.params.id,
+            { $set: payload },
+            { new: true }
+        );
+        if (!updatedProduct) return res.status(404).json({ msg: 'Product not found' });
+        res.status(200).json(updatedProduct);
+    } catch (err) {
+        res.status(500).json(err);
+    }
+});
+
+// Delete Product (Admin Only)
+router.delete('/:id', verifyToken, async (req, res) => {
+    if (req.user.role !== 'admin') return res.status(403).json({ msg: 'Access Denied' });
+
+    try {
+        const deletedProduct = await Product.findByIdAndDelete(req.params.id);
+        if (!deletedProduct) return res.status(404).json({ msg: 'Product not found' });
+        res.status(200).json({ msg: 'Product deleted successfully' });
+    } catch (err) {
+        res.status(500).json(err);
+    }
+});
+
+// Bulk Delete Products (Admin Only)
+router.post('/bulk-delete', verifyToken, async (req, res) => {
+    if (req.user.role !== 'admin') return res.status(403).json({ msg: 'Access Denied' });
+
+    try {
+        const { productIds } = req.body;
+        
+        if (!Array.isArray(productIds) || productIds.length === 0) {
+            return res.status(400).json({ msg: 'No product IDs provided' });
+        }
+
+        const result = await Product.deleteMany({ _id: { $in: productIds } });
+        
+        res.status(200).json({ 
+            msg: `${result.deletedCount} product(s) deleted successfully`,
+            deletedCount: result.deletedCount
+        });
+    } catch (err) {
+        res.status(500).json(err);
+    }
+});
+
 module.exports = router;
