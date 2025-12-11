@@ -8,6 +8,7 @@ import QuickSearchChips from "../../components/Shared/QuickSearchChips";
 import VirtualStoresSection from "../../components/Shared/VirtualStoresSection";
 import CategoryGrid from "../../components/Shared/CategoryGrid";
 import ProductsLoaderTemplate from "../Customer/ProductsLoaderTemplate";
+import SplashScreen from "../../components/Shared/SplashScreen";
 
 // Lazy load heavy sections
 const SubcategorySection = React.lazy(() => import("../../components/Customer/CustomerCategory/SubcategorySection"));
@@ -24,6 +25,7 @@ const Home = () => {
   const [userIsLoggedIn, setUserIsLoggedIn] = useState(false);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [role, setRole] = useState(localStorage.getItem("role") || "guest");
+  const [showSplash, setShowSplash] = useState(true);
 
   // Check auth status on load
   useEffect(() => {
@@ -75,6 +77,9 @@ const Home = () => {
         setHomeSections(res.data);
       } catch (err) {
         console.error("Home sections fetch error:", err);
+      } finally {
+        // Hide splash after initial data loads
+        setTimeout(() => setShowSplash(false), 800);
       }
     };
     if (role !== "admin") fetchHomeSections();
@@ -198,6 +203,11 @@ const Home = () => {
 
   if (loadingProducts) {
     return <ProductsLoaderTemplate />;
+  }
+
+  // Show splash screen on first load
+  if (showSplash) {
+    return <SplashScreen />;
   }
 
   return (

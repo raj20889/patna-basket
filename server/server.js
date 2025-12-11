@@ -20,6 +20,9 @@ const quickSearchRoute = require('./routes/quickSearch');
 const trendingSearchRoute = require('./routes/virtualStores');
 const storesRoute = require('./routes/stores');
 
+// Keep-alive service to prevent cold starts
+require('./keepAlive');
+
 
 
 
@@ -82,6 +85,11 @@ app.use('/stores', storesRoute);
 
 app.get('/', (req, res) => {
     res.send('E-Commerce API Running...');
+});
+
+// Health check endpoint for keep-alive pings
+app.get('/health', (req, res) => {
+    res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
 // Use a sensible default port for local development if PORT is not set

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import Modal from '../shared/Modal';
 import FormInput from '../shared/FormInput';
 import Toast from '../shared/Toast';
-import MultiSelectDropdown from '../../../../../components/shared/MultiSelectDropdown';
+import MultiSelectDropdown from '../../../../../components/Shared/MultiSelectDropdown';
 import { validationRules, messages } from '../../constants';
 
 const AddProductModal = ({ isOpen, onClose, onAdd, categories, subcategories = [], loading }) => {
