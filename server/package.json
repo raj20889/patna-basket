@@ -7,7 +7,8 @@
     "start": "nodemon server.js",
     "dev": "nodemon server.js",
     "seed:banners": "node scripts/seedBanners.js",
-    "seed:homepage": "node scripts/seedHomepage.js"
+    "seed:homepage": "node scripts/seedHomepage.js",
+    "seed:openfood": "node scripts/seedOpenFoodFacts.js"
   },
   "repository": {
     "type": "git",
