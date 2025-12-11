@@ -25,7 +25,7 @@ const Home = () => {
   const [userIsLoggedIn, setUserIsLoggedIn] = useState(false);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [role, setRole] = useState(localStorage.getItem("role") || "guest");
-  const [showSplash, setShowSplash] = useState(true);
+  const [showSplash, setShowSplash] = useState(true); // always show splash on load
 
   // Check auth status on load
   useEffect(() => {
@@ -79,7 +79,9 @@ const Home = () => {
         console.error("Home sections fetch error:", err);
       } finally {
         // Hide splash after initial data loads
-        setTimeout(() => setShowSplash(false), 800);
+        setTimeout(() => {
+          setShowSplash(false);
+        }, 800);
       }
     };
     if (role !== "admin") fetchHomeSections();

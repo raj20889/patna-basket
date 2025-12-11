@@ -151,7 +151,7 @@ const CustomerNavbar = ({
   }, [propCartCount, propTotalPrice]);
 
   return (
-    <nav className="bg-white shadow-md p-4 sticky w-full top-0 z-50">
+    <nav className="bg-white shadow-md px-4 pt-4 pb-1 sticky w-full top-0 z-50">
       {/* Desktop View */}
       <div className="hidden md:flex items-center justify-between max-w-7xl mx-auto">
         <div className="flex items-center gap-4">

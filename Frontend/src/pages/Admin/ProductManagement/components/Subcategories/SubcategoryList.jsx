@@ -73,7 +73,7 @@ const SubcategoryList = ({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-40">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <SearchBar value={searchTerm} onChange={setSearchTerm} placeholder="Search subcategories" />
         <div className="flex gap-2">

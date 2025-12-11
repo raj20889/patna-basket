@@ -35,19 +35,17 @@ const ProductComponent = ({
 
 
   return (
-    <div className="px-4 py-6 bg-white">
-      <div className="relative">
-        <div className="flex overflow-x-auto pb-4 -mx-4 px-4 scrollbar-hide space-x-4">
-          {Array.isArray(products) && products.map(product => (
-            <div key={product._id} className="flex-shrink-0">
-              <ProductCard
-                product={product}
-                handleAddToCart={handleAddToCart}
-                handleChange={handleChange}
-              />
-            </div>
-          ))}
-        </div>
+    <div className="px-4 py-4 bg-white">
+      {/* Responsive grid like Blinkit/Zepto */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4">
+        {Array.isArray(products) && products.map(product => (
+          <ProductCard
+            key={product._id}
+            product={product}
+            handleAddToCart={handleAddToCart}
+            handleChange={handleChange}
+          />
+        ))}
       </div>
     </div>
   );

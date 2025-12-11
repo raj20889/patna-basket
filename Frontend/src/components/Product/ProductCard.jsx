@@ -10,6 +10,16 @@ const ProductCard = ({ product }) => {
   const cartItem = useSelector((state) =>
     state.cart.items.find((item) => item.productId === product._id)
   );
+  const truncateTitle = (text, max = 24) => {
+    if (!text) return "";
+    const trimmed = text.trim();
+    if (trimmed.length <= max) return trimmed;
+    // Prefer cutting at last space before max to avoid mid-word cuts
+    const slice = trimmed.slice(0, max);
+    const lastSpace = slice.lastIndexOf(" ");
+    const base = lastSpace > 12 ? slice.slice(0, lastSpace) : slice; // keep at least ~12 chars before forcing mid-word
+    return base + "...";
+  };
   const quantity = cartItem ? cartItem.quantity : 0;
   const token = localStorage.getItem("token");
 
@@ -115,15 +125,20 @@ const ProductCard = ({ product }) => {
   };
 
   return (
-    <div className="flex-shrink-0 w-44 border border-slate-300 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+    <div
+      className="flex-shrink-0 w-36 md:w-40 rounded-xl overflow-hidden bg-white/70 backdrop-blur-md border border-gray-200 shadow-sm hover:shadow-xl transition-all duration-300 group"
+      style={{
+        animation: 'pc-fade-in 0.5s ease-out both'
+      }}
+    >
       {/* Product Image */}
       <div
-        className="relative h-40 bg-gray-100 flex items-center justify-center p-2 cursor-pointer hover:bg-gray-200 transition-colors"
+        className="relative h-32 md:h-36 bg-gradient-to-br from-gray-50 to-gray-100 cursor-pointer overflow-hidden rounded-lg m-2"
         onClick={() => navigate(`/product/${product._id}`)}
       >
         {/* Discount Badge */}
         {showDiscount && (
-          <div className={`absolute top-2 left-2 ${getBadgeColorClass()} text-white text-xs font-bold px-2 py-1 rounded`}>
+          <div className={`absolute top-2 left-2 z-30 ${getBadgeColorClass()} text-white text-xs font-bold px-2 py-1 rounded`}>
             {product.discount.badgeText || (
               <>
                 {product.discount.value}{product.discount.type === 'percentage' ? '%' : '₹'} OFF
@@ -134,7 +149,7 @@ const ProductCard = ({ product }) => {
 
         {/* Custom Badges */}
         {product.badges && product.badges.length > 0 && (
-          <div className="absolute top-2 right-2 flex flex-col gap-1">
+          <div className="absolute top-2 right-2 z-30 flex flex-col gap-1">
             {product.badges.slice(0, 2).map((badge, idx) => (
               <span
                 key={idx}
@@ -147,7 +162,7 @@ const ProductCard = ({ product }) => {
         )}
 
         {/* Delivery Time Badge */}
-        <div className="absolute bottom-2 right-2 bg-white bg-opacity-90 px-2 py-1 rounded text-xs font-semibold text-gray-800">
+        <div className="absolute bottom-2 right-2 z-30 bg-white bg-opacity-90 px-2 py-1 rounded text-xs font-semibold text-gray-800">
           {product.deliveryTime || '30 MINS'}
         </div>
 
@@ -156,28 +171,31 @@ const ProductCard = ({ product }) => {
           alt={product.name}
           loading="lazy"
           decoding="async"
-          className="h-full w-full object-contain"
+          className="absolute inset-0 h-full w-full object-cover transform transition-transform duration-500 group-hover:scale-105 z-20"
           onError={(e) => {
             e.target.src = "/placeholder-product.jpg";
           }}
         />
+
+        {/* Decorative gradient glow */}
+        <div className="absolute -bottom-16 left-1/2 -translate-x-1/2 w-32 h-32 bg-gradient-to-r from-purple-400/30 to-pink-400/30 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity z-10" />
       </div>
 
       {/* Product Details */}
       <div className="p-2">
-        <h3 className="font-medium text-sm line-clamp-2 mb-1">
-          {product.name}
+        <h3 className="font-semibold text-xs md:text-sm line-clamp-2 mb-1 text-gray-900 group-hover:text-purple-600 transition-colors">
+          {truncateTitle(product?.name || product?.title || "Product")}
         </h3>
-        <div className="text-xs text-gray-500 mb-1">
+        <div className="text-[10px] md:text-[11px] text-gray-500 mb-2">
           {product.weight || "1 pc"}
         </div>
 
-        <div className="flex justify-between items-start gap-2 mb-2">
+        <div className="flex justify-between items-end gap-2 mb-1.5">
           {/* Price */}
-          <div>
-            <div className="font-bold text-sm">₹{discountedPrice.toFixed(2)}</div>
+          <div className="flex flex-col">
+            <div className="font-extrabold text-xs md:text-sm tracking-wide">₹{discountedPrice.toFixed(2)}</div>
             {showDiscount && (
-              <div className="text-xs text-gray-400 line-through">
+              <div className="text-[10px] md:text-xs text-gray-400 line-through">
                 ₹{product.price.toFixed(2)}
               </div>
             )}
@@ -191,7 +209,7 @@ const ProductCard = ({ product }) => {
                 handleAddToCart();
               }}
               disabled={isLoading}
-              className={`border border-green-600 rounded px-3 py-1 text-green-600 text-xs font-bold hover:bg-green-50 transition-colors ${
+              className={`rounded-lg px-2.5 py-1.5 text-white text-[11px] md:text-xs font-bold bg-gradient-to-r from-green-600 to-emerald-600 shadow hover:shadow-md hover:brightness-110 active:scale-95 transition-all ${
                 isLoading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
               }`}
             >
@@ -199,23 +217,23 @@ const ProductCard = ({ product }) => {
             </button>
           ) : (
             <div
-              className="flex items-center space-x-1 bg-green-600 rounded px-2 py-1"
+              className="flex items-center space-x-2 bg-green-600 rounded-lg px-2 py-1.5 shadow-md"
               onClick={(e) => e.stopPropagation()}
             >
               <button
                 onClick={() => handleDecrease()}
                 disabled={isLoading}
-                className="text-white font-bold text-xs"
+                className="text-white font-bold text-[11px] md:text-xs hover:scale-110 transition-transform"
               >
                 −
               </button>
-              <span className="text-xs text-white font-medium w-4 text-center">
+              <span className="text-[11px] md:text-xs text-white font-medium w-4 text-center">
                 {quantity}
               </span>
               <button
                 onClick={() => handleIncrease()}
                 disabled={isLoading}
-                className="text-white font-bold text-xs"
+                className="text-white font-bold text-[11px] md:text-xs hover:scale-110 transition-transform"
               >
                 +
               </button>
