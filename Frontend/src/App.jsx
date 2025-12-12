@@ -64,15 +64,8 @@ const App = () => {
           <Route path="/:category" element={<CategoryWithSubcategories />} />
           <Route path="/product/:id" element={<ProductDetails />} />
           
-          {/* Virtual Store Route */}
-          <Route
-            path="/store/:storeId"
-            element={
-              <PrivateRoute allowedRoles={["customer"]}>
-                <StoreView />
-              </PrivateRoute>
-            }
-          />
+          {/* Virtual Store Route - Public Access */}
+          <Route path="/store/:storeId" element={<StoreView />} />
 
           {/* Protected Admin Routes */}
           <Route

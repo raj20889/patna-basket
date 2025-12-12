@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import CustomerNavbar from '../../../components/Navbar/CustomerNavbar';
+import PublicNavbar from '../../../components/Navbar/PublicNavbar';
 import ShopHeader from '../../../components/VirtualStore/ShopHeader';
 import ShelfRow from '../../../components/VirtualStore/ShelfRow';
 import FloatingCartBar from '../../../components/VirtualStore/FloatingCartBar';
@@ -18,6 +19,12 @@ const StoreView = () => {
   const [store, setStore] = useState(null);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Check if user is logged in
+  const token = localStorage.getItem('token');
+  const user = JSON.parse(localStorage.getItem('user') || 'null');
+  const isLoggedIn = !!(token && user);
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -80,7 +87,7 @@ const StoreView = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <CustomerNavbar />
+        {isLoggedIn ? <CustomerNavbar /> : <PublicNavbar />}
         <div className="flex items-center justify-center h-screen">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mb-4 mx-auto"></div>
@@ -94,7 +101,7 @@ const StoreView = () => {
   if (error || !store) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <CustomerNavbar />
+        {isLoggedIn ? <CustomerNavbar /> : <PublicNavbar />}
         <div className="flex flex-col items-center justify-center h-screen gap-4">
           <div className="text-6xl">🏪</div>
           <p className="text-gray-600 font-medium">Store not found</p>
@@ -120,7 +127,7 @@ const StoreView = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-32">
-      <CustomerNavbar />
+      {isLoggedIn ? <CustomerNavbar /> : <PublicNavbar />}
 
       {/* Store Header */}
       <ShopHeader store={viewStore} onClose={() => navigate(-1)} />
