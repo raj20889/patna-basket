@@ -12,6 +12,7 @@ const AdminDashboard = () => {
     { name: 'Invoice & Transaction', route: '/admin/transaction-management' },
     { name: 'Delivery Management', route: '/admin/delivery-management' },
     { name: 'Notification Banner', route: '/admin/notification' },
+    { name: '🏪 Virtual Store Manager', route: '/admin/virtual-stores' },
   ];
 
   return (

@@ -6,7 +6,6 @@ import SubcategoryList from './components/Subcategories/SubcategoryList';
 import HomeSectionManagement from './HomeSectionManagement';
 import BannerManagement from './BannerManagement';
 import QuickSearchManager from './components/QuickSearch/QuickSearchManager';
-import VirtualStoresManager from './components/VirtualStores/VirtualStoresManager';
 import { useProducts } from './hooks/useProducts';
 import { useCategories } from './hooks/useCategories';
 import { useSubcategories } from './hooks/useSubcategories';
@@ -134,16 +133,6 @@ const ProductManagement = () => {
           >
             Quick Searches
           </button>
-          <button
-            onClick={() => setActiveTab('stores')}
-            className={`px-6 py-3 font-semibold border-b-2 transition ${
-              activeTab === 'stores'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-600 hover:text-gray-800'
-            }`}
-          >
-            Virtual Stores
-          </button>
         </div>
 
         {/* Error Messages */}
@@ -214,10 +203,6 @@ const ProductManagement = () => {
 
           {activeTab === 'quickSearch' && (
             <QuickSearchManager />
-          )}
-
-          {activeTab === 'stores' && (
-            <VirtualStoresManager />
           )}
         </div>
       </div>

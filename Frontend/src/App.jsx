@@ -12,6 +12,10 @@ import SubcategoryWithProducts from "./components/Product/SubcategoryWithProduct
 import CategoryWithSubcategories from "./components/Product/CategoryWithSubcategories";
 import ProductDetails from "./components/Product/ProductDetails";
 
+// Virtual Store Pages
+import StoreView from "./pages/Customer/VirtualStore/StoreView";
+import StoresListPage from "./pages/Customer/VirtualStore/StoresListPage";
+
 // Shared Components
 import PrivateRoute from "./components/Shared/PrivateRoute";
 import CartPage from "./components/Shared/Cart";
@@ -40,6 +44,7 @@ import OrderManagement from "./pages/Admin/OrderManagement";
 import NotificationPanel from "./pages/Admin/NotificationPanel";
 import DeliveryManagement from "./pages/Admin/DeliveryManagement";
 import ProductManagement from "./pages/Admin/ProductManagement/index";
+import VirtualStoresPage from "./pages/Admin/VirtualStoresPage";
 
 const App = () => {
   useCartLoader();
@@ -47,15 +52,27 @@ const App = () => {
     <CartProvider>
       <Router>
         <Routes>
-          {/* Public Routes */}
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/search" element={<SearchResults />} />
           <Route path="/cart" element={<CartPage />} />
+          
+          {/* Virtual Stores List - Must be before /:category */}
+          <Route path="/stores" element={<StoresListPage />} />
+          
           <Route path="/:category" element={<CategoryWithSubcategories />} />
-          //product details route
           <Route path="/product/:id" element={<ProductDetails />} />
+          
+          {/* Virtual Store Route */}
+          <Route
+            path="/store/:storeId"
+            element={
+              <PrivateRoute allowedRoles={["customer"]}>
+                <StoreView />
+              </PrivateRoute>
+            }
+          />
 
           {/* Protected Admin Routes */}
           <Route
@@ -148,6 +165,15 @@ const App = () => {
                   <AdminNavbar />
                   <DeliveryManagement />
                 </>
+              </PrivateRoute>
+            }
+          />
+
+          <Route
+            path="/admin/virtual-stores"
+            element={
+              <PrivateRoute allowedRoles={["admin"]}>
+                <VirtualStoresPage />
               </PrivateRoute>
             }
           />

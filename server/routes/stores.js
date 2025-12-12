@@ -63,6 +63,44 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+// Get products for a specific store with shelves
+router.get('/:storeId/products', async (req, res) => {
+  try {
+    const { storeId } = req.params;
+    const { category, limit = 50 } = req.query;
+
+    const store = await VirtualStore.findById(storeId)
+      .populate('featuredProducts')
+      .populate('categories')
+      .populate('subcategories');
+
+    if (!store) {
+      return res.status(404).json({ error: 'Store not found' });
+    }
+
+    // Get products from featured products
+    let products = store.featuredProducts || [];
+
+    // If category specified, filter
+    if (category && store.categories.length > 0) {
+      const catId = store.categories.find(c => c.name.toLowerCase() === category.toLowerCase())?._id;
+      if (catId) {
+        const Product = require('../models/Product');
+        products = await Product.find({ category: catId })
+          .limit(parseInt(limit));
+      }
+    }
+
+    res.json({
+      store,
+      products,
+      count: products.length
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Create virtual store (admin)
 router.post('/add', verifyToken, async (req, res) => {
   try {
