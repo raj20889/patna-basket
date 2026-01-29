@@ -21,6 +21,37 @@ const CartPage = () => {
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
 
+  // Hydrate Redux cart on page mount to avoid empty view until refresh
+  useEffect(() => {
+    const hydrate = async () => {
+      try {
+        if (token) {
+          const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/cart`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          const items = (res.data?.products || []).map(p => ({
+            productId: p.productId?._id || p.productId,
+            name: p.productId?.name,
+            price: p.productId?.price,
+            image: p.productId?.image,
+            quantity: p.quantity || 1
+          }));
+          dispatch(setCart({ cartItems: items }));
+        } else {
+          const guestCart = JSON.parse(localStorage.getItem('guestCart') || '[]');
+          dispatch(setCart({ cartItems: Array.isArray(guestCart) ? guestCart : [] }));
+        }
+      } catch (e) {
+        console.error('Error hydrating cart on cart page:', e);
+      }
+    };
+
+    hydrate();
+    const onCartUpdated = () => hydrate();
+    window.addEventListener('cartUpdated', onCartUpdated);
+    return () => window.removeEventListener('cartUpdated', onCartUpdated);
+  }, [token, dispatch]);
+
   const updateCartCharges = useCallback(async (tip, donation) => {
     const newTip = tip ?? selectedTip;
     const newDonation = donation ?? donationSelected;

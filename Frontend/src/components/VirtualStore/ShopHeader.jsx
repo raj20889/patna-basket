@@ -13,14 +13,15 @@ const ShopHeader = ({ store, onClose }) => {
   const isOpen = store?.isActive !== false;
 
   return (
-    <div className="bg-white border-b border-gray-200 sticky top-16 z-30">
-      {/* Banner Image */}
-      <div className="relative h-40 bg-gradient-to-r from-blue-500 to-purple-600 overflow-hidden">
+    <div className="bg-white border-b border-gray-200">
+      {/* Banner Image (match admin preview) */}
+      <div className="relative h-40 md:h-48 bg-gray-100 overflow-hidden">
         {banner ? (
+          
           <img
             src={banner}
             alt={name}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-fit"
             onError={(e) => {
               e.target.style.display = 'none';
             }}

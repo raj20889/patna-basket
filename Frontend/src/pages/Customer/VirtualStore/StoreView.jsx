@@ -18,6 +18,7 @@ const StoreView = () => {
   const navigate = useNavigate();
   const [store, setStore] = useState(null);
   const [products, setProducts] = useState([]);
+  const [shelvesState, setShelvesState] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -25,7 +26,6 @@ const StoreView = () => {
   const token = localStorage.getItem('token');
   const user = JSON.parse(localStorage.getItem('user') || 'null');
   const isLoggedIn = !!(token && user);
-  const [error, setError] = useState(null);
 
   useEffect(() => {
     fetchStoreData();
@@ -37,6 +37,7 @@ const StoreView = () => {
 
     try {
       const storeRes = await axios.get(`${API_BASE_URL}/stores/${storeId}`);
+      console.log('Store data fetched:', storeRes.data);
       setStore(storeRes.data);
     } catch (err) {
       console.error('Error fetching store data:', err);
@@ -54,6 +55,10 @@ const StoreView = () => {
         ? payload
         : [];
       setProducts(list);
+      // If API provides shelves, use them
+      if (Array.isArray(payload?.shelves)) {
+        setShelvesState(payload.shelves);
+      }
     } catch (err) {
       console.error('Error fetching products for store:', err);
       setProducts([]);
@@ -118,12 +123,20 @@ const StoreView = () => {
 
   const featuredProducts = (store?.featuredProducts || []).map((p) => p.product || p);
   const discounted = products.filter((p) => p.discount?.isActive);
-  const shelves = [
-    { title: '⭐ Featured', icon: '⭐', products: featuredProducts.slice(0, 12) },
-    { title: '🔥 Best Deals', icon: '🔥', products: discounted.slice(0, 12) },
-    { title: '🛍️ Popular Picks', icon: '🛍️', products: products.slice(0, 12) },
-    { title: '✨ New Arrivals', icon: '✨', products: products.slice(12, 24) }
-  ].filter((s) => s.products && s.products.length > 0);
+
+  // Prefer admin-defined shelves when available
+  const shelves = (shelvesState && shelvesState.length > 0)
+    ? shelvesState.map(s => ({
+        title: s.title,
+        icon: s.icon || '🛒',
+        products: (s.products || s.productIds || []).map(p => p.product || p)
+      })).filter(s => s.products && s.products.length > 0)
+    : [
+        { title: '⭐ Featured', icon: '⭐', products: featuredProducts.slice(0, 12) },
+        { title: '🔥 Best Deals', icon: '🔥', products: discounted.slice(0, 12) },
+        { title: '🛍️ Popular Picks', icon: '🛍️', products: products.slice(0, 12) },
+        { title: '✨ New Arrivals', icon: '✨', products: products.slice(12, 24) }
+      ].filter((s) => s.products && s.products.length > 0);
 
   return (
     <div className="min-h-screen bg-gray-50 pb-32">
@@ -136,7 +149,7 @@ const StoreView = () => {
       <OfferSection offers={store?.offers || []} />
 
       {/* Shop Navigation Tabs (Static for now) */}
-      <div className="bg-white border-b border-gray-200 sticky top-48 z-20">
+      <div className="bg-white border-b border-gray-200">
         <div className="container mx-auto px-4">
           <div className="flex gap-4 overflow-x-auto py-2">
             {['All', 'Our Special', 'Trending', 'Snacks', 'Drinks', 'Fresh'].map((tab) => (
@@ -210,6 +223,28 @@ const StoreView = () => {
         <div className="flex flex-col items-center justify-center py-16">
           <div className="text-6xl mb-4">📦</div>
           <p className="text-gray-600 font-medium">No products available</p>
+        </div>
+      )}
+
+      {/* Famous For Section */}
+      {store?.famousFor && store.famousFor.length > 0 && (
+        <div className="bg-gradient-to-r from-yellow-50 to-orange-50 py-8 border-t border-b border-yellow-200">
+          <div className="container mx-auto px-4">
+            <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <span className="text-2xl">⭐</span>
+              Famous For
+            </h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              {store.famousFor.map((item, idx) => (
+                <div
+                  key={idx}
+                  className="bg-white rounded-lg p-4 border border-yellow-200 hover:shadow-md transition-all text-center"
+                >
+                  <p className="text-sm font-semibold text-gray-800">{item}</p>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       )}
 

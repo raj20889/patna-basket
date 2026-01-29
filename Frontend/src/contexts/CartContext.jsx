@@ -1,4 +1,6 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
+import { useDispatch } from 'react-redux';
+import { setCart as setReduxCart } from '../redux/cartSlice';
 import axios from 'axios';
 
 // Create the CartContext
@@ -12,6 +14,7 @@ const CartProvider = ({ children }) => {
   
   const role = localStorage.getItem('role');
   const token = localStorage.getItem('token');
+  const dispatch = useDispatch();
   
   useEffect(() => {
     const fetchCartData = async () => {
@@ -24,6 +27,8 @@ const CartProvider = ({ children }) => {
             guestCartMap[item.productId] = item.quantity;
           });
           setCart(guestCartMap);
+          // Sync Redux so ProductCard reflects quantities when navigating back
+          dispatch(setReduxCart({ cartItems: guestCart }));
           calculateAndUpdateCart(guestCart);
         } else {
           // For logged-in users, fetch cart data from the server
@@ -39,6 +44,14 @@ const CartProvider = ({ children }) => {
             });
 
             setCart(serverCartMap);
+            const reduxItems = (cartData?.products || []).map(item => ({
+              productId: item.productId?._id || item.productId,
+              name: item.productId?.name,
+              price: item.productId?.price,
+              image: item.productId?.image,
+              quantity: item.quantity || 1
+            }));
+            dispatch(setReduxCart({ cartItems: reduxItems }));
             calculateAndUpdateCart(cartData?.products || []);
           } catch (err) {
             console.error('Error fetching cart:', err);

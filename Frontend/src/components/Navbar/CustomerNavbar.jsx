@@ -7,7 +7,8 @@ import Dialog from '@mui/material/Dialog';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import Button from '@mui/material/Button';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { setCart as setReduxCart } from '../../redux/cartSlice';
 
 const CustomerNavbar = ({ 
   cartUpdated, 
@@ -16,6 +17,7 @@ const CustomerNavbar = ({
   forceUpdate 
 }) => {
   const [showDropdown, setShowDropdown] = useState(false);
+  const dispatch = useDispatch();
   const reduxCart = useSelector((state) => state.cart);
   const [cartCount, setCartCount] = useState(propCartCount || 0);
   const [totalPrice, setTotalPrice] = useState(propTotalPrice || 0);
@@ -98,6 +100,8 @@ const CustomerNavbar = ({
         
         setCartCount(count);
         setTotalPrice(total);
+        // Sync Redux so other views (ProductCard/Cart page) update instantly
+        dispatch(setReduxCart({ cartItems: guestCart }));
       } else {
         const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/cart`, {
           headers: {
@@ -122,6 +126,15 @@ const CustomerNavbar = ({
         
         setCartCount(quantity);
         setTotalPrice(price);
+        // Normalize and sync into Redux for immediate UI updates
+        const cartItems = (data?.products || []).map((item) => ({
+          productId: item.productId?._id || item.productId,
+          name: item.productId?.name,
+          price: item.productId?.price,
+          image: item.productId?.image,
+          quantity: item.quantity || 1,
+        }));
+        dispatch(setReduxCart({ cartItems }));
       }
     } catch (err) {
       console.error('Error fetching cart details:', err);

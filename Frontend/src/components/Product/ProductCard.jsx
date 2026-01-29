@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { addToCart, removeFromCart } from "../../redux/cartSlice";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { useCart } from "../../contexts/CartContext";
 
 const ProductCard = ({ product }) => {
   const dispatch = useDispatch();
@@ -10,6 +11,7 @@ const ProductCard = ({ product }) => {
   const cartItem = useSelector((state) =>
     state.cart.items.find((item) => item.productId === product._id)
   );
+  const { cart: cartMap } = useCart();
   const truncateTitle = (text, max = 24) => {
     if (!text) return "";
     const trimmed = text.trim();
@@ -20,7 +22,18 @@ const ProductCard = ({ product }) => {
     const base = lastSpace > 12 ? slice.slice(0, lastSpace) : slice; // keep at least ~12 chars before forcing mid-word
     return base + "...";
   };
-  const quantity = cartItem ? cartItem.quantity : 0;
+  // Prefer Redux (immediate UI updates), fallback to CartContext if Redux empty
+  const quantity = (() => {
+    if (cartItem && typeof cartItem.quantity === 'number') {
+      return cartItem.quantity;
+    }
+    const token = localStorage.getItem("token");
+    if (token && cartMap && typeof cartMap === 'object') {
+      const q = cartMap[product._id];
+      if (typeof q === 'number') return q;
+    }
+    return 0;
+  })();
   const token = localStorage.getItem("token");
 
   const syncToServer = async (newQuantity) => {

@@ -47,7 +47,8 @@ router.get('/:id', async (req, res) => {
     const store = await VirtualStore.findById(req.params.id)
       .populate('categories')
       .populate('subcategories')
-      .populate('featuredProducts');
+      .populate('featuredProducts')
+      .populate({ path: 'shelves.productIds', select: 'name price image discount category' });
     
     if (!store) {
       return res.status(404).json({ error: 'Store not found' });
@@ -72,13 +73,14 @@ router.get('/:storeId/products', async (req, res) => {
     const store = await VirtualStore.findById(storeId)
       .populate('featuredProducts')
       .populate('categories')
-      .populate('subcategories');
+      .populate('subcategories')
+      .populate({ path: 'shelves.productIds', select: 'name price image discount category' });
 
     if (!store) {
       return res.status(404).json({ error: 'Store not found' });
     }
 
-    // Get products from featured products
+    // Base products: featured
     let products = store.featuredProducts || [];
 
     // If category specified, filter
@@ -91,9 +93,17 @@ router.get('/:storeId/products', async (req, res) => {
       }
     }
 
+    // Include shelves in response
+    const shelves = (store.shelves || []).map(s => ({
+      title: s.title,
+      icon: s.icon || '🛒',
+      products: (s.productIds || []).map(p => p.product || p)
+    }));
+
     res.json({
       store,
       products,
+      shelves,
       count: products.length
     });
   } catch (error) {

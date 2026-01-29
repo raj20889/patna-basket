@@ -30,8 +30,10 @@ const StoreEditor = ({ store, onClose, onSave, token }) => {
   const handleSaveStore = async () => {
     setSaving(true);
     setError('');
+    console.log('Saving store data:', storeData);
     try {
       await axios.put(`${API_BASE_URL}/stores/${storeData._id}`, storeData, { headers });
+      console.log('Store saved successfully');
       onSave();
     } catch (err) {
       console.error('Error saving store:', err);

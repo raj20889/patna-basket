@@ -1,5 +1,14 @@
 const mongoose = require('mongoose');
 
+const shelfSchema = new mongoose.Schema(
+  {
+    title: { type: String, required: true },
+    icon: { type: String, default: '🛒' },
+    productIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product' }]
+  },
+  { _id: false }
+);
+
 const virtualStoreSchema = new mongoose.Schema(
   {
     storeName: {
@@ -47,6 +56,8 @@ const virtualStoreSchema = new mongoose.Schema(
         ref: 'Product'
       }
     ],
+    shelves: [shelfSchema],
+    famousFor: [String],
     displayOrder: {
       type: Number,
       default: 0,
