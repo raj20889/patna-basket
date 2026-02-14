@@ -13,6 +13,7 @@ const AddProductModal = ({ isOpen, onClose, onAdd, categories, subcategories = [
     category: [],
     subcategory: [],
     image: '',
+    stock: 0, // Add stock field to form data
   });
   const [errors, setErrors] = useState({});
   const [toast, setToast] = useState(null);
@@ -86,6 +87,7 @@ const AddProductModal = ({ isOpen, onClose, onAdd, categories, subcategories = [
           category: [],
           subcategory: [],
           image: '',
+          stock: 0,
         });
         onClose();
       }, 500);
@@ -161,6 +163,17 @@ const AddProductModal = ({ isOpen, onClose, onAdd, categories, subcategories = [
             value={formData.image}
             onChange={handleInputChange}
             placeholder="https://example.com/image.jpg"
+          />
+
+          <FormInput
+            label="Stock"
+            type="number"
+            name="stock"
+            value={formData.stock}
+            onChange={handleInputChange}
+            error={errors.stock}
+            required
+            placeholder="Enter stock quantity"
           />
 
           <div className="flex gap-2 mt-6">

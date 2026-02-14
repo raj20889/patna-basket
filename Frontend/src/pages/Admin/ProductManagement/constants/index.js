@@ -29,6 +29,11 @@ export const validationRules = {
       required: false,
       message: 'Image URL is optional',
     },
+    stock: {
+      required: true,
+      min: 0,
+      message: 'Stock must be a non-negative integer',
+    },
   },
   category: {
     name: {
@@ -100,6 +105,7 @@ export const tableColumns = {
     { key: 'category', label: 'Category', sortable: true },
     { key: 'subcategory', label: 'Subcategory', sortable: false },
     { key: 'price', label: 'Price', sortable: true },
+    { key: 'stock', label: 'Stock', sortable: true }, // Added Stock column
     { key: 'actions', label: 'Actions', sortable: false },
   ],
   categories: [

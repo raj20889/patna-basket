@@ -1,6 +1,7 @@
 const express = require('express');
 const Product = require('../models/Product');
 const verifyToken = require('../middlewares/verifyToken');
+const io = require('socket.io');
 
 const router = express.Router();
 
@@ -19,6 +20,7 @@ router.post('/add', verifyToken, async (req, res) => {
             ...req.body,
             category: normalizeToArray(req.body.category),
             subcategory: normalizeToArray(req.body.subcategory),
+            stock: req.body.stock || 0, // Include stock field with default value
         };
 
         const newProduct = new Product(payload);

@@ -37,7 +37,7 @@ const FloatingCartBar = () => {
 
         {/* Checkout Button */}
         <button
-          onClick={() => navigate('/checkout')}
+          onClick={() => navigate('/checkout', { state: { addressId: localStorage.getItem('defaultAddressId') } })}
           className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-3 rounded-lg font-semibold hover:brightness-110 transition-all active:scale-95 shadow-lg"
         >
           Checkout

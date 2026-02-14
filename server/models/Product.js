@@ -50,7 +50,8 @@ const productSchema = new mongoose.Schema({
             type: String,
             description: 'Array of custom badges (Bestseller, New, etc.)'
         }
-    ]
+    ],
+    stock: { type: Number, required: true, default: 0 } // Add stock field
 }, { timestamps: true });
 
 // Updated text index with subcategory

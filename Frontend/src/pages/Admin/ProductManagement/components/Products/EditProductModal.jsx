@@ -13,6 +13,7 @@ const EditProductModal = ({ isOpen, onClose, onUpdate, product, categories, subc
     category: [],
     subcategory: [],
     image: '',
+    stock: 0, // Add stock field to form data
   });
   const [errors, setErrors] = useState({});
   const [toast, setToast] = useState(null);
@@ -43,6 +44,7 @@ const EditProductModal = ({ isOpen, onClose, onUpdate, product, categories, subc
             ? [product.subcategory]
             : [],
         image: product.image || '',
+        stock: product.stock || 0, // Initialize stock field
       });
     }
   }, [product, isOpen]);
@@ -164,6 +166,16 @@ const EditProductModal = ({ isOpen, onClose, onUpdate, product, categories, subc
             name="image"
             value={formData.image}
             onChange={handleInputChange}
+          />
+
+          <FormInput
+            label="Stock"
+            type="number"
+            name="stock"
+            value={formData.stock}
+            onChange={handleInputChange}
+            error={errors.stock}
+            required
           />
 
           <div className="flex gap-2 mt-6">

@@ -1,5 +1,5 @@
 const OrderSummary = ({
-  address,
+  address = {}, // Default to an empty object
   cartItems,
   cartTotals,
   selectedTip,
@@ -17,18 +17,18 @@ const OrderSummary = ({
         <h2 className="text-xl font-semibold mb-6 text-gray-800">Order Summary</h2>
         
         {/* Delivery Address */}
-        {address && (
+        {address && address.contactName ? (
           <div className="mb-6 pb-6 border-b border-gray-200">
             <h3 className="font-medium text-gray-700 mb-3">Delivery Address</h3>
             <div className="text-gray-600 space-y-1">
               <p className="font-semibold">
-                {address.addressType === 'Other' ? address.customName : address.addressType}: 
+                {address.addressType === 'Other' ? address.customName : address.addressType || 'N/A'}: 
               </p>
-              <p>{address.building}, {address.locality}</p>
+              <p>{address.building || 'N/A'}, {address.locality || 'N/A'}</p>
               {address.floor && <p>Floor: {address.floor}</p>}
               {address.landmark && <p>Landmark: {address.landmark}</p>}
               <p className="mt-2">
-                <span className="font-medium">Contact:</span> {address.contactName} ({address.contactPhone})
+                <span className="font-medium">Contact:</span> {address.contactName || 'N/A'} ({address.contactPhone || 'N/A' })
               </p>
             </div>
             <button 
@@ -36,6 +36,17 @@ const OrderSummary = ({
               onClick={() => navigate('/checkout')}
             >
               Change Address
+            </button>
+          </div>
+        ) : (
+          <div className="mb-6 pb-6 border-b border-gray-200">
+            <h3 className="font-medium text-gray-700 mb-3">Delivery Address</h3>
+            <p className="text-gray-500">No address available. Please add an address.</p>
+            <button 
+              className="mt-3 text-blue-600 text-sm font-medium hover:text-blue-800"
+              onClick={() => navigate('/checkout')}
+            >
+              Add Address
             </button>
           </div>
         )}

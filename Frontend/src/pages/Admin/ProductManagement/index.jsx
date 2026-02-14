@@ -24,6 +24,7 @@ const ProductManagement = () => {
     deleteProduct,
     bulkDeleteProducts,
     searchProducts,
+    updateProductStock, // Pass stock update handler
   } = useProducts();
 
   // Categories hook
@@ -165,6 +166,7 @@ const ProductManagement = () => {
               categories={categories}
               subcategories={subcategories}
               onSearch={searchProducts}
+              onStockUpdate={updateProductStock} // Pass stock update handler
             />
           )}
 

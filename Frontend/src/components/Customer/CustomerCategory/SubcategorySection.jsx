@@ -57,10 +57,7 @@ const SubcategorySection = ({
       <div className="relative">
         <div className="flex space-x-4 overflow-x-auto pb-4 scrollbar-hide">
           {filteredProducts.slice(0, 8).map((product) => (
-            <ProductCard
-              key={product._id}
-              product={product}
-            />
+            <ProductCard key={product._id} product={product} />
           ))}
         </div>
 

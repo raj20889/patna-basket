@@ -34,6 +34,29 @@ const OrderDetails = () => {
         });
 
         if (response.data.success && response.data.order) {
+          console.log('Fetched order details:', response.data.order); // Debugging log
+
+          // Fetch full address details if address is an ID
+          if (typeof response.data.order.address === 'string') {
+            try {
+              const addressResponse = await axios.get(`${API_BASE_URL}/addresses/${response.data.order.address}`, {
+                headers: {
+                  Authorization: `Bearer ${token}`
+                }
+              });
+              response.data.order.address = addressResponse.data; // Replace address ID with full address object
+            } catch (addressError) {
+              console.error('Error fetching address details:', addressError);
+              response.data.order.address = {
+                contactName: 'N/A',
+                contactPhone: 'N/A',
+                details: 'Address not available'
+              }; // Provide fallback address details
+            }
+          }
+
+          console.log('Address details:', response.data.order.address); // Debugging log
+
           setOrder(response.data.order);
         } else {
           setError('Order not found or invalid data format');

@@ -10,7 +10,8 @@ const AddProduct = () => {
     price: '',
     description: '',
     category: '',
-    image: ''
+    image: '',
+    stock: 0, // Add stock field to state
   })
 
   const navigate = useNavigate()
@@ -105,6 +106,20 @@ const AddProduct = () => {
               onChange={handleChange}
               className="mt-1 block w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring focus:border-blue-500"
               placeholder="Enter image URL"
+            />
+          </div>
+
+          <div className="mb-6">
+            <label htmlFor="stock" className="block text-sm font-medium text-gray-700">Stock</label>
+            <input
+              type="number"
+              id="stock"
+              name="stock"
+              value={productData.stock}
+              onChange={handleChange}
+              className="mt-1 block w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring focus:border-blue-500"
+              placeholder="Enter stock quantity"
+              required
             />
           </div>
 

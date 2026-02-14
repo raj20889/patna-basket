@@ -8,6 +8,7 @@ import QuickSearchChips from "../../components/Shared/QuickSearchChips";
 import VirtualStoresSection from "../../components/Shared/VirtualStoresSection";
 import CategoryGrid from "../../components/Shared/CategoryGrid";
 import ProductsLoaderTemplate from "./ProductsLoaderTemplate.jsx";
+import { io } from "socket.io-client";
 
 // Lazy load category/product sections
 const SubcategorySection = lazy(() =>
@@ -63,7 +64,14 @@ const Dashboard = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       const productsData = await productsRes.json();
-      setProducts(productsData);
+
+      // Include stock information in the products state
+      const productsWithStock = productsData.map(product => ({
+        ...product,
+        stock: product.stock || 0, // Default to 0 if stock is undefined
+      }));
+
+      setProducts(productsWithStock);
     } catch (err) {
       console.error("Error fetching products", err);
     } finally {
@@ -87,6 +95,10 @@ const Dashboard = () => {
     fetchProducts();
     fetchHomeSections();
   }, []);
+
+  useEffect(() => {
+    console.log("Products state with stock:", products); // Debugging: Verify stock values in products state
+  }, [products]);
 
   // Update cart API
   const updateCartOnServer = async (productId, newQuantity) => {
@@ -222,8 +234,33 @@ const Dashboard = () => {
           </Suspense>
         )}
       </div>
+
+      <WebSocketListener />
     </div>
   );
 };
 
 export default Dashboard;
+
+const WebSocketListener = () => {
+  useEffect(() => {
+    const socket = io(import.meta.env.VITE_API_BASE_URL || "http://localhost:5000");
+
+    socket.on("connect", () => {
+      console.log("WebSocket connected:", socket.id); // Debugging: Log WebSocket connection
+    });
+
+    socket.on("stockUpdated", (updatedProduct) => {
+      console.log("Stock updated event received:", updatedProduct); // Debugging: Log the received event
+      setProducts((prevProducts) => {
+        return prevProducts.map((product) =>
+          product._id === updatedProduct._id ? { ...product, stock: updatedProduct.stock } : product
+        );
+      });
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
+};

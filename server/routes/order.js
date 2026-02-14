@@ -94,6 +94,19 @@ router.post(
         paymentStatus: paymentMethod === 'COD' ? 'pending':'pending'  
       });
 
+      // Update product stock after order creation
+      for (const item of items) {
+        const product = await Product.findById(item.productId);
+        if (!product) {
+          return res.status(404).json({ success: false, message: `Product not found: ${item.productId}` });
+        }
+        if (product.stock < item.quantity) {
+          return res.status(400).json({ success: false, message: `Insufficient stock for product: ${product.name}` });
+        }
+        product.stock -= item.quantity;
+        await product.save();
+      }
+
       await newOrder.save();
 
       // Prepare response that matches frontend expectations

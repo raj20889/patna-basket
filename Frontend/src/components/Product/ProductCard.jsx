@@ -6,6 +6,7 @@ import axios from "axios";
 import { useCart } from "../../contexts/CartContext";
 
 const ProductCard = ({ product }) => {
+  console.log("ProductCard props:", { product }); // Debugging: Log props to verify stock
   const dispatch = useDispatch();
   const [isLoading, setIsLoading] = React.useState(false);
   const cartItem = useSelector((state) =>
@@ -139,7 +140,7 @@ const ProductCard = ({ product }) => {
 
   return (
     <div
-      className="flex-shrink-0 w-36 md:w-40 rounded-xl overflow-hidden bg-white/70 backdrop-blur-md border border-gray-200 shadow-sm hover:shadow-xl transition-all duration-300 group"
+      className={`flex-shrink-0 w-36 md:w-40 rounded-xl overflow-hidden bg-white/70 backdrop-blur-md border border-gray-200 shadow-sm hover:shadow-xl transition-all duration-300 group ${product.stock === 0 ? 'opacity-50' : ''}`}
       style={{
         animation: 'pc-fade-in 0.5s ease-out both'
       }}
@@ -149,6 +150,13 @@ const ProductCard = ({ product }) => {
         className="relative h-32 md:h-36 bg-gradient-to-br from-gray-50 to-gray-100 cursor-pointer overflow-hidden rounded-lg m-2"
         onClick={() => navigate(`/product/${product._id}`)}
       >
+        {/* Out of Stock Overlay */}
+        {product.stock === 0 && (
+          <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-30">
+            <span className="text-white text-sm font-bold">Out of Stock</span>
+          </div>
+        )}
+
         {/* Discount Badge */}
         {showDiscount && (
           <div className={`absolute top-2 left-2 z-30 ${getBadgeColorClass()} text-white text-xs font-bold px-2 py-1 rounded`}>
@@ -202,6 +210,9 @@ const ProductCard = ({ product }) => {
         <div className="text-[10px] md:text-[11px] text-gray-500 mb-2">
           {product.weight || "1 pc"}
         </div>
+        <div className="text-[10px] md:text-[11px] text-gray-500 mb-2">
+          Stock: {product.stock > 0 ? product.stock : "Out of stock"}
+        </div>
 
         <div className="flex justify-between items-end gap-2 mb-1.5">
           {/* Price */}
@@ -215,42 +226,51 @@ const ProductCard = ({ product }) => {
           </div>
 
           {/* Cart Buttons */}
-          {quantity === 0 ? (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleAddToCart();
-              }}
-              disabled={isLoading}
-              className={`rounded-lg px-2.5 py-1.5 text-white text-[11px] md:text-xs font-bold bg-gradient-to-r from-green-600 to-emerald-600 shadow hover:shadow-md hover:brightness-110 active:scale-95 transition-all ${
-                isLoading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
-              }`}
-            >
-              {isLoading ? "..." : "ADD"}
-            </button>
+          {product.stock > 0 ? (
+            quantity === 0 ? (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleAddToCart();
+                }}
+                disabled={isLoading}
+                className={`rounded-lg px-2.5 py-1.5 text-white text-[11px] md:text-xs font-bold bg-gradient-to-r from-green-600 to-emerald-600 shadow hover:shadow-md hover:brightness-110 active:scale-95 transition-all ${
+                  isLoading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                }`}
+              >
+                {isLoading ? "..." : "ADD"}
+              </button>
+            ) : (
+              <div
+                className="flex items-center space-x-2 bg-green-600 rounded-lg px-2 py-1.5 shadow-md"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button
+                  onClick={() => handleDecrease()}
+                  disabled={isLoading || quantity <= 0}
+                  className="text-white font-bold text-[11px] md:text-xs hover:scale-110 transition-transform"
+                >
+                  −
+                </button>
+                <span className="text-[11px] md:text-xs text-white font-medium w-4 text-center">
+                  {quantity}
+                </span>
+                <button
+                  onClick={() => handleIncrease()}
+                  disabled={isLoading || quantity >= product.stock}
+                  className="text-white font-bold text-[11px] md:text-xs hover:scale-110 transition-transform"
+                >
+                  +
+                </button>
+              </div>
+            )
           ) : (
-            <div
-              className="flex items-center space-x-2 bg-green-600 rounded-lg px-2 py-1.5 shadow-md"
-              onClick={(e) => e.stopPropagation()}
+            <button
+              disabled
+              className="rounded-lg px-2.5 py-1.5 text-white text-[11px] md:text-xs font-bold bg-gray-400 cursor-not-allowed"
             >
-              <button
-                onClick={() => handleDecrease()}
-                disabled={isLoading}
-                className="text-white font-bold text-[11px] md:text-xs hover:scale-110 transition-transform"
-              >
-                −
-              </button>
-              <span className="text-[11px] md:text-xs text-white font-medium w-4 text-center">
-                {quantity}
-              </span>
-              <button
-                onClick={() => handleIncrease()}
-                disabled={isLoading}
-                className="text-white font-bold text-[11px] md:text-xs hover:scale-110 transition-transform"
-              >
-                +
-              </button>
-            </div>
+              Out of Stock
+            </button>
           )}
         </div>
       </div>

@@ -6,21 +6,13 @@ import DeleteProductModal from './DeleteProductModal';
 import { tableColumns } from '../../constants';
 import { AiOutlinePlus, AiOutlineSearch, AiOutlineDelete } from 'react-icons/ai';
 
-const ProductList = ({ products, loading, onAdd, onUpdate, onDelete, categories, subcategories = [], onSearch, onBulkDelete }) => {
+const ProductList = ({ products, loading, onAdd, onUpdate, onDelete, categories, subcategories = [], onSearch, onBulkDelete, onStockUpdate }) => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProducts, setSelectedProducts] = useState([]);
-
-  // Debug logging
-  useEffect(() => {
-    console.log('ProductList - Products:', products);
-    console.log('ProductList - Categories:', categories);
-    console.log('ProductList - Loading:', loading);
-    console.log('ProductList - Subcategories:', subcategories);
-  }, [products, categories, subcategories, loading]);
 
   const handleEdit = (product) => {
     setSelectedProduct(product);
@@ -38,12 +30,9 @@ const ProductList = ({ products, loading, onAdd, onUpdate, onDelete, categories,
     onSearch(term);
   };
 
-  const handleBulkDelete = async () => {
-    if (selectedProducts.length === 0) return;
-    
-    if (window.confirm(`Are you sure you want to delete ${selectedProducts.length} product(s)?`)) {
-      await onBulkDelete(selectedProducts);
-      setSelectedProducts([]);
+  const handleStockUpdate = (productId, newStock) => {
+    if (onStockUpdate) {
+      onStockUpdate(productId, newStock);
     }
   };
 
@@ -64,7 +53,7 @@ const ProductList = ({ products, loading, onAdd, onUpdate, onDelete, categories,
         <div className="flex gap-2">
           {selectedProducts.length > 0 && (
             <button
-              onClick={handleBulkDelete}
+              onClick={() => onBulkDelete(selectedProducts)}
               className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
             >
               <AiOutlineDelete size={20} />
@@ -84,7 +73,18 @@ const ProductList = ({ products, loading, onAdd, onUpdate, onDelete, categories,
       {/* Table */}
       <DataTable
         columns={tableColumns.products}
-        data={products}
+        data={products.map(product => ({
+          ...product,
+          stock: (
+            <input
+              type="number"
+              value={product.stock}
+              onChange={(e) => handleStockUpdate(product._id, e.target.value)}
+              className="w-20 border border-gray-300 rounded-md p-1 text-center"
+            />
+          ),
+        }))
+        }
         onEdit={handleEdit}
         onDelete={handleDelete}
         loading={loading}

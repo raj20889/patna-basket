@@ -65,6 +65,22 @@ export const useProducts = () => {
     }
   }, [products]);
 
+  // Update product stock
+  const updateProductStock = useCallback(async (id, newStock) => {
+    try {
+      setError(null);
+      const updatedProduct = await productService.updateProduct(id, { stock: newStock });
+      setProducts((prevProducts) =>
+        prevProducts.map((p) => (p._id === id ? { ...p, stock: newStock } : p))
+      );
+      return updatedProduct;
+    } catch (err) {
+      const errorMsg = err.response?.data?.msg || 'Failed to update stock';
+      setError(errorMsg);
+      throw new Error(errorMsg);
+    }
+  }, []);
+
   // Delete product
   const deleteProduct = useCallback(async (id) => {
     try {
@@ -120,6 +136,7 @@ export const useProducts = () => {
     fetchProducts,
     addProduct,
     updateProduct,
+    updateProductStock,
     deleteProduct,
     bulkDeleteProducts,
     searchProducts,
