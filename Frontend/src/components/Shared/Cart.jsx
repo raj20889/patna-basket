@@ -10,6 +10,7 @@ const CartPage = () => {
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [selectedTip, setSelectedTip] = useState(0); // Default tip set to 0
   const [donationSelected, setDonationSelected] = useState(true);
+  const [stockError, setStockError] = useState({}); // State to track stock errors
 
   const dispatch = useDispatch();
   const cartState = useSelector((state) => {
@@ -34,12 +35,18 @@ const CartPage = () => {
             name: p.productId?.name,
             price: p.productId?.price,
             image: p.productId?.image,
-            quantity: p.quantity || 1
+            quantity: p.quantity || 1,
+            stock: p.productId?.stock || 0, // Include stock field
           }));
           dispatch(setCart({ cartItems: items }));
         } else {
           const guestCart = JSON.parse(localStorage.getItem('guestCart') || '[]');
-          dispatch(setCart({ cartItems: Array.isArray(guestCart) ? guestCart : [] }));
+          const updatedGuestCart = guestCart.map((item) => ({
+            ...item,
+            stock: item.stock || 1, // Add a default stock value if missing
+          }));
+          localStorage.setItem("guestCart", JSON.stringify(updatedGuestCart));
+          dispatch(setCart({ cartItems: updatedGuestCart }));
         }
       } catch (e) {
         console.error('Error hydrating cart on cart page:', e);
@@ -51,6 +58,10 @@ const CartPage = () => {
     window.addEventListener('cartUpdated', onCartUpdated);
     return () => window.removeEventListener('cartUpdated', onCartUpdated);
   }, [token, dispatch]);
+
+  useEffect(() => {
+    console.log("Cart items:", cartItems); // Debug log to verify stock field
+  }, [cartItems]);
 
   const updateCartCharges = useCallback(async (tip, donation) => {
     const newTip = tip ?? selectedTip;
@@ -93,30 +104,49 @@ const CartPage = () => {
   }, [token, cartItems, selectedTip, donationSelected, totalPrice]);
 
   const handleUpdateQuantity = async (productId, newQuantity) => {
+    // Find the product in the cart to check its stock
+    const product = cartItems.find((item) => item.productId === productId);
+
+    // Ensure stock is defined and enforce the stock limit
+    if (product && typeof product.stock === 'number' && newQuantity > product.stock) {
+      setStockError((prev) => ({ ...prev, [productId]: `Only ${product.stock} items are available in stock.` }));
+
+      // Automatically clear the error message after 2 seconds
+      setTimeout(() => {
+        setStockError((prev) => ({ ...prev, [productId]: null }));
+      }, 1000);
+
+      return;
+    }
+
+    // Clear stock error for the product if the update is valid
+    setStockError((prev) => ({ ...prev, [productId]: null }));
+
     // If the new quantity would be zero or less, remove the item instead
     if (newQuantity <= 0) {
       await handleRemoveFromCart(productId);
       return;
     }
 
-    setProductLoadingStates(prev => ({ ...prev, [productId]: true }));
+    setProductLoadingStates((prev) => ({ ...prev, [productId]: true }));
     try {
       if (!token) {
         dispatch(updateQuantity({ productId, quantity: newQuantity }));
       } else {
-        await axios.post(`${import.meta.env.VITE_API_BASE_URL}/cart/add`, 
+        await axios.post(
+          `${import.meta.env.VITE_API_BASE_URL}/cart/add`,
           { productId, quantity: newQuantity },
           { headers: { Authorization: `Bearer ${token}` } }
         );
         // Update Redux so UI reflects change immediately
         dispatch(updateQuantity({ productId, quantity: newQuantity }));
         // Notify other parts of the app to re-fetch if needed
-        window.dispatchEvent(new Event('cartUpdated'));
+        window.dispatchEvent(new Event("cartUpdated"));
       }
     } catch (err) {
-      console.error('Error updating cart:', err);
+      console.error("Error updating cart:", err);
     } finally {
-      setProductLoadingStates(prev => ({ ...prev, [productId]: false }));
+      setProductLoadingStates((prev) => ({ ...prev, [productId]: false }));
     }
   };
 
@@ -153,7 +183,7 @@ const CartPage = () => {
 
   const handleRemoveFromCart = async (productId) => {
     console.log(`handleRemoveFromCart called for productId: ${productId}`);
-    setProductLoadingStates(prev => ({ ...prev, [productId]: true }));
+    setProductLoadingStates((prev) => ({ ...prev, [productId]: true }));
     try {
       if (!token) {
         console.log("handleRemoveFromCart: Guest user, dispatching removeFromCart action.");
@@ -171,7 +201,7 @@ const CartPage = () => {
     } catch (err) {
       console.error('Error removing item from cart:', err);
     } finally {
-      setProductLoadingStates(prev => ({ ...prev, [productId]: false }));
+      setProductLoadingStates((prev) => ({ ...prev, [productId]: false }));
     }
   };
 
@@ -295,6 +325,15 @@ const CartPage = () => {
                         </div>
                       </div>
                     </div>
+                    {/* Display stock error message with enhanced styling */}
+                    {stockError[item.productId] && (
+                      <div
+                        className="mt-2 p-2 bg-red-100 border border-red-400 text-red-700 rounded shadow-md transition-opacity duration-500"
+                        style={{ animation: 'fadeOut 2s forwards' }}
+                      >
+                        <p className="text-sm font-semibold">{stockError[item.productId]}</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
