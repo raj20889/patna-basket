@@ -1,3 +1,7 @@
+const dns = require('dns');
+// Force Node to use Google DNS for SRV resolution
+dns.setServers(['8.8.8.8', '8.8.4.4']);
+
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -40,7 +44,6 @@ const DEV_ORIGINS = [
   'http://localhost:3000',
   'http://127.0.0.1:3000',
 ];
-
 const ALLOWED_ORIGINS = new Set([DEPLOYED_FRONTEND, ...DEV_ORIGINS]);
 
 app.use(
@@ -74,34 +77,48 @@ app.use('/quick-searches', quickSearchRoute);
 app.use('/trending-searches', trendingSearchRoute);
 app.use('/stores', storesRoute);
 
-// PORT define FIRST
+// PORT define
 const PORT = process.env.PORT || 5000;
 
-// Connect DB and start server
-mongoose.connect(process.env.MONGO_URL)
+// Mongoose Connection
+const connectWithRetry = () => {
+  mongoose.connect(process.env.MONGO_URL, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    serverSelectionTimeoutMS: 5000, // Fail fast if cannot connect
+  })
   .then(() => {
-    console.log('MongoDB Connected');
+    console.log('✅ MongoDB Connected');
 
+    // Start server after DB connection
     const server = app.listen(PORT, () => {
-      console.log(`Server running on ${PORT}`);
+      console.log(`🚀 Server running on port ${PORT}`);
     });
 
     // Socket.io setup
     const io = require("socket.io")(server, {
       cors: {
         origin: "*",
-        methods: ["GET", "POST"]
+        methods: ["GET", "POST"],
       }
     });
 
     io.on("connection", (socket) => {
-      console.log("New WebSocket connection:", socket.id);
-
+      console.log("🟢 New WebSocket connection:", socket.id);
       socket.on("disconnect", () => {
-        console.log("WebSocket disconnected:", socket.id);
+        console.log("🔴 WebSocket disconnected:", socket.id);
       });
     });
 
     app.set("io", io);
+
   })
-  .catch(err => console.log('MongoDB connection error:', err));
+  .catch(err => {
+    console.error('❌ MongoDB connection error:', err.message);
+    console.log('⏳ Retrying in 5 seconds...');
+    setTimeout(connectWithRetry, 5000);
+  });
+};
+
+// Connect to DB
+connectWithRetry();
