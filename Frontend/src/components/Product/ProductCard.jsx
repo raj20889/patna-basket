@@ -54,18 +54,33 @@ const ProductCard = ({ product }) => {
 
   const handleAddToCart = async () => {
     setIsLoading(true);
-    dispatch(addToCart({ 
-      productId: product._id, 
-      name: product.name,
-      price: product.price,
-      image: product.image,
-      quantity: 1 
-    }));
-    await syncToServer(1);
-    setTimeout(() => setIsLoading(false), 100);
+    try {
+      dispatch(addToCart({ 
+        productId: product._id, 
+        name: product.name,
+        price: product.price,
+        image: product.image,
+        quantity: 1 
+      }));
+      await syncToServer(1);
+
+      // Fetch updated product details
+      const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/products/${product._id}`);
+      product.stock = response.data.stock; // Update stock dynamically
+    } catch (error) {
+      console.error("Error adding to cart:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleIncrease = async () => {
+    if (quantity >= product.stock) {
+      setShowOutOfStockMessage(true); // Show the message dynamically
+      setTimeout(() => setShowOutOfStockMessage(false), 3000); // Hide after 3 seconds
+      return;
+    }
+
     setIsLoading(true);
     const newQuantity = quantity + 1;
     dispatch(addToCart({ 
@@ -137,6 +152,8 @@ const ProductCard = ({ product }) => {
     };
     return colorMap[product.discount?.badgeColor] || 'bg-red-500';
   };
+
+  const [showOutOfStockMessage, setShowOutOfStockMessage] = React.useState(false);
 
   return (
     <div
@@ -226,52 +243,61 @@ const ProductCard = ({ product }) => {
           </div>
 
           {/* Cart Buttons */}
-          {product.stock > 0 ? (
-            quantity === 0 ? (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleAddToCart();
-                }}
-                disabled={isLoading}
-                className={`rounded-lg px-2.5 py-1.5 text-white text-[11px] md:text-xs font-bold bg-gradient-to-r from-green-600 to-emerald-600 shadow hover:shadow-md hover:brightness-110 active:scale-95 transition-all ${
-                  isLoading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
-                }`}
-              >
-                {isLoading ? "..." : "ADD"}
-              </button>
+          <div className="relative">
+            {product.stock > 0 ? (
+              quantity === 0 ? (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleAddToCart();
+                  }}
+                  disabled={isLoading}
+                  className={`rounded-lg px-2.5 py-1.5 text-white text-[11px] md:text-xs font-bold bg-gradient-to-r from-green-600 to-emerald-600 shadow hover:shadow-md hover:brightness-110 active:scale-95 transition-all ${
+                    isLoading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                  }`}
+                >
+                  {isLoading ? "..." : "ADD"}
+                </button>
+              ) : (
+                <div
+                  className="flex items-center space-x-2 bg-green-600 rounded-lg px-2 py-1.5 shadow-md"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <button
+                    onClick={() => handleDecrease()}
+                    disabled={isLoading || quantity <= 0}
+                    className="text-white font-bold text-[11px] md:text-xs hover:scale-110 transition-transform"
+                  >
+                    −
+                  </button>
+                  <span className="text-[11px] md:text-xs text-white font-medium w-4 text-center">
+                    {quantity}
+                  </span>
+                  <button
+                    onClick={() => handleIncrease()}
+                    disabled={isLoading}
+                    className="text-white font-bold text-[11px] md:text-xs hover:scale-110 transition-transform"
+                  >
+                    +
+                  </button>
+                </div>
+              )
             ) : (
-              <div
-                className="flex items-center space-x-2 bg-green-600 rounded-lg px-2 py-1.5 shadow-md"
-                onClick={(e) => e.stopPropagation()}
+              <button
+                disabled
+                className="rounded-lg px-2.5 py-1.5 text-white text-[11px] md:text-xs font-bold bg-gray-400 cursor-not-allowed"
               >
-                <button
-                  onClick={() => handleDecrease()}
-                  disabled={isLoading || quantity <= 0}
-                  className="text-white font-bold text-[11px] md:text-xs hover:scale-110 transition-transform"
-                >
-                  −
-                </button>
-                <span className="text-[11px] md:text-xs text-white font-medium w-4 text-center">
-                  {quantity}
-                </span>
-                <button
-                  onClick={() => handleIncrease()}
-                  disabled={isLoading || quantity >= product.stock}
-                  className="text-white font-bold text-[11px] md:text-xs hover:scale-110 transition-transform"
-                >
-                  +
-                </button>
+                Out of Stock
+              </button>
+            )}
+
+            {/* Out of Stock Message */}
+            {showOutOfStockMessage && (
+              <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 text-red-500 text-sm font-bold bg-white p-1 rounded shadow-md">
+                Out of Stock!
               </div>
-            )
-          ) : (
-            <button
-              disabled
-              className="rounded-lg px-2.5 py-1.5 text-white text-[11px] md:text-xs font-bold bg-gray-400 cursor-not-allowed"
-            >
-              Out of Stock
-            </button>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </div>
