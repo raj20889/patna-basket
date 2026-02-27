@@ -1,11 +1,13 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import StoreProductCard from './StoreProductCard';
+import ProductCard from '../Product/ProductCard'; // Import ProductCard directly
+import socket from '../../utils/socket'; // Import socket instance
 
 const ShelfRow = ({ title, icon, products = [], storeId }) => {
   const scrollRef = useRef(null);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(true);
+  const [liveProducts, setLiveProducts] = useState(products); // State for live updates
 
   const checkScroll = () => {
     if (scrollRef.current) {
@@ -15,7 +17,7 @@ const ShelfRow = ({ title, icon, products = [], storeId }) => {
     }
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     checkScroll();
     const container = scrollRef.current;
     if (container) {
@@ -28,6 +30,23 @@ const ShelfRow = ({ title, icon, products = [], storeId }) => {
     };
   }, [products]);
 
+  useEffect(() => {
+    // Listen for stock updates
+    socket.on('stockUpdate', (updatedProduct) => {
+      setLiveProducts((prevProducts) =>
+        prevProducts.map((product) =>
+          product._id === updatedProduct.productId
+            ? { ...product, stock: updatedProduct.stock }
+            : product
+        )
+      );
+    });
+
+    return () => {
+      socket.off('stockUpdate'); // Cleanup listener on unmount
+    };
+  }, []);
+
   const scroll = (direction) => {
     if (scrollRef.current) {
       const scrollAmount = direction === 'left' ? -300 : 300;
@@ -35,7 +54,7 @@ const ShelfRow = ({ title, icon, products = [], storeId }) => {
     }
   };
 
-  if (!products || products.length === 0) return null;
+  if (!liveProducts || liveProducts.length === 0) return null;
 
   return (
     <div className="bg-white py-4">
@@ -44,7 +63,7 @@ const ShelfRow = ({ title, icon, products = [], storeId }) => {
         <div className="flex items-center gap-2 mb-3">
           {icon && <span className="text-2xl">{icon}</span>}
           <h3 className="text-lg font-bold text-gray-800">{title}</h3>
-          <span className="text-xs text-gray-500 ml-auto">{products.length} items</span>
+          <span className="text-xs text-gray-500 ml-auto">{liveProducts.length} items</span>
         </div>
 
         {/* Shelf Container */}
@@ -70,11 +89,11 @@ const ShelfRow = ({ title, icon, products = [], storeId }) => {
             }}
           >
             <div className="flex gap-2 min-w-max px-0.5">
-              {products.map((product) => (
-                <StoreProductCard
+              {liveProducts.map((product) => (
+                <ProductCard
                   key={product._id}
                   product={product}
-                  storeId={storeId}
+                  storeId={storeId} // Pass storeId if needed
                 />
               ))}
             </div>

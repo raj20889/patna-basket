@@ -4,6 +4,7 @@ import axios from 'axios';
 import CustomerNavbar from '../Navbar/CustomerNavbar';
 import PublicNavbar from '../Navbar/PublicNavbar';
 import ProductCard from './ProductCard';
+import { io } from "socket.io-client"; // Import socket.io-client
 
 const CategoryWithSubcategories = () => {
   const { category } = useParams();
@@ -133,6 +134,30 @@ const CategoryWithSubcategories = () => {
     }
   }, [selectedSubcategory, allProducts]);
 
+  // Add socket.io listener for live stock updates
+  useEffect(() => {
+    const socket = io(import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000');
+
+    socket.on('connect', () => {
+      console.log('WebSocket connected:', socket.id);
+    });
+
+    socket.on('stockUpdate', (updatedProduct) => {
+      console.log('Stock update received:', updatedProduct);
+      setAllProducts((prevProducts) =>
+        prevProducts.map((product) =>
+          product._id === updatedProduct.productId
+            ? { ...product, stock: updatedProduct.stock }
+            : product
+        )
+      );
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -252,7 +277,7 @@ const CategoryWithSubcategories = () => {
                 {subcategories.length === 0 && (
                   <div className="px-4 py-8 text-center">
                     <div className="text-gray-400 text-4xl mb-2">📦</div>
-                    <p className="text-sm text-gray-500">No subcategories yet</p>
+                    <p className="text-sm text-gray-500">No subcategories ye</p>
                   </div>
                 )}
 

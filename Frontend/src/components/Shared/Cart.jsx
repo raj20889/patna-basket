@@ -3,6 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { setCart, removeFromCart, updateQuantity, clearCart } from '../../redux/cartSlice';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import socket from "../../utils/socket"; // Import socket instance
 
 const CartPage = () => {
   const [productLoadingStates, setProductLoadingStates] = useState({});
@@ -63,6 +64,22 @@ const CartPage = () => {
     console.log("Cart items:", cartItems); // Debug log to verify stock field
   }, [cartItems]);
 
+  useEffect(() => {
+    // Listen for real-time stock updates
+    socket.on("stockUpdate", ({ productId, stock }) => {
+      console.log('Stock update received:', { productId, stock });
+      setCartItems((prevItems) =>
+        prevItems.map((item) =>
+          item.productId === productId ? { ...item, stock } : item
+        )
+      );
+    });
+
+    return () => {
+      socket.off("stockUpdate"); // Cleanup listener on unmount
+    };
+  }, [cartItems]); // Add cartItems as a dependency
+
   const updateCartCharges = useCallback(async (tip, donation) => {
     const newTip = tip ?? selectedTip;
     const newDonation = donation ?? donationSelected;
@@ -109,7 +126,7 @@ const CartPage = () => {
 
     // Ensure stock is defined and enforce the stock limit
     if (product && typeof product.stock === 'number' && newQuantity > product.stock) {
-      setStockError((prev) => ({ ...prev, [productId]: `Only ${product.stock} items are available in stock.` }));
+      setStockError((prev) => ({ ...prev, [productId]: `Only these much items are available in stock.` }));
 
       // Automatically clear the error message after 2 seconds
       setTimeout(() => {

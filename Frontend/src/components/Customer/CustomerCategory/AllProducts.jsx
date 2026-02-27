@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import ProductCard from "../../Product/ProductCard";
+import { io } from "socket.io-client"; // Import socket.io-client
 
 const AllProducts = ({
   products = [],
@@ -8,16 +9,41 @@ const AllProducts = ({
   const [searchTerm, setSearchTerm] = useState("");
   const [sortOption, setSortOption] = useState("default");
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [liveProducts, setLiveProducts] = useState(products); // State for live updates
+
+  // Add socket.io listener for live stock updates
+  useEffect(() => {
+    const socket = io(import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000');
+
+    socket.on('connect', () => {
+      console.log('WebSocket connected:', socket.id);
+    });
+
+    socket.on('stockUpdate', (updatedProduct) => {
+      console.log('Stock update received:', updatedProduct);
+      setLiveProducts((prevProducts) =>
+        prevProducts.map((product) =>
+          product._id === updatedProduct.productId
+            ? { ...product, stock: updatedProduct.stock }
+            : product
+        )
+      );
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
 
   // Get unique categories
   const categories = [
     "all",
-    ...new Set(products.map((p) => p.category).filter(Boolean)),
+    ...new Set(liveProducts.map((p) => p.category).filter(Boolean)),
   ];
 
   // Filter + sort
   useEffect(() => {
-    let result = [...products];
+    let result = [...liveProducts];
 
     // Search filter
     if (searchTerm) {
@@ -40,7 +66,7 @@ const AllProducts = ({
     }
 
     setFilteredProducts(result);
-  }, [products, searchTerm, selectedCategory]);
+  }, [liveProducts, searchTerm, selectedCategory]);
 
   return (
     <div>

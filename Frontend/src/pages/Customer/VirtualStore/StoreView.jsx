@@ -5,7 +5,6 @@ import CustomerNavbar from '../../../components/Navbar/CustomerNavbar';
 import PublicNavbar from '../../../components/Navbar/PublicNavbar';
 import ShopHeader from '../../../components/VirtualStore/ShopHeader';
 import ShelfRow from '../../../components/VirtualStore/ShelfRow';
-import FloatingCartBar from '../../../components/VirtualStore/FloatingCartBar';
 import OfferSection from '../../../components/VirtualStore/OfferSection';
 import CategoryAisle from '../../../components/VirtualStore/CategoryAisle';
 import StoreInfo from '../../../components/VirtualStore/StoreInfo';
@@ -218,14 +217,6 @@ const StoreView = () => {
         </div>
       )}
 
-      {/* Empty State */}
-      {products.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-16">
-          <div className="text-6xl mb-4">📦</div>
-          <p className="text-gray-600 font-medium">No products available</p>
-        </div>
-      )}
-
       {/* Famous For Section */}
       {store?.famousFor && store.famousFor.length > 0 && (
         <div className="bg-gradient-to-r from-yellow-50 to-orange-50 py-8 border-t border-b border-yellow-200">
@@ -253,9 +244,6 @@ const StoreView = () => {
 
       {/* Reviews Section */}
       <ReviewSection storeId={storeId} />
-
-      {/* Floating Cart Bar */}
-      <FloatingCartBar />
     </div>
   );
 };

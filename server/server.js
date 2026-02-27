@@ -95,22 +95,39 @@ const connectWithRetry = () => {
       console.log(`🚀 Server running on port ${PORT}`);
     });
 
-    // Socket.io setup
-    const io = require("socket.io")(server, {
-      cors: {
-        origin: "*",
-        methods: ["GET", "POST"],
-      }
-    });
+    // Initialize Socket.io
+    const { initSocket } = require("./socket");
+    const io = initSocket(server);
 
     io.on("connection", (socket) => {
       console.log("🟢 New WebSocket connection:", socket.id);
+
+      // Emit stock updates to all clients
+      const updateStock = (productId, newStock) => {
+        console.log("Emitting stock update:", { productId, stock: newStock });
+        io.emit("stockUpdate", { productId, stock: newStock });
+      };
+
+      // Handle stock locking for cart operations
+      const lockedStock = {};
+
+      socket.on("lockStock", ({ productId, quantity }) => {
+        if (!lockedStock[productId]) lockedStock[productId] = 0;
+        lockedStock[productId] += quantity;
+        updateStock(productId, totalStock[productId] - lockedStock[productId]);
+      });
+
+      socket.on("releaseStock", ({ productId, quantity }) => {
+        if (lockedStock[productId]) lockedStock[productId] -= quantity;
+        updateStock(productId, totalStock[productId] - lockedStock[productId]);
+      });
+
       socket.on("disconnect", () => {
         console.log("🔴 WebSocket disconnected:", socket.id);
       });
     });
 
-    app.set("io", io);
+    module.exports.io = io; // Export the io instance
 
   })
   .catch(err => {

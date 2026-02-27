@@ -95,11 +95,23 @@ const EditProductModal = ({ isOpen, onClose, onUpdate, product, categories, subc
 
     try {
       setIsSubmitting(true);
-      await onUpdate(product._id, formData);
+      await onUpdate(product._id, formData); // Update stock
       setToast({ type: 'success', message: messages.product.updateSuccess });
       setTimeout(() => onClose(), 500);
     } catch (err) {
       setToast({ type: 'error', message: messages.product.updateError });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleStockUpdate = async () => {
+    try {
+      setIsSubmitting(true);
+      await onUpdate(product._id, { stock: formData.stock }); // Update stock explicitly
+      setToast({ type: 'success', message: 'Stock updated successfully!' });
+    } catch (err) {
+      setToast({ type: 'error', message: 'Failed to update stock.' });
     } finally {
       setIsSubmitting(false);
     }
@@ -192,6 +204,14 @@ const EditProductModal = ({ isOpen, onClose, onUpdate, product, categories, subc
               className="flex-1 px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
             >
               Cancel
+            </button>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={handleStockUpdate}
+              disabled={isSubmitting}
+            >
+              Update Stock
             </button>
           </div>
         </form>

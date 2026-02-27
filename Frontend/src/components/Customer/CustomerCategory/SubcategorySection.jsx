@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useEffect, useState } from "react"; // Add missing useEffect and useState imports
 import { useNavigate } from "react-router-dom";
 import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import ProductCard from "../../Product/ProductCard";
+import { io } from "socket.io-client"; // Import socket.io-client
 
 const SubcategorySection = ({ 
   products, 
@@ -12,16 +13,43 @@ const SubcategorySection = ({
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
 
+  // State to manage live updates
+  const [liveProducts, setLiveProducts] = useState(products);
+
+  // Add socket.io listener for live stock updates
+  useEffect(() => {
+    const socket = io(import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000');
+
+    socket.on('connect', () => {
+      console.log('WebSocket connected:', socket.id);
+    });
+
+    socket.on('stockUpdate', (updatedProduct) => {
+      console.log('Stock update received:', updatedProduct);
+      setLiveProducts((prevProducts) =>
+        prevProducts.map((product) =>
+          product._id === updatedProduct.productId
+            ? { ...product, stock: updatedProduct.stock }
+            : product
+        )
+      );
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
+
   // Filter products by subcategory (check both subcategory and category fields for compatibility)
-  const filteredProducts = (Array.isArray(products) ? products : []).filter((product) => {
+  const filteredProducts = (Array.isArray(liveProducts) ? liveProducts : []).filter((product) => {
     // Support multiple filters separated by | or , (e.g., "milk|bread|egg" or "oil,fortune")
     const filters = subcategoryFilter.toLowerCase().split(/[|,]/).map(f => f.trim());
-    
+
     // Check subcategory field
     const productSubcategories = Array.isArray(product.subcategory)
       ? product.subcategory.map((s) => (s || '').toLowerCase())
       : [(product.subcategory || '').toLowerCase()];
-    
+
     const matchesSubcategory = productSubcategories.some(sub => 
       filters.some(filter => sub.includes(filter))
     );
@@ -30,7 +58,7 @@ const SubcategorySection = ({
     const productCategories = Array.isArray(product.category)
       ? product.category.map((c) => (c || '').toLowerCase())
       : [(product.category || '').toLowerCase()];
-    
+
     const matchesCategory = productCategories.some(cat => 
       filters.some(filter => cat.includes(filter))
     );

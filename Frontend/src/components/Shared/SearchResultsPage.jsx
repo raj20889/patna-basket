@@ -2,7 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import ProductCard from '../Product/ProductCard';
-import PublicNavBar from '../Navbar/PublicNavbar';
+import PublicNavBar from '../Navbar/PublicNavBar';
+import CustomerNavbar from '../Navbar/CustomerNavbar';
+import { io } from 'socket.io-client'; // Import socket.io-client
 
 const SearchResults = () => {
     const [results, setResults] = useState([]);
@@ -11,6 +13,7 @@ const SearchResults = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const token = localStorage.getItem('token');
+    const user = JSON.parse(localStorage.getItem('user')) || null;
 
     // Fetch search results
     useEffect(() => {
@@ -55,6 +58,30 @@ const SearchResults = () => {
         fetchResults();
     }, [location.search, token]);
 
+    // Add socket.io listener for live stock updates
+    useEffect(() => {
+        const socket = io(import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000');
+
+        socket.on('connect', () => {
+            console.log('WebSocket connected:', socket.id);
+        });
+
+        socket.on('stockUpdate', (updatedProduct) => {
+            console.log('Stock update received:', updatedProduct);
+            setResults((prevResults) =>
+                prevResults.map((product) =>
+                    product._id === updatedProduct.productId
+                        ? { ...product, stock: updatedProduct.stock }
+                        : product
+                )
+            );
+        });
+
+        return () => {
+            socket.disconnect();
+        };
+    }, []);
+
     if (loading) {
         return (
             <div className="flex justify-center items-center h-64">
@@ -81,7 +108,7 @@ const SearchResults = () => {
 
     return (
         <>
-            <PublicNavBar />
+            {user ? <CustomerNavbar /> : <PublicNavBar />}
             <div className="container mx-auto px-4 py-8">
                 <h1 className="text-2xl font-bold mb-6">
                     {results.length > 0

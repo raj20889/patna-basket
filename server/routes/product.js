@@ -1,7 +1,7 @@
 const express = require('express');
 const Product = require('../models/Product');
 const verifyToken = require('../middlewares/verifyToken');
-const io = require('socket.io');
+const { getSocket } = require("../socket"); // Import getSocket
 
 const router = express.Router();
 
@@ -147,9 +147,18 @@ router.put('/:id', verifyToken, async (req, res) => {
             { new: true }
         );
         if (!updatedProduct) return res.status(404).json({ msg: 'Product not found' });
-        res.status(200).json(updatedProduct);
+
+        res.status(200).json(updatedProduct); // Send response first
+
+        // Emit stock update event after response
+        const io = getSocket(); // Get the io instance
+        io.emit('stockUpdate', { productId: updatedProduct._id, stock: updatedProduct.stock });
+        console.log('Stock update emitted:', { productId: updatedProduct._id, stock: updatedProduct.stock });
     } catch (err) {
-        res.status(500).json(err);
+        if (!res.headersSent) {
+            res.status(500).json(err); // Send error response only if headers are not sent
+        }
+        console.error('Error updating product:', err);
     }
 });
 

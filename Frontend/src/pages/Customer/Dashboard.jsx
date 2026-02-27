@@ -30,6 +30,8 @@ const Dashboard = () => {
   const token = localStorage.getItem("token");
   const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
+  console.log("Passing setProducts to WebSocketListener:", setProducts); // Debugging: Log setProducts
+
   const fetchUserCart = async () => {
     if (!token) return;
     try {
@@ -235,26 +237,32 @@ const Dashboard = () => {
         )}
       </div>
 
-      <WebSocketListener />
+      <WebSocketListener setProducts={setProducts} />
     </div>
   );
 };
 
 export default Dashboard;
 
-const WebSocketListener = () => {
+const WebSocketListener = ({ setProducts }) => {
   useEffect(() => {
+    if (!setProducts) {
+      console.error("setProducts function is not passed to WebSocketListener");
+      return;
+    }
+
     const socket = io(import.meta.env.VITE_API_BASE_URL || "http://localhost:5000");
 
     socket.on("connect", () => {
       console.log("WebSocket connected:", socket.id); // Debugging: Log WebSocket connection
     });
 
-    socket.on("stockUpdated", (updatedProduct) => {
-      console.log("Stock updated event received:", updatedProduct); // Debugging: Log the received event
+    // Update event name to match the backend
+    socket.on("stockUpdate", (updatedProduct) => {
+      console.log("Stock update event received:", updatedProduct); // Debugging: Log the received event
       setProducts((prevProducts) => {
         return prevProducts.map((product) =>
-          product._id === updatedProduct._id ? { ...product, stock: updatedProduct.stock } : product
+          product._id === updatedProduct.productId ? { ...product, stock: updatedProduct.stock } : product
         );
       });
     });
@@ -262,5 +270,5 @@ const WebSocketListener = () => {
     return () => {
       socket.disconnect();
     };
-  }, []);
+  }, [setProducts]);
 };

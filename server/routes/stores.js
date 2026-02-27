@@ -48,7 +48,7 @@ router.get('/:id', async (req, res) => {
       .populate('categories')
       .populate('subcategories')
       .populate('featuredProducts')
-      .populate({ path: 'shelves.productIds', select: 'name price image discount category' });
+      .populate({ path: 'shelves.productIds', select: 'name price image discount category stock' });
     
     if (!store) {
       return res.status(404).json({ error: 'Store not found' });
@@ -74,7 +74,7 @@ router.get('/:storeId/products', async (req, res) => {
       .populate('featuredProducts')
       .populate('categories')
       .populate('subcategories')
-      .populate({ path: 'shelves.productIds', select: 'name price image discount category' });
+      .populate({ path: 'shelves.productIds', select: 'name price image discount category stock' }); // Include stock field
 
     if (!store) {
       return res.status(404).json({ error: 'Store not found' });
