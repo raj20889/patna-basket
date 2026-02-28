@@ -7,19 +7,19 @@ const WebSocketListener = () => {
 
   useEffect(() => {
     if (!setProducts) {
-      console.error("setProducts function is not available in ProductsContext");
+      console.error("[Deployed] setProducts function is not available in ProductsContext");
       return;
     }
 
     const socket = io(import.meta.env.VITE_API_BASE_URL || "http://localhost:5000");
 
     socket.on("connect", () => {
-      console.log("WebSocket connected:", socket.id); // Debugging: Log WebSocket connection
+      console.log("[Deployed] WebSocket connected:", socket.id); // Debugging: Log WebSocket connection
     });
 
     // Update event name to match the backend
     socket.on("stockUpdate", (updatedProduct) => {
-      console.log("Stock update event received:", updatedProduct); // Debugging: Log the received event
+      console.log("[Deployed] Stock update event received:", updatedProduct); // Debugging: Log the received event
       setProducts((prevProducts) => {
         return prevProducts.map((product) =>
           product._id === updatedProduct.productId ? { ...product, stock: updatedProduct.stock } : product
@@ -28,6 +28,7 @@ const WebSocketListener = () => {
     });
 
     return () => {
+      console.log("[Deployed] WebSocket disconnected");
       socket.disconnect();
     };
   }, [setProducts]);

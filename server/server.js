@@ -100,30 +100,28 @@ const connectWithRetry = () => {
     const io = initSocket(server);
 
     io.on("connection", (socket) => {
-      console.log("🟢 New WebSocket connection:", socket.id);
+      console.log("🟢 New WebSocket connection (Deployed):", socket.id);
 
-      // Emit stock updates to all clients
       const updateStock = (productId, newStock) => {
-        console.log("Emitting stock update:", { productId, stock: newStock });
+        console.log("[Deployed] Emitting stock update:", { productId, stock: newStock });
         io.emit("stockUpdate", { productId, stock: newStock });
       };
 
-      // Handle stock locking for cart operations
-      const lockedStock = {};
-
       socket.on("lockStock", ({ productId, quantity }) => {
+        console.log("[Deployed] Locking stock:", { productId, quantity });
         if (!lockedStock[productId]) lockedStock[productId] = 0;
         lockedStock[productId] += quantity;
         updateStock(productId, totalStock[productId] - lockedStock[productId]);
       });
 
       socket.on("releaseStock", ({ productId, quantity }) => {
+        console.log("[Deployed] Releasing stock:", { productId, quantity });
         if (lockedStock[productId]) lockedStock[productId] -= quantity;
         updateStock(productId, totalStock[productId] - lockedStock[productId]);
       });
 
       socket.on("disconnect", () => {
-        console.log("🔴 WebSocket disconnected:", socket.id);
+        console.log("🔴 WebSocket disconnected (Deployed):", socket.id);
       });
     });
 
