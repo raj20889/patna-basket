@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { CartProvider } from "./contexts/CartContext";
 import useCartLoader from "./hooks/useCartLoader";
 import { ProductsProvider } from "./contexts/ProductsContext"; // Import ProductsProvider
+import React from "react";
 
 // Guest Pages
 import Home from "./pages/Guest/Home";
@@ -51,6 +52,8 @@ import WebSocketListener from "./components/Shared/WebSocketListener"; // Correc
 
 const App = () => {
   useCartLoader();
+  console.log("[Deployed] ENV OBJECT:", import.meta.env);
+  console.log("[Deployed] API URL:", import.meta.env.VITE_API_BASE_URL);
   return (
     <ProductsProvider> {/* Wrap the app with ProductsProvider */}
       <CartProvider>
