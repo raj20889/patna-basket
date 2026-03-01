@@ -1,0 +1,1 @@
+const io = require('socket.io-client'); const socket = io('https://patna-basket-1.onrender.com'); socket.on('connect', () => console.log('Connected:', socket.id)); socket.on('stockUpdate', (data) => console.log('Stock Update:', data)); socket.on('disconnect', () => console.log('Disconnected'));

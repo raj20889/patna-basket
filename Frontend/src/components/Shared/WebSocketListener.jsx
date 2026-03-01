@@ -10,7 +10,7 @@ const WebSocketListener = () => {
       console.error("[Deployed] setProducts function is not available in ProductsContext");
       return;
     }
-
+    console.log("ENV VALUE:", import.meta.env.VITE_API_BASE_URL);
     const socket = io(import.meta.env.VITE_API_BASE_URL || "http://localhost:5000");
 
     socket.on("connect", () => {
