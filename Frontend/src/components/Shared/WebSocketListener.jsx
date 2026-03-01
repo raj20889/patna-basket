@@ -1,34 +1,39 @@
 import React, { useEffect } from "react";
 import { io } from "socket.io-client";
-import { useProducts } from "../../contexts/ProductsContext"; // Import useProducts
+import { useProducts } from "../../contexts/ProductsContext";
 
 const WebSocketListener = () => {
-  const { setProducts } = useProducts(); // Access setProducts from context
+  const { setProducts } = useProducts();
 
   useEffect(() => {
+    console.log("WebSocketListener Mounted");
+
     if (!setProducts) {
-      console.error("[Deployed] setProducts function is not available in ProductsContext");
+      console.error("setProducts not available");
       return;
     }
+
     console.log("ENV VALUE:", import.meta.env.VITE_API_BASE_URL);
-    const socket = io(import.meta.env.VITE_API_BASE_URL || "http://localhost:5000");
+
+    const socket = io(import.meta.env.VITE_API_BASE_URL);
 
     socket.on("connect", () => {
-      console.log("[Deployed] WebSocket connected:", socket.id); // Debugging: Log WebSocket connection
+      console.log("WebSocket connected:", socket.id);
     });
 
-    // Update event name to match the backend
     socket.on("stockUpdate", (updatedProduct) => {
-      console.log("[Deployed] Stock update event received:", updatedProduct); // Debugging: Log the received event
-      setProducts((prevProducts) => {
-        return prevProducts.map((product) =>
-          product._id === updatedProduct.productId ? { ...product, stock: updatedProduct.stock } : product
-        );
-      });
+      console.log("Stock update received:", updatedProduct);
+
+      setProducts((prevProducts) =>
+        prevProducts.map((product) =>
+          product._id === updatedProduct.productId
+            ? { ...product, stock: updatedProduct.stock }
+            : product
+        )
+      );
     });
 
     return () => {
-      console.log("[Deployed] WebSocket disconnected");
       socket.disconnect();
     };
   }, [setProducts]);
