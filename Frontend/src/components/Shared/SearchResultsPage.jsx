@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import ProductCard from '../Product/ProductCard';
-import PublicNavBar from '../Navbar/PublicNavBar';
+import PublicNavBar from '../Navbar/PublicNavbar';
 import CustomerNavbar from '../Navbar/CustomerNavbar';
 import { io } from 'socket.io-client'; // Import socket.io-client
 
