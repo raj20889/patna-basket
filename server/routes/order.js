@@ -90,6 +90,11 @@ router.post(
 
           product.stock -= item.quantity;
           await product.save({ session });
+
+          // Emit stock update event
+          const io = require('../socket').getSocket();
+          io.emit('stockUpdate', { productId: product._id, stock: product.stock });
+          console.log('Stock update emitted:', { productId: product._id, stock: product.stock });
         }
 
         // Create new order

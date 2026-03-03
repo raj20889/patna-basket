@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
 import { TypeAnimation } from 'react-type-animation';
@@ -27,6 +27,18 @@ const PublicNavbar = () => {
 
   const cartTotalQuantity = useSelector((state) => state.cart.totalQuantity);
   const cartTotalPrice = useSelector((state) => state.cart.totalPrice);
+
+  useEffect(() => {
+    const handleCartUpdate = () => {
+      // Logic to re-fetch or update cart details
+      fetchCartDetails();
+    };
+
+    window.addEventListener('cartUpdated', handleCartUpdate);
+    return () => {
+      window.removeEventListener('cartUpdated', handleCartUpdate);
+    };
+  }, []);
 
   const handleLocationChange = (address) => {
     setCurrentAddress(address);

@@ -4,6 +4,7 @@ import { setCart, removeFromCart, updateQuantity, clearCart } from '../../redux/
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import socket from "../../utils/socket"; // Import socket instance
+import { toast } from 'react-toastify';
 
 const CartPage = () => {
   const [productLoadingStates, setProductLoadingStates] = useState({});
@@ -69,12 +70,30 @@ const CartPage = () => {
   useEffect(() => {
     // Listen for real-time stock updates
     socket.on("stockUpdate", ({ productId, stock }) => {
-      console.log('Stock update received:', { productId, stock });
-      setCartItems((prevItems) =>
-        prevItems.map((item) =>
-          item.productId === productId ? { ...item, stock } : item
-        )
+      console.log('Debug: Received stockUpdate event:', { productId, stock });
+
+      const updatedCartItems = cartItems.filter((item) => {
+        if (item.productId === productId && stock === 0) {
+          console.log(`Debug: Removing out-of-stock product: ${item.name}`);
+          toast.error(`Product ${item.name} is out of stock and has been removed from your cart.`);
+          return false; // Remove the item from the cart
+        }
+        return true;
+      });
+
+      dispatch(setCart({ cartItems: updatedCartItems }));
+
+      // Notify other components about the cart update
+      window.dispatchEvent(new Event("cartUpdated"));
+
+      // Notify user if a product in the cart is out of stock
+      const outOfStockItem = updatedCartItems.find(
+        (item) => item.productId === productId && stock === 0
       );
+
+      if (outOfStockItem) {
+        toast.error(`Product ${outOfStockItem.name} is out of stock!`);
+      }
     });
 
     return () => {

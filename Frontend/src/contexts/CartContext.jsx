@@ -2,6 +2,7 @@ import React, { createContext, useState, useEffect, useContext } from 'react';
 import { useDispatch } from 'react-redux';
 import { setCart as setReduxCart } from '../redux/cartSlice';
 import axios from 'axios';
+import { io } from 'socket.io-client';
 
 // Create the CartContext
 const CartContext = createContext();
@@ -61,6 +62,24 @@ const CartProvider = ({ children }) => {
     };
 
     fetchCartData();
+
+    const socket = io(import.meta.env.VITE_API_BASE_URL);
+
+    socket.on('stockUpdate', (data) => {
+      console.log('Stock update received:', data);
+
+      if (cart[data.productId]) {
+        toast.error(`Product ${data.productName} is out of stock!`);
+        const updatedCart = { ...cart };
+        delete updatedCart[data.productId];
+        setCart(updatedCart);
+        calculateAndUpdateCart(Object.values(updatedCart));
+      }
+    });
+
+    return () => {
+      socket.disconnect();
+    };
   }, [role, token]);
 
   const calculateAndUpdateCart = (cartItems) => {
