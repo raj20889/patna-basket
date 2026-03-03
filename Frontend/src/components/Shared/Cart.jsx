@@ -12,6 +12,8 @@ const CartPage = () => {
   const [selectedTip, setSelectedTip] = useState(0); // Default tip set to 0
   const [donationSelected, setDonationSelected] = useState(true);
   const [stockError, setStockError] = useState({}); // State to track stock errors
+  const [successMessage, setSuccessMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
 
   const dispatch = useDispatch();
   const cartState = useSelector((state) => {
@@ -243,7 +245,42 @@ const CartPage = () => {
     }
   };
 
+  const handlePlaceOrder = async () => {
+    try {
+      const response = await axios.post(
+        `${import.meta.env.VITE_API_BASE_URL}/orders`,
+        {
+          items: cartItems,
+          addressId: selectedAddress,
+          paymentMethod: selectedPaymentMethod,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
+      // Clear cart and show success message
+      setCartItems([]);
+      setSuccessMessage("Order placed successfully!");
+    } catch (error) {
+      if (error.response && error.response.status === 400) {
+        // Handle insufficient stock error
+        const { message } = error.response.data;
+        setErrorMessage(message);
+
+        // Sync cart with updated stock values from the backend
+        const updatedCart = await axios.get(
+          `${import.meta.env.VITE_API_BASE_URL}/cart`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        setCartItems(updatedCart.data);
+      } else {
+        setErrorMessage("An unexpected error occurred. Please try again.");
+      }
+    }
+  };
 
   return (
     <div className="max-w-md mx-auto bg-gray-50 min-h-screen">

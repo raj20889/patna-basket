@@ -7,6 +7,7 @@ const verifyToken = require('../middlewares/verifyToken');
 const { check, validationResult } = require('express-validator');
 const Razorpay = require('razorpay');
 const { RAZORPAY } = require('../config/payment');
+const { getSocket } = require("../socket"); // Import getSocket to emit WebSocket events
 
 // Initialize Razorpay instance
 const razorpay = new Razorpay({
@@ -66,80 +67,67 @@ router.post(
       if (products.length !== items.length) {
         return res.status(400).json({ 
           success: false,
-          msg: 'One or more products not found !' 
+          msg: 'One or more products not found!' 
         });
       }
 
-      // Create new order with the data from frontend (but verified)
-      const newOrder = new Order({
-        userId: req.user.id,
-        address: address._id,
-        items: items.map(item => ({
-          productId: item.productId,
-          name: item.name || 'Product',
-          image: item.image || null,
-          variant: item.variant || '1 unit',
-          price: item.price,
-          quantity: item.quantity
-        })),
-        paymentMethod,
-        itemsTotal: parseFloat(itemsTotal),
-        deliveryCharge: parseFloat(deliveryCharge),
-        handlingCharge: parseFloat(handlingCharge),
-        tipAmount: parseFloat(tipAmount),
-        donationAmount: parseFloat(donationAmount),
-        grandTotal: parseFloat(grandTotal),
-        orderNotes,
-        status: paymentMethod === 'COD' ?  'confirmed' :  'pending_payment',
-        paymentStatus: paymentMethod === 'COD' ? 'pending':'pending'  
-      });
+      // Start a transaction for stock validation and order placement
+      const session = await Product.startSession();
+      session.startTransaction();
 
-      // Update product stock after order creation
-      for (const item of items) {
-        const product = await Product.findById(item.productId);
-        if (!product) {
-          return res.status(404).json({ success: false, message: `Product not found: ${item.productId}` });
+      try {
+        // Update stock for each product in the order
+        for (const item of items) {
+          const product = await Product.findById(item.productId).session(session);
+          if (!product) {
+            throw new Error(`Product not found: ${item.productId}`);
+          }
+
+          // Check if stock is sufficient
+          if (product.stock < item.quantity) {
+            throw new Error(`Insufficient stock for product: ${product.name}`);
+          }
+
+          product.stock -= item.quantity;
+          await product.save({ session });
         }
-        if (product.stock < item.quantity) {
-          return res.status(400).json({ success: false, message: `Insufficient stock for product: ${product.name}` });
-        }
-        product.stock -= item.quantity;
-        await product.save();
-      }
 
-      await newOrder.save();
-
-      // Prepare response that matches frontend expectations
-      const response = {
-        success: true,
-        orderId: newOrder._id,
-        message: paymentMethod === 'COD' ? 'Order placed successfully' : 'Redirect to payment gateway',
-        order: {
-          id: newOrder._id,
-          status: newOrder.status,
-          grandTotal: newOrder.grandTotal,
-          estimatedDelivery: newOrder.estimatedDelivery
-        }
-      };
-
-      if (paymentMethod !== 'COD') {
-        const amountInPaise = Math.round((newOrder.grandTotal || 0) * 100);
-        const rzpOrder = await razorpay.orders.create({
-          amount: amountInPaise,
-          currency: 'INR',
-          receipt: String(newOrder._id),
+        // Create new order
+        const newOrder = new Order({
+          userId: req.user.id,
+          address: address._id,
+          items: items.map(item => ({
+            productId: item.productId,
+            name: item.name || 'Product',
+            image: item.image || null,
+            variant: item.variant || '1 unit',
+            price: item.price,
+            quantity: item.quantity
+          })),
+          paymentMethod,
+          itemsTotal: parseFloat(itemsTotal),
+          deliveryCharge: parseFloat(deliveryCharge),
+          handlingCharge: parseFloat(handlingCharge),
+          tipAmount: parseFloat(tipAmount),
+          donationAmount: parseFloat(donationAmount),
+          grandTotal: parseFloat(grandTotal),
+          orderNotes,
+          status: paymentMethod === 'COD' ? 'confirmed' : 'pending_payment',
+          paymentStatus: paymentMethod === 'COD' ? 'pending' : 'pending'
         });
-        newOrder.razorpayOrderId = rzpOrder.id;
-        await newOrder.save();
 
-        response.razorpayOrderId = rzpOrder.id;
-        response.amount = rzpOrder.amount;
-        response.currency = rzpOrder.currency;
-        response.key = RAZORPAY.KEY_ID;
+        await newOrder.save({ session });
+
+        // Commit transaction
+        await session.commitTransaction();
+        session.endSession();
+
+        res.status(200).json({ success: true, orderId: newOrder._id });
+      } catch (error) {
+        await session.abortTransaction();
+        session.endSession();
+        res.status(400).json({ success: false, message: error.message });
       }
-
-      res.status(201).json(response);
-
     } catch (err) {
 
       

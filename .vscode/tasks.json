@@ -7,6 +7,13 @@
 			"command": "npm run test",
 			"args": [],
 			"isBackground": false
+		},
+		{
+			"label": "Test Real-Time Stock Updates",
+			"type": "shell",
+			"command": "npm run test",
+			"args": [],
+			"isBackground": false
 		}
 	]
 }

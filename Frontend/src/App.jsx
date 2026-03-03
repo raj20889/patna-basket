@@ -3,6 +3,8 @@ import { CartProvider } from "./contexts/CartContext";
 import useCartLoader from "./hooks/useCartLoader";
 import { ProductsProvider } from "./contexts/ProductsContext"; // Import ProductsProvider
 import React from "react";
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 // Guest Pages
 import Home from "./pages/Guest/Home";
@@ -58,6 +60,7 @@ const App = () => {
     <ProductsProvider> {/* Wrap the app with ProductsProvider */}
       <CartProvider>
         <Router>
+          <ToastContainer /> {/* Add ToastContainer for toast notifications */}
           <WebSocketListener /> {/* Render WebSocketListener globally */}
           <Routes>
             <Route path="/" element={<Home />} />
