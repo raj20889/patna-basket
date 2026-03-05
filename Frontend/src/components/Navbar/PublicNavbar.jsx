@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
 import { TypeAnimation } from 'react-type-animation';
 import LocationSelector from '../Customer/Address/LocationSelector';
@@ -7,6 +7,8 @@ import Dialog from '@mui/material/Dialog';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import Button from '@mui/material/Button';
+import { handleStockUpdate } from '../../redux/cartSlice';
+import socket from '../../utils/socket';
 
 const PublicNavbar = () => {
   const [blink, setBlink] = useState(false);
@@ -28,6 +30,8 @@ const PublicNavbar = () => {
   const cartTotalQuantity = useSelector((state) => state.cart.totalQuantity);
   const cartTotalPrice = useSelector((state) => state.cart.totalPrice);
 
+  const dispatch = useDispatch();
+
   useEffect(() => {
     const handleCartUpdate = () => {
       // Logic to re-fetch or update cart details
@@ -39,6 +43,19 @@ const PublicNavbar = () => {
       window.removeEventListener('cartUpdated', handleCartUpdate);
     };
   }, []);
+
+  useEffect(() => {
+    const handleStockUpdateEvent = (data) => {
+      console.log('Stock update received in Navbar:', data);
+      dispatch(handleStockUpdate(data)); // Dispatch Redux action
+    };
+
+    socket.on('stockUpdate', handleStockUpdateEvent);
+
+    return () => {
+      socket.off('stockUpdate', handleStockUpdateEvent);
+    };
+  }, [dispatch]);
 
   const handleLocationChange = (address) => {
     setCurrentAddress(address);

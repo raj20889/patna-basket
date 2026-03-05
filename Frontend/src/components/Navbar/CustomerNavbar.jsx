@@ -8,6 +8,8 @@ import DialogActions from '@mui/material/DialogActions';
 import Button from '@mui/material/Button';
 import { useSelector, useDispatch } from 'react-redux';
 import { setCart as setReduxCart } from '../../redux/cartSlice';
+import socket from '../../utils/socket';
+import { handleStockUpdate } from '../../redux/cartSlice';
 
 const CustomerNavbar = ({ 
   cartUpdated, 
@@ -161,6 +163,19 @@ const CustomerNavbar = ({
     setCartCount(propCartCount || 0);
     setTotalPrice(propTotalPrice || 0);
   }, [propCartCount, propTotalPrice]);
+
+  useEffect(() => {
+    const handleStockUpdateEvent = (data) => {
+      console.log('Stock update received in CustomerNavbar:', data);
+      dispatch(handleStockUpdate(data)); // Dispatch Redux action
+    };
+
+    socket.on('stockUpdate', handleStockUpdateEvent);
+
+    return () => {
+      socket.off('stockUpdate', handleStockUpdateEvent);
+    };
+  }, [dispatch]);
 
   return (
     <nav className="bg-white shadow-md px-4 pt-4 pb-1 sticky w-full top-0 z-50">
