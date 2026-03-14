@@ -5,24 +5,37 @@ const verifyToken = require('../middlewares/verifyToken');
 
 const router = express.Router();
 
+const normalizeProductId = (id) => id.toString();
+
 // Helper function to calculate cart totals
-const calculateCartTotals = async (products) => {
+const calculateCartTotals = async (products, userId) => {
     console.log("calculateCartTotals: Incoming products:", products);
     let itemsTotal = 0;
     const populatedProducts = [];
-    
+    const validProducts = [];
+
     for (const item of products) {
         const product = await Product.findById(item.productId);
-        if (product) {
+        if (product && product.stock > 0) {
             itemsTotal += product.price * item.quantity;
             populatedProducts.push({
                 ...item.toObject(),
                 productId: product
             });
+            validProducts.push(item); // Keep valid products
         } else {
-            console.warn("calculateCartTotals: Product not found for ID:", item.productId);
+            console.warn("calculateCartTotals: Product out of stock or not found for ID:", item.productId);
         }
     }
+
+    // If userId is provided, update the cart in the database
+    if (userId) {
+        await Cart.updateOne(
+            { userId },
+            { $set: { products: validProducts } }
+        );
+    }
+
     console.log("calculateCartTotals: Populated products:", populatedProducts);
     return { itemsTotal, populatedProducts };
 };
@@ -39,27 +52,25 @@ router.post('/add', verifyToken, async (req, res) => {
         let cart = await Cart.findOne({ userId: req.user.id });
 
         if (cart) {
-            console.log("POST /cart/add: Cart found for user:", cart.userId);
-            console.log("POST /cart/add: Current cart products before update:", cart.products);
-            const itemIndex = cart.products.findIndex(p => p.productId.toString() === productId);
+            const normalizedProductId = normalizeProductId(productId);
+            const itemIndex = cart.products.findIndex(p => normalizeProductId(p.productId) === normalizedProductId);
 
             if (itemIndex > -1) {
-                // Do not remove item when quantity is 0, just set the quantity to 0
-                // The frontend ProductDetails component will handle displaying the "Add to Cart" button when quantity is 0
+                // Update quantity if product already exists
                 cart.products[itemIndex].quantity = quantity;
             } else if (quantity > 0) {
-                cart.products.push({ productId, quantity });
-                console.log("POST /cart/add: New product added to cart. New products:", cart.products);
+                // Add new product only if it doesn't exist
+                cart.products.push({ productId: normalizedProductId, quantity });
             }
 
-            // Calculate totals with populated products
-            const { itemsTotal, populatedProducts } = await calculateCartTotals(cart.products);
-            
+            // Remove potential duplicates before saving
+            const uniqueProducts = Array.from(new Map(cart.products.map(item => [normalizeProductId(item.productId), item])).values());
+            cart.products = uniqueProducts;
+
+            const { itemsTotal, populatedProducts } = await calculateCartTotals(cart.products, cart.userId);
             cart.grandTotal = itemsTotal + cart.deliveryCharge + cart.handlingCharge + cart.tipAmount + cart.donationAmount;
-            
+
             await cart.save();
-            console.log("POST /cart/add: Cart saved. Final cart products:", cart.products);
-            
             return res.status(200).json({ 
                 msg: 'Cart updated successfully',
                 products: populatedProducts,
@@ -71,22 +82,19 @@ router.post('/add', verifyToken, async (req, res) => {
                 grandTotal: cart.grandTotal
             });
         } else {
-            console.log("POST /cart/add: No cart found for user. Creating new cart.");
             const newCart = new Cart({
                 userId: req.user.id,
-                products: quantity > 0 ? [{ productId, quantity }] : [],
+                products: quantity > 0 ? [{ productId: normalizeProductId(productId), quantity }] : [],
                 deliveryCharge: 0,
                 handlingCharge: 2,
                 tipAmount: 0,
                 donationAmount: 0
             });
 
-            const { itemsTotal } = await calculateCartTotals(newCart.products);
+            const { itemsTotal } = await calculateCartTotals(newCart.products, newCart.userId);
             newCart.grandTotal = itemsTotal + newCart.deliveryCharge + newCart.handlingCharge;
-            
+
             await newCart.save();
-            console.log("POST /cart/add: New cart created and saved. Products:", newCart.products);
-            
             return res.status(201).json({ 
                 msg: 'Cart created',
                 products: [],
@@ -121,7 +129,7 @@ router.post('/update-charges', verifyToken, async (req, res) => {
         if (donationAmount !== undefined) cart.donationAmount = donationAmount;
 
         // Recalculate totals with populated products
-        const { itemsTotal, populatedProducts } = await calculateCartTotals(cart.products);
+        const { itemsTotal, populatedProducts } = await calculateCartTotals(cart.products, cart.userId);
         cart.grandTotal = itemsTotal + cart.deliveryCharge + cart.handlingCharge + cart.tipAmount + cart.donationAmount;
 
         await cart.save();
@@ -160,7 +168,7 @@ router.get('/', verifyToken, async (req, res) => {
         }
 
         // Calculate totals with populated products
-        const { itemsTotal, populatedProducts } = await calculateCartTotals(cart.products);
+        const { itemsTotal, populatedProducts } = await calculateCartTotals(cart.products, cart.userId);
         
         // Ensure grand total is correct
         const grandTotal = itemsTotal + cart.deliveryCharge + cart.handlingCharge + cart.tipAmount + cart.donationAmount;
@@ -198,7 +206,7 @@ router.delete('/remove/:productId', verifyToken, async (req, res) => {
         }
 
         // Recalculate totals with populated products
-        const { itemsTotal, populatedProducts } = await calculateCartTotals(cart.products);
+        const { itemsTotal, populatedProducts } = await calculateCartTotals(cart.products, cart.userId);
         cart.grandTotal = itemsTotal + cart.deliveryCharge + cart.handlingCharge + cart.tipAmount + cart.donationAmount;
 
         await cart.save();
@@ -274,7 +282,7 @@ router.post('/merge', verifyToken, async (req, res) => {
             const { productId, quantity } = guestItem;
             if (!productId || quantity === undefined) continue; // Skip invalid items
 
-            const itemIndex = cart.products.findIndex(p => p.productId.toString() === productId);
+            const itemIndex = cart.products.findIndex(p => normalizeProductId(p.productId) === normalizeProductId(productId));
 
             if (itemIndex > -1) {
                 // Update quantity if product already in cart
@@ -286,7 +294,7 @@ router.post('/merge', verifyToken, async (req, res) => {
         }
 
         // Recalculate totals with populated products
-        const { itemsTotal, populatedProducts } = await calculateCartTotals(cart.products);
+        const { itemsTotal, populatedProducts } = await calculateCartTotals(cart.products, cart.userId);
         cart.grandTotal = itemsTotal + cart.deliveryCharge + cart.handlingCharge + cart.tipAmount + cart.donationAmount;
 
         await cart.save();
