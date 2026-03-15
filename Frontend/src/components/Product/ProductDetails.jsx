@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { useDispatch, useSelector } from 'react-redux';
 import { addToCart, setCart } from '../../redux/cartSlice';
 import axios from "axios";
+import socket from '../../utils/socket';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -46,6 +47,12 @@ function ProductDetails() {
 
   const handleUpdateQuantity = async (newQuantity) => {
     if (!product) return;
+
+    // Prevent adding more than available stock
+    if (newQuantity > product.stock) {
+      alert(`Only ${product.stock} items are available in stock.`);
+      return;
+    }
 
     setProductLoadingStates(prev => ({ ...prev, [product._id]: true }));
     try {
@@ -109,6 +116,25 @@ function ProductDetails() {
     };
   }, [id, token, dispatch]);
 
+  useEffect(() => {
+    // Listen for stock updates
+    const handleStockUpdate = (updatedProduct) => {
+      if (updatedProduct.productId === product?._id) {
+        setProduct((prevProduct) => ({
+          ...prevProduct,
+          stock: updatedProduct.stock,
+        }));
+        console.log(`Stock updated for product ${updatedProduct.productId}: ${updatedProduct.stock}`);
+      }
+    };
+
+    socket.on('stockUpdate', handleStockUpdate);
+
+    return () => {
+      socket.off('stockUpdate', handleStockUpdate); // Cleanup listener on unmount
+    };
+  }, [product?._id]);
+
   if (!product) return <div className="text-center py-20">Loading....</div>;
 
   return (
@@ -149,53 +175,62 @@ function ProductDetails() {
             )}
           </div>
 
-          {/* Add to Cart / Quantity Controls */}
+          {/* Stock Information */}
+          <div className="text-lg font-medium mb-4">
+            Stock Available: {product.stock}
+          </div>
+
+          {/* Add to Cart / Out of Stock */}
           <div className="mt-6">
-            {currentProductInCart && currentProductInCart.quantity > 0 ? (
-              <div className="flex items-center gap-4">
+            {product.stock > 0 ? (
+              currentProductInCart && currentProductInCart.quantity > 0 ? (
+                <div className="flex items-center gap-4">
+                  <button
+                    onClick={() => handleUpdateQuantity(currentProductInCart.quantity - 1)}
+                    className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
+                    disabled={productLoadingStates[product._id]}
+                  >
+                    -
+                  </button>
+                  <span className="text-lg font-semibold">
+                    {productLoadingStates[product._id] ? (
+                      <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-blue-500"></div>
+                    ) : (
+                      currentProductInCart.quantity
+                    )}
+                  </span>
+                  <button
+                    onClick={() => handleUpdateQuantity(currentProductInCart.quantity + 1)}
+                    className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
+                    disabled={productLoadingStates[product._id]}
+                  >
+                    +
+                  </button>
+                  <button
+                    onClick={() => handleUpdateQuantity(0)} // Option to remove all from cart
+                    className="ml-4 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                    disabled={productLoadingStates[product._id]}
+                  >
+                    Remove All
+                  </button>
+                </div>
+              ) : (
                 <button
-                  onClick={() => handleUpdateQuantity(currentProductInCart.quantity - 1)}
-                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
+                  onClick={handleAddToCart}
+                  className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                   disabled={productLoadingStates[product._id]}
                 >
-                  -
-                </button>
-                <span className="text-lg font-semibold">
                   {productLoadingStates[product._id] ? (
-                    <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-blue-500"></div>
+                    <div className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
+                    </div>
                   ) : (
-                    currentProductInCart.quantity
+                    "Add to Cart"
                   )}
-                </span>
-                <button
-                  onClick={() => handleUpdateQuantity(currentProductInCart.quantity + 1)}
-                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
-                  disabled={productLoadingStates[product._id]}
-                >
-                  +
                 </button>
-                <button
-                  onClick={() => handleUpdateQuantity(0)} // Option to remove all from cart
-                  className="ml-4 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
-                  disabled={productLoadingStates[product._id]}
-                >
-                  Remove All
-                </button>
-              </div>
+              )
             ) : (
-              <button
-                onClick={handleAddToCart}
-                className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                disabled={productLoadingStates[product._id]}
-              >
-                {productLoadingStates[product._id] ? (
-                  <div className="flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
-                  </div>
-                ) : (
-                  "Add to Cart"
-                )}
-              </button>
+              <div className="text-red-500 font-semibold">Out of Stock</div>
             )}
           </div>
 
