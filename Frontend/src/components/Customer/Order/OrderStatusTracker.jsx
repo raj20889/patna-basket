@@ -72,9 +72,9 @@ const OrderStatusTracker = ({ status, paymentStatus, paymentMethod }) => {
           </div>
 
           {/* Status steps */}
-          <div className="grid grid-cols-5 gap-2 md:flex md:justify-between relative">
+          <div className="grid grid-cols-5 gap-4 md:flex md:justify-between relative">
             {statusSteps
-              .filter(step => step.id !== 'cancelled') // Remove cancelled from main flow
+              .filter(step => step.id !== 'cancelled' || isCancelled) // Show only 'Cancelled' if the order is canceled
               .map((step, index) => {
                 const isCompleted = index < currentStatusIndex;
                 const isCurrent = index === currentStatusIndex;
@@ -97,35 +97,38 @@ const OrderStatusTracker = ({ status, paymentStatus, paymentMethod }) => {
                 return (
                   <div 
                     key={step.id} 
-                    className={`flex flex-col items-center ${isFuture ? 'opacity-50' : ''}`}
+                    className={`flex flex-col items-center ${isFuture ? 'opacity-50' : ''} whitespace-nowrap`}
                   >
-                    <div className={`flex items-center justify-center w-8 h-8 md:w-12 md:h-12 rounded-full border-2 ${borderColor} ${bgColor} mb-1 md:mb-2`}>
+                    <div className={`flex items-center justify-center w-10 h-10 md:w-14 md:h-14 rounded-full border-2 ${borderColor} ${bgColor} mb-2`}
+                      style={{ whiteSpace: 'nowrap' }}>
                       {React.cloneElement(step.icon, { 
-                        className: `h-4 w-4 md:h-6 md:w-6 ${textColor}` 
+                        className: `h-5 w-5 md:h-7 md:w-7 ${textColor}` 
                       })}
                     </div>
-                    <span className={`text-[10px] md:text-xs font-medium text-center ${textColor} hidden md:block`}>
+                    <span className={`text-[11px] md:text-sm font-medium text-center ${textColor} hidden md:block`}
+                      style={{ whiteSpace: 'nowrap' }}>
                       {step.name}
                     </span>
-                    <span className={`text-[10px] md:text-xs font-medium text-center ${textColor} block md:hidden`}>
+                    <span className={`text-[11px] md:text-sm font-medium text-center ${textColor} block md:hidden`}
+                      style={{ whiteSpace: 'nowrap' }}>
                       {step.shortName}
                     </span>
                     {isCurrent && !isCancelled && (
-                      <span className="text-[10px] md:text-xs mt-0 md:mt-1 text-blue-600 font-medium">
+                      <span className="text-[11px] md:text-sm mt-1 text-blue-600 font-medium">
                         Current
                       </span>
                     )}
                   </div>
                 );
               })}
-            
+
             {/* Cancelled status - shown separately if needed */}
             {isCancelled && (
-              <div className="flex flex-col items-center col-span-5 mt-4 md:mt-0 md:absolute md:right-0 md:top-0">
-                <div className="flex items-center justify-center w-8 h-8 md:w-12 md:h-12 rounded-full border-2 border-red-300 bg-red-100 mb-1 md:mb-2">
-                  <XCircleIcon className="h-4 w-4 md:h-6 md:w-6 text-red-800" />
+              <div className="flex flex-col items-center col-span-5 mt-6 md:mt-0 md:absolute md:right-0 md:top-0">
+                <div className="flex items-center justify-center w-10 h-10 md:w-14 md:h-14 rounded-full border-2 border-red-300 bg-red-100 mb-2">
+                  <XCircleIcon className="h-5 w-5 md:h-7 md:w-7 text-red-800" />
                 </div>
-                <span className="text-[10px] md:text-xs font-medium text-center text-red-800">
+                <span className="text-[11px] md:text-sm font-medium text-center text-red-800">
                   Cancelled
                 </span>
               </div>

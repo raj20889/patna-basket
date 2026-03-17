@@ -66,6 +66,20 @@ router.get('/', verifyToken, async (req, res) => {
     }
 })
 
+// Get address by ID
+router.get('/:id', verifyToken, async (req, res) => {
+    try {
+        const address = await Address.findOne({ _id: req.params.id, userId: req.user.id })
+        if (!address) {
+            return res.status(404).json({ msg: 'Address not found' })
+        }
+        res.status(200).json(address)
+    } catch (err) {
+        console.error(err)
+        res.status(500).json({ msg: 'Server Error' })
+    }
+})
+
 // Update address
 router.put('/:id', verifyToken, async (req, res) => {
     try {

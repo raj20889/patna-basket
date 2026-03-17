@@ -14,6 +14,7 @@ import {
   HomeIcon,
   MapPinIcon
 } from '@heroicons/react/24/outline';
+import { toast } from 'react-toastify';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -55,7 +56,7 @@ const OrderDetails = () => {
             }
           }
 
-          console.log('Address details:', response.data.order.address); // Debugging log
+          console.log('Debugging Address Details:', response.data.order.address); // Debugging log
 
           setOrder(response.data.order);
         } else {
@@ -111,6 +112,33 @@ const OrderDetails = () => {
   const calculateSubtotal = () => {
     if (!order?.items) return 0;
     return order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  };
+
+  const handleCancelOrder = async () => {
+    if (!window.confirm('Are you sure you want to cancel this order?')) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.put(
+        `${API_BASE_URL}/user-orders/${orderId}/cancel`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
+
+      toast.success('Order cancelled successfully');
+      setOrder(prev => ({
+        ...prev,
+        status: 'cancelled',
+        updatedAt: new Date()
+      }));
+    } catch (err) {
+      console.error('Error cancelling order:', err);
+      toast.error(err.response?.data?.message || 'Failed to cancel order');
+    }
   };
 
   if (loading) {
@@ -189,9 +217,9 @@ const OrderDetails = () => {
               <p className="text-gray-600">Placed on {formatDate(order.createdAt)}</p>
             </div>
             <div className="mt-4 md:mt-0">
-              <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+              <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 whitespace-nowrap">
                 {getStatusIcon(order.status)}
-                <span className="ml-2">{formatStatusText(order.status)}</span>
+                <span className="ml-2 truncate">{formatStatusText(order.status)}</span>
               </div>
             </div>
           </div>
@@ -209,25 +237,21 @@ const OrderDetails = () => {
                 <UserIcon className="h-5 w-5 mr-2 mt-0.5 text-gray-400 flex-shrink-0" />
                 <p className="text-gray-700">
                   <span className="font-medium">Contact: </span> 
-                  {order.address?.addressId?.contactName || 'N/A'}
+                  {order.address?.contactName || order.address?.addressId?.contactName || 'N/A'}
                 </p>
               </div>
               <div className="flex items-start">
                 <PhoneIcon className="h-5 w-5 mr-2 mt-0.5 text-gray-400 flex-shrink-0" />
                 <p className="text-gray-700">
                   <span className="font-medium">Phone: </span> 
-                  {order.address?.addressId?.contactPhone || 'N/A'}
+                  {order.address?.contactPhone || order.address?.addressId?.contactPhone || 'N/A'}
                 </p>
               </div>
               <div className="flex items-start">
                 <HomeIcon className="h-5 w-5 mr-2 mt-0.5 text-gray-400 flex-shrink-0" />
                 <p className="text-gray-700">
                   <span className="font-medium">Address: </span> 
-                  {order.address?.details ? 
-      order.address.details.split(', ')
-        .slice(0, -1) // Remove last two parts
-        .join(', ') : 
-      'N/A'}
+                  {order.address ? `${order.address.building}, ${order.address.floor}, ${order.address.landmark}, ${order.address.locality}` : 'N/A'}
                 </p>
               </div>
               {order.estimatedDelivery && (
@@ -266,11 +290,12 @@ const OrderDetails = () => {
     <div className="flex items-center">
       <span className="font-medium mr-2">Status:</span>
       <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+        order.status === 'cancelled' ? 'bg-gray-100 text-gray-800' :
         order.paymentStatus === 'completed' ? 'bg-green-100 text-green-800' :
         order.paymentStatus === 'failed' ? 'bg-red-100 text-red-800' :
         'bg-yellow-100 text-yellow-800'
       }`}>
-        {order.paymentStatus?.charAt(0).toUpperCase() + order.paymentStatus?.slice(1)}
+        {order.status === 'cancelled' ? 'Order Cancelled' : order.paymentStatus?.charAt(0).toUpperCase() + order.paymentStatus?.slice(1)}
       </span>
     </div>
     {order.paymentId && (
@@ -370,6 +395,18 @@ const OrderDetails = () => {
           </div>
         </div>
       )}
+
+      {/* Action Buttons */}
+      <div className="mt-8 flex justify-end">
+        {['pending_payment', 'confirmed', 'preparing'].includes(order.status) && (
+          <button
+            onClick={handleCancelOrder}
+            className="px-4 py-2 bg-red-600 text-white font-medium rounded hover:bg-red-700 transition-colors"
+          >
+            Cancel Order
+          </button>
+        )}
+      </div>
     </div>
   );
 };

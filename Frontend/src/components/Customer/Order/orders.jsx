@@ -13,6 +13,7 @@ const OrderDetails = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [trackingStatus, setTrackingStatus] = useState([]);
+  const [isCancelling, setIsCancelling] = useState(false);
 
   useEffect(() => {
     const fetchOrderDetails = async () => {
@@ -36,6 +37,7 @@ const OrderDetails = () => {
           updatedAt: response.data.updatedAt ? new Date(response.data.updatedAt) : null
         };
 
+        console.log('Fetched Order Data:', orderData); // Debugging log
         setOrder(orderData);
         generateTrackingStatus(orderData.status, orderData.createdAt);
       } catch (err) {
@@ -97,6 +99,8 @@ const OrderDetails = () => {
   const handleCancelOrder = async () => {
     if (!window.confirm('Are you sure you want to cancel this order?')) return;
 
+    setIsCancelling(true); // Set loading state
+
     try {
       const token = localStorage.getItem('token');
       const response = await axios.patch(
@@ -119,8 +123,13 @@ const OrderDetails = () => {
     } catch (err) {
       console.error('Error cancelling order:', err);
       toast.error(err.response?.data?.message || 'Failed to cancel order');
+    } finally {
+      setIsCancelling(false); // Reset loading state
     }
   };
+
+  // Debugging log for order status
+  console.log('Order Status:', order?.status);
 
   if (loading) {
     return (
@@ -369,16 +378,15 @@ const OrderDetails = () => {
           >
             Back to Orders
           </button>
-          
-          {/* Only show cancel button if order can be cancelled */}
-          {['pending_payment', 'confirmed', 'preparing'].includes(order.status) && (
-            <button
-              onClick={handleCancelOrder}
-              className="flex-1 py-3 px-6 bg-red-600 rounded-lg font-medium text-white hover:bg-red-700 transition-colors"
-            >
-              Cancel Order
-            </button>
-          )}
+
+          {/* Temporarily show cancel button for debugging */}
+          <button
+            onClick={handleCancelOrder}
+            className={`flex-1 py-3 px-6 rounded-lg font-medium text-white transition-colors ${isCancelling ? 'bg-gray-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'}`}
+            disabled={isCancelling}
+          >
+            {isCancelling ? 'Cancelling...' : 'Cancel Order'}
+          </button>
         </div>
       </div>
     </div>

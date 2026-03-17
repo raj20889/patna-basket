@@ -274,7 +274,7 @@ router.get(
   }
 );
 
-// Cancel an order
+// Reintroduced the order cancellation route
 router.patch(
   '/:id/cancel',
   [
@@ -304,16 +304,36 @@ router.patch(
       }
 
       // Check if order can be cancelled
-      if (!['pending', 'confirmed', 'processing'].includes(order.status)) {
+      if (!['pending_payment', 'confirmed', 'preparing'].includes(order.status)) {
         return res.status(400).json({ 
           success: false,
           msg: 'Order cannot be cancelled at this stage' 
         });
       }
 
+      // Refund logic for prepaid orders
+      if (order.paymentMethod !== 'COD') {
+        try {
+          const refund = await razorpay.payments.refund(order.razorpayPaymentId, {
+            amount: order.grandTotal * 100 // Amount in paise
+          });
+          console.log('Refund successful:', refund);
+        } catch (refundError) {
+          console.error('Refund failed:', refundError);
+          return res.status(500).json({ 
+            success: false,
+            msg: 'Refund failed. Please try again later.' 
+          });
+        }
+      }
+
       order.status = 'cancelled';
       order.cancelledAt = new Date();
       await order.save();
+
+      // Emit WebSocket event
+      const io = require('../socket').getSocket();
+      io.emit('orderCancelled', { orderId: order._id, status: order.status });
 
       res.json({
         success: true,
@@ -330,6 +350,36 @@ router.patch(
     }
   }
 );
+
+// Add a route for users to cancel their orders
+router.put('/:id/cancel', verifyToken, async (req, res) => {
+  try {
+    const order = await Order.findOne({
+      _id: req.params.id,
+      userId: req.user.id
+    });
+
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+
+    // Check if the order can be cancelled
+    const cancellableStatuses = ['pending_payment', 'confirmed', 'preparing'];
+    if (!cancellableStatuses.includes(order.status)) {
+      return res.status(400).json({ success: false, message: 'Order cannot be cancelled at this stage' });
+    }
+
+    // Update the order status to 'cancelled'
+    order.status = 'cancelled';
+    order.cancelledAt = new Date();
+    await order.save();
+
+    res.status(200).json({ success: true, message: 'Order cancelled successfully', order });
+  } catch (error) {
+    console.error('Error cancelling order:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
 
 // Helper functions
 function calculateDeliveryCharge(address) {
@@ -360,8 +410,7 @@ function formatOrderResponse(order) {
     paymentStatus: order.paymentStatus,
     createdAt: order.createdAt.toISOString(),
     updatedAt: order.updatedAt.toISOString(),
-    estimatedDelivery: order.estimatedDelivery?.toISOString(),
-    cancelledAt: order.cancelledAt?.toISOString()
+    estimatedDelivery: order.estimatedDelivery?.toISOString()
   };
 }
 
