@@ -69,6 +69,13 @@ const CustomerOrders = () => {
     }
   };
 
+  const getPaymentStatus = (order) => {
+    if (order.status === 'cancelled') {
+      return 'Cancelled';
+    }
+    return order.paymentStatus === 'completed' ? 'Paid' : 'Pending';
+  };
+
   const filteredOrders = activeFilter === 'all' 
     ? orders 
     : orders.filter(order => order.status.toLowerCase() === activeFilter.toLowerCase());
@@ -148,10 +155,10 @@ const CustomerOrders = () => {
         <div className="bg-white shadow overflow-hidden sm:rounded-lg">
           <ul className="divide-y divide-gray-200">
             {filteredOrders.map((order) => (
-              <li key={order._id || order.id}>
+              <li key={order._id || order.id} className={`${order.status === 'cancelled' ? 'bg-red-100 hover:bg-red-200' : 'hover:bg-gray-50'}`}>
                 <Link
                   to={`/orders/${order._id || order.id}`}
-                  className="block hover:bg-gray-50 transition-colors"
+                  className="block transition-colors"
                 >
                   <div className="px-4 py-4 sm:px-6">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
@@ -186,8 +193,8 @@ const CustomerOrders = () => {
                         <p className="text-base font-medium text-gray-900">
                           ₹{(order.grandTotal || order.total || 0).toFixed(2)}
                         </p>
-                        <span className="ml-1 text-sm text-gray-500">
-                          {order.paymentStatus === 'completed' ? '(Paid)' : '(Pending)'}
+                        <span className={`ml-1 text-sm ${order.status === 'cancelled' ? 'text-red-500' : 'text-gray-500'}`}> 
+                          {getPaymentStatus(order)}
                         </span>
                       </div>
                     </div>

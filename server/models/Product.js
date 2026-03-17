@@ -3,9 +3,9 @@ const mongoose = require('mongoose');
 const productSchema = new mongoose.Schema({
     name: { type: String, required: true, index: true },
     desc: { type: String, index: true },
-    price: { type: Number, required: true },
+    price: { type: Number, required: true, default: 0 },
     category: [{ type: String, index: true }],
-    subcategory: [{ type: String, index: true }], // supports multiple subcategories
+    subcategory: [{ type: String, index: true }], // Added support for subcategories
     image: { type: String },
     discount: {
         isActive: {

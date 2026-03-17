@@ -1,168 +1,212 @@
-// Seed script to add sample products
+const dns = require('dns');
+// Force Node to use Google DNS for SRV resolution
+dns.setServers(['8.8.8.8', '8.8.4.4']);
+
 const mongoose = require('mongoose');
 const Product = require('../models/Product');
-require('dotenv').config();
+require('dotenv').config({ path: './server/.env' });
 
-const sampleProducts = [
+// Connect to the database
+mongoose.connect(process.env.MONGO_URL, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
+  .then(() => console.log('Database connected successfully'))
+  .catch(err => {
+    console.error('Database connection error:', err);
+    process.exit(1);
+  });
+
+console.log('MONGO_URL:', process.env.MONGO_URL);
+
+const fs = require('fs');
+const path = require('path');
+
+
+const filePath = path.join(__dirname, '../../Product_DATASET/Updated_Grocery_Inventory.csv');
+
+const products = [
   {
-    name: 'Coca Cola 2L',
-    description: 'Cold refreshing Coca Cola bottle',
-    price: 120,
-    discount: 10,
-    image: 'https://dummyimage.com/300x300/f44336/ffffff&text=Coca+Cola',
-    category: 'Beverages',
-    subcategory: 'Cold Drinks',
-    stock: 50,
-    isActive: true,
-    rating: 4.5,
-    reviews: 120
+    name: "Amul Milk 500ml",
+    desc: "Fresh toned milk",
+    price: 28,
+    category: ["Dairy"],
+    subcategory: ["Milk"],
+    image: "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b",
+    discount: { isActive: true, type: "percentage", value: 10, badgeColor: "green", badgeText: "10% OFF" },
+    deliveryTime: "20 MINS",
+    badges: ["Bestseller"],
+    stock: 100
   },
   {
-    name: 'Pepsi 2L',
-    description: 'Refreshing Pepsi Cola drink',
-    price: 115,
-    discount: 8,
-    image: 'https://dummyimage.com/300x300/1e88e5/ffffff&text=Pepsi',
-    category: 'Beverages',
-    subcategory: 'Cold Drinks',
-    stock: 45,
-    isActive: true,
-    rating: 4.3,
-    reviews: 98
+    name: "Maggi Noodles",
+    desc: "2-minute instant noodles",
+    price: 14,
+    category: ["Snacks"],
+    subcategory: ["Noodles"],
+    image: "https://images.unsplash.com/photo-1604908176997-125f25cc6f3d",
+    discount: { isActive: false },
+    deliveryTime: "15 MINS",
+    badges: ["Popular"],
+    stock: 200
   },
   {
-    name: 'Lay\'s Classic Salted Chips',
-    description: 'Crispy salted potato chips',
-    price: 50,
-    discount: 5,
-    image: 'https://dummyimage.com/300x300/ffc107/000000&text=Lays+Chips',
-    category: 'Snacks',
-    subcategory: 'Chips',
-    stock: 100,
-    isActive: true,
-    rating: 4.6,
-    reviews: 250
+    name: "Lay's Classic Chips",
+    desc: "Salted potato chips",
+    price: 20,
+    category: ["Snacks"],
+    subcategory: ["Chips"],
+    image: "https://images.unsplash.com/photo-1585238342024-78d387f4a707",
+    discount: { isActive: true, type: "flat", value: 5, badgeColor: "orange", badgeText: "₹5 OFF" },
+    deliveryTime: "20 MINS",
+    badges: ["Trending"],
+    stock: 150
   },
   {
-    name: 'Cadbury Dairy Milk',
-    description: 'Delicious chocolate bar',
+    name: "Parle-G Biscuits",
+    desc: "Glucose biscuits",
+    price: 10,
+    category: ["Snacks"],
+    subcategory: ["Biscuits"],
+    image: "https://images.unsplash.com/photo-1617196038435-9a1f40add352",
+    discount: { isActive: false },
+    deliveryTime: "25 MINS",
+    badges: [],
+    stock: 300
+  },
+  {
+    name: "Tata Salt 1kg",
+    desc: "Iodized salt",
+    price: 28,
+    category: ["Essentials"],
+    subcategory: ["Salt"],
+    image: "https://images.unsplash.com/photo-1582284540020-8acbe03f4924",
+    discount: { isActive: true, type: "percentage", value: 5, badgeColor: "blue", badgeText: "5% OFF" },
+    deliveryTime: "30 MINS",
+    badges: ["Daily Use"],
+    stock: 120
+  },
+  {
+    name: "Aashirvaad Atta 5kg",
+    desc: "Whole wheat flour",
+    price: 250,
+    category: ["Staples"],
+    subcategory: ["Atta"],
+    image: "https://images.unsplash.com/photo-1608198093002-ad4e005484ec",
+    discount: { isActive: true, type: "percentage", value: 12, badgeColor: "green", badgeText: "SAVE" },
+    deliveryTime: "30 MINS",
+    badges: ["Bestseller"],
+    stock: 80
+  },
+  {
+    name: "Fortune Sunflower Oil 1L",
+    desc: "Refined cooking oil",
+    price: 140,
+    category: ["Cooking"],
+    subcategory: ["Oil"],
+    image: "https://images.unsplash.com/photo-1604908177522-b8b00cc1c60e",
+    discount: { isActive: false },
+    deliveryTime: "30 MINS",
+    badges: [],
+    stock: 90
+  },
+  {
+    name: "Coca Cola 750ml",
+    desc: "Soft drink",
     price: 40,
-    discount: 0,
-    image: 'https://dummyimage.com/300x300/8b4513/ffffff&text=Cadbury',
-    category: 'Snacks',
-    subcategory: 'Chocolate',
-    stock: 150,
-    isActive: true,
-    rating: 4.7,
-    reviews: 320
+    category: ["Beverages"],
+    subcategory: ["Soft Drinks"],
+    image: "https://images.unsplash.com/photo-1580910051074-3eb694886505",
+    discount: { isActive: true, type: "flat", value: 5, badgeColor: "red", badgeText: "DEAL" },
+    deliveryTime: "20 MINS",
+    badges: ["Cold"],
+    stock: 200
   },
   {
-    name: 'Britannia Tiger Biscuits',
-    description: 'Crunchy tea biscuits',
-    price: 35,
-    discount: 10,
-    image: 'https://dummyimage.com/300x300/d2691e/ffffff&text=Britannia',
-    category: 'Snacks',
-    subcategory: 'Biscuits',
-    stock: 80,
-    isActive: true,
-    rating: 4.4,
-    reviews: 180
-  },
-  {
-    name: 'Sprite 2L',
-    description: 'Lemon flavored carbonated drink',
+    name: "Real Orange Juice",
+    desc: "Fruit juice 1L",
     price: 110,
-    discount: 8,
-    image: 'https://dummyimage.com/300x300/76ff03/000000&text=Sprite',
-    category: 'Beverages',
-    subcategory: 'Cold Drinks',
-    stock: 60,
-    isActive: true,
-    rating: 4.5,
-    reviews: 140
+    category: ["Beverages"],
+    subcategory: ["Juice"],
+    image: "https://images.unsplash.com/photo-1571689936114-7f9b8d6e92f0",
+    discount: { isActive: false },
+    deliveryTime: "20 MINS",
+    badges: [],
+    stock: 110
   },
   {
-    name: 'Doritos Nacho Cheese',
-    description: 'Cheesy corn chips',
-    price: 60,
-    discount: 12,
-    image: 'https://dummyimage.com/300x300/ff9800/000000&text=Doritos',
-    category: 'Snacks',
-    subcategory: 'Chips',
-    stock: 75,
-    isActive: true,
-    rating: 4.5,
-    reviews: 200
+    name: "Bru Coffee 100g",
+    desc: "Instant coffee",
+    price: 95,
+    category: ["Beverages"],
+    subcategory: ["Coffee"],
+    image: "https://images.unsplash.com/photo-1509042239860-f550ce710b93",
+    discount: { isActive: true, type: "percentage", value: 8, badgeColor: "orange", badgeText: "SALE" },
+    deliveryTime: "25 MINS",
+    badges: ["Hot"],
+    stock: 75
   },
   {
-    name: 'Amul Butter',
-    description: 'Fresh butter 500g',
-    price: 180,
-    discount: 5,
-    image: 'https://dummyimage.com/300x300/ffe082/000000&text=Amul+Butter',
-    category: 'Dairy',
-    subcategory: 'Butter',
-    stock: 40,
-    isActive: true,
-    rating: 4.8,
-    reviews: 95
+    name: "Colgate Toothpaste",
+    desc: "Strong teeth toothpaste",
+    price: 55,
+    category: ["Personal Care"],
+    subcategory: ["Toothpaste"],
+    image: "https://images.unsplash.com/photo-1588776814546-1ffcf47267a5",
+    discount: { isActive: false },
+    deliveryTime: "30 MINS",
+    badges: [],
+    stock: 140
   },
   {
-    name: 'Parle G Biscuits',
-    description: 'Classic sweet biscuits',
-    price: 25,
-    discount: 0,
-    image: 'https://dummyimage.com/300x300/ff6f00/ffffff&text=Parle+G',
-    category: 'Snacks',
-    subcategory: 'Biscuits',
-    stock: 200,
-    isActive: true,
-    rating: 4.6,
-    reviews: 450
+    name: "Lux Soap",
+    desc: "Beauty soap",
+    price: 35,
+    category: ["Personal Care"],
+    subcategory: ["Soap"],
+    image: "https://images.unsplash.com/photo-1607000975856-0c0b0c0c0c0c",
+    discount: { isActive: true, type: "flat", value: 3, badgeColor: "green", badgeText: "SAVE" },
+    deliveryTime: "25 MINS",
+    badges: [],
+    stock: 200
   },
   {
-    name: 'Frooti Mango Drink',
-    description: 'Fruity mango beverage',
+    name: "Surf Excel Detergent",
+    desc: "Washing powder",
+    price: 120,
+    category: ["Home Care"],
+    subcategory: ["Detergent"],
+    image: "https://images.unsplash.com/photo-1594041680534-e8c8cdebd659",
+    discount: { isActive: true, type: "percentage", value: 10, badgeColor: "blue", badgeText: "10% OFF" },
+    deliveryTime: "30 MINS",
+    badges: ["Cleaning"],
+    stock: 90
+  },
+  {
+    name: "Good Day Biscuits",
+    desc: "Butter cookies",
     price: 30,
-    discount: 5,
-    image: 'https://dummyimage.com/300x300/ff6f00/ffffff&text=Frooti',
-    category: 'Beverages',
-    subcategory: 'Juices',
-    stock: 120,
-    isActive: true,
-    rating: 4.2,
-    reviews: 160
+    category: ["Snacks"],
+    subcategory: ["Biscuits"],
+    image: "https://images.unsplash.com/photo-1608198093002-ad4e005484ec",
+    discount: { isActive: false },
+    deliveryTime: "20 MINS",
+    badges: [],
+    stock: 180
   }
 ];
 
 const seedProducts = async () => {
   try {
-    await mongoose.connect(process.env.MONGO_URL);
-    console.log('✓ Connected to MongoDB');
+    await Product.deleteMany({});
+    console.log('All products deleted successfully!');
 
-    // Clear existing products (optional - comment out to keep existing)
-    // await Product.deleteMany({});
-    // console.log('Cleared existing products');
+    await Product.insertMany(products);
+    console.log('New products inserted successfully!');
 
-    const created = await Product.insertMany(sampleProducts);
-    console.log(`✓ Created ${created.length} sample products:\n`);
-    
-    created.forEach(product => {
-      console.log(`  • ${product.name} - ₹${product.price} (${product.category} > ${product.subcategory})`);
-    });
-    
-    console.log('\n✓ Products seeded successfully!');
-    await mongoose.connection.close();
     process.exit(0);
   } catch (error) {
-    if (error.code === 11000) {
-      console.log('⚠ Some products already exist (skipped duplicates)');
-      await mongoose.connection.close();
-      process.exit(0);
-    }
-    console.error('✗ Error seeding products:', error.message);
-    await mongoose.connection.close();
+    console.error('Error seeding products:', error);
     process.exit(1);
   }
 };
