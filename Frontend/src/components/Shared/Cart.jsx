@@ -17,11 +17,8 @@ const CartPage = () => {
   const [errorMessage, setErrorMessage] = useState('');
 
   const dispatch = useDispatch();
-  const cartState = useSelector((state) => {
-    
-    return state.cart;
-  });
-  const { items: cartItems = [], totalQuantity, totalPrice } = cartState;
+  const cart = useSelector((state) => state.cart); // Access cart from Redux store
+  const { items: cartItems = [], totalQuantity, totalPrice, tipAmount: cartTipAmount } = cart;
   
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
@@ -66,6 +63,16 @@ const CartPage = () => {
   useEffect(() => {
     console.log("Cart items:", cartItems); // Debug log to verify stock field
   }, [cartItems]);
+
+  useEffect(() => {
+    // Debug log to verify Redux state
+    console.log("Redux cart state:", cart);
+
+    // Restore selectedTip from Redux
+    if (cart.tipAmount !== undefined) {
+      setSelectedTip(cart.tipAmount);
+    }
+  }, [cart]);
 
   useEffect(() => {
     // Listen for real-time stock updates
@@ -200,6 +207,27 @@ const CartPage = () => {
   const handleDonationToggle = async () => {
     const newDonationSelected = !donationSelected;
     setDonationSelected(newDonationSelected);
+
+    // Ensure the donation amount is recalculated correctly
+    const newDonationAmount = newDonationSelected ? 1 : 0;
+
+    // Calculate new totals locally
+    const itemsTotal = token ? totalPrice : 
+      cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
+    const newGrandTotal = itemsTotal + 2 + selectedTip + newDonationAmount;
+
+    // Update local state immediately
+    dispatch(setCart({
+      cartItems: cartItems,
+      itemsTotal,
+      deliveryCharge: 0,
+      handlingCharge: 2,
+      tipAmount: selectedTip,
+      donationAmount: newDonationAmount,
+      grandTotal: newGrandTotal
+    }));
+
+    // Update charges on the server
     await updateCartCharges(null, newDonationSelected);
   };
 
@@ -443,7 +471,10 @@ const CartPage = () => {
                     <span>Handling charge</span>
                     <span className="text-gray-400 text-xs">i</span>
                   </div>
-                  <span className="font-medium">₹2.00</span>
+                  <div>
+                     <span className="font-medium">₹2.00</span>
+                   
+                  </div>
                 </div>
                 
                 <div className="flex justify-between">
@@ -511,7 +542,19 @@ const CartPage = () => {
                 {[20, 30, 50, 'Custom'].map((amount) => (
                   <button
                     key={amount}
-                    onClick={() => typeof amount === 'number' && handleTipChange(amount)}
+                    onClick={() => {
+                      if (typeof amount === 'number') {
+                        handleTipChange(amount);
+                      } else {
+                        const customTip = prompt('Enter custom tip amount:');
+                        const customTipAmount = parseFloat(customTip);
+                        if (!isNaN(customTipAmount) && customTipAmount > 0) {
+                          handleTipChange(customTipAmount);
+                        } else {
+                          alert('Invalid tip amount. Please enter a valid number.');
+                        }
+                      }
+                    }}
                     className={`flex-shrink-0 px-4 py-2 rounded-lg ${selectedTip === amount ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-800'} transition-colors`}
                   >
                     {typeof amount === 'number' ? (

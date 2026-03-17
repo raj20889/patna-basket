@@ -98,9 +98,24 @@ const cartSlice = createSlice({
       console.log("Redux: Setting cart with payload:", action.payload);
       state.items = action.payload.cartItems || [];
       const { totalQuantity: newTotalQuantity, totalPrice: newTotalPrice } = calculateTotals(state.items);
+
+      // Preserve additional charges
+      state.tipAmount = action.payload.tipAmount ?? state.tipAmount;
+      state.donationAmount = action.payload.donationAmount ?? state.donationAmount;
+      state.deliveryCharge = action.payload.deliveryCharge ?? state.deliveryCharge;
+      state.handlingCharge = action.payload.handlingCharge ?? state.handlingCharge;
+
       state.totalQuantity = newTotalQuantity;
-      state.totalPrice = newTotalPrice;
-      saveCartToLocalStorage(state.items);
+      state.totalPrice = newTotalPrice + state.tipAmount + state.donationAmount + state.deliveryCharge + state.handlingCharge;
+
+      // Save updated cart to local storage
+      saveCartToLocalStorage({
+        items: state.items,
+        tipAmount: state.tipAmount,
+        donationAmount: state.donationAmount,
+        deliveryCharge: state.deliveryCharge,
+        handlingCharge: state.handlingCharge
+      });
     },
     handleStockUpdate: (state, action) => {
       const { productId, stock } = action.payload;

@@ -204,34 +204,31 @@ const Payment = () => {
       return;
     }
 
-    // Check stock availability
-    const outOfStockItems = cartItems.filter(item => item.quantity > item.stock);
-    if (outOfStockItems.length > 0) {
-      const productNames = outOfStockItems.map(item => item.name).join(', ');
-      toast.error(`Out of stock: ${productNames}`);
-      return;
-    }
 
+  
     try {
-      const orderData = {
-        addressId: address?._id,
-        paymentMethod: selectedPayment,
-        items: cartItems.map(item => ({
-          productId: item.productId || item._id,
-          name: item.name,
-          image: item.image,
-          variant: item.variant,
-          price: item.price,
-          quantity: item.quantity,
-        })),
-        itemsTotal: cartTotals.itemsTotal,
-        deliveryCharge: 0,
-        handlingCharge: cartTotals.handlingCharge,
-        tipAmount: cartTotals.tipAmount,
-        donationAmount: cartTotals.donationAmount,
-        grandTotal: cartTotals.grandTotal,
-        paymentStatus: 'pending',
-      };
+      // First create the order
+     const orderData = {
+  addressId: address?._id,
+  paymentMethod: selectedPayment,
+  items: cartItems.map(item => ({
+    productId: item.productId || item._id, // ✅ FIX here
+    name: item.name,
+    image: item.image,
+    variant: item.variant,
+    price: item.price,
+    quantity: item.quantity
+  })),
+  itemsTotal: cartTotals.itemsTotal,
+  deliveryCharge: 0,
+  handlingCharge: cartTotals.handlingCharge,
+  tipAmount: cartTotals.tipAmount,
+  donationAmount: cartTotals.donationAmount,
+  grandTotal: cartTotals.grandTotal,
+  paymentStatus: 'pending'
+};
+      console.log("Order payload to backend:", orderData); // Updated console.log message as per instruction
+      console.log("Cart items before order submission:", cartItems);
 
       const response = await axios.post(`${API_BASE_URL}/user-orders`, orderData, {
         headers: {
@@ -239,25 +236,130 @@ const Payment = () => {
           'Content-Type': 'application/json',
         },
       });
+  
+      // Redirect user
+      if (selectedPayment === 'COD') {
+        toast.success('Order placed successfully! Pay when your order arrives');
+        navigate('/order-confirmation', { 
+          state: { 
+            orderId: response.data.orderId,
+            paymentStatus: 'pending'
+          } 
+        });
+        // Clear cart only after successful COD order placement
+        try {
+          await axios.delete(`${API_BASE_URL}/cart`, {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          });
+          setCartItems([]);
+        } catch (clearCartError) {
+          console.warn('Cart clearing failed:', clearCartError);
+        }
+      } else if (selectedPayment === 'RAZORPAY') {
+        try {
+          // Dynamically load Razorpay script if not already loaded
+          const loadRazorpayScript = () => {
+            return new Promise((resolve) => {
+              if (document.querySelector('script[src="https://checkout.razorpay.com/v1/checkout.js"]')) {
+                return resolve(true);
+              }
+              const script = document.createElement('script');
+              script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+              script.onload = () => resolve(true);
+              script.onerror = () => resolve(false);
+              document.body.appendChild(script);
+            });
+          };
 
-      toast.success('Order placed successfully!');
-      navigate('/order-confirmation', {
-        state: { orderId: response.data.orderId, paymentStatus: 'pending' },
-      });
+          const scriptLoaded = await loadRazorpayScript();
+          if (!scriptLoaded) {
+            toast.error('Failed to load Razorpay SDK. Please try again.');
+            return;
+          }
 
-      await axios.delete(`${API_BASE_URL}/cart`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setCartItems([]);
-    } catch (error) {
-      console.error('Order submission failed:', error);
+          const options = {
+            key: response.data.key, // Razorpay Key ID
+            amount: response.data.amount, // in paise
+            currency: response.data.currency,
+            name: 'Patna Basket',
+            description: 'Order Payment',
+            order_id: response.data.razorpayOrderId,
+            handler: async function (paymentResponse) {
+              try {
+                // Verify payment on backend
+                console.log('Verifying payment with:', {
+                  orderId: response.data.orderId,
+                  razorpayOrderId: paymentResponse.razorpay_order_id,
+                  razorpayPaymentId: paymentResponse.razorpay_payment_id,
+                  razorpaySignature: paymentResponse.razorpay_signature,
+                });
+                await axios.post(`${API_BASE_URL}/payment/razorpay/verify`, {
+                  orderId: response.data.orderId,
+                  razorpayOrderId: paymentResponse.razorpay_order_id,
+                  razorpayPaymentId: paymentResponse.razorpay_payment_id,
+                  razorpaySignature: paymentResponse.razorpay_signature,
+                }, {
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                  },
+                });
 
-      // Extract and display the error message
-      console.error('Full error response:', error.response?.data);
-      const errorMessage = error.response?.data?.message || 'Error placing order. Please try again.';
-      toast.error(`Order Error: ${errorMessage}`);
+                toast.success('Payment successful!');
+                console.log('Order ID before navigation:', response.data.orderId);
+                navigate('/order-confirmation', {
+                  state: {
+                    orderId: response.data.orderId,
+                    paymentStatus: 'paid',
+                  },
+                });
+                // Clear cart only after successful Razorpay payment
+                try {
+                  await axios.delete(`${API_BASE_URL}/cart`, {
+                    headers: {
+                      Authorization: `Bearer ${token}`
+                    }
+                  });
+                  setCartItems([]);
+                } catch (clearCartError) {
+                  console.warn('Cart clearing failed:', clearCartError);
+                }
+              } catch (verifyErr) {
+                console.error('Payment verification failed:', verifyErr);
+                toast.error('Payment verification failed. Please contact support.');
+                navigate('/orders');
+              }
+            },
+            prefill: {
+              name: user?.name || '',
+              email: user?.email || '',
+              contact: user?.phone || '',
+            },
+            theme: {
+              color: '#3399cc',
+            },
+          };
 
-      if (error.response?.status === 401 || error.response?.status === 403) {
+          const rzp = new window.Razorpay(options);
+          rzp.on('payment.failed', function (resp) {
+            toast.error(resp.error.description || 'Payment failed');
+          });
+          rzp.open();
+        } catch (paymentErr) {
+          console.error('Razorpay payment error:', paymentErr);
+          toast.error('Failed to process payment. Please try again.');
+        }
+      }
+  
+    } catch (err) {
+      console.error('Order submission failed:', err);
+      const errorMessage = err.response?.data?.message || 
+                          'Error placing order. Please try again.';
+      toast.error(errorMessage);
+      
+      if (err.response?.status === 401 || err.response?.status === 403) {
         navigate('/login');
       }
     }

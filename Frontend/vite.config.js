@@ -20,4 +20,13 @@ export default defineConfig({
     },
     chunkSizeWarningLimit: 1000,
   },
+  server: {
+    host: true,
+    open: '/index.html',
+  },
+  define: {
+    'process.env': {
+      VITE_APP_TITLE: 'Patna Basket'
+    }
+  }
 })
