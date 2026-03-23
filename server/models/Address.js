@@ -41,6 +41,18 @@ const addressSchema = new mongoose.Schema({
     isDefault: {
         type: Boolean,
         default: false
+    },
+    city: {
+        type: String,
+        required: true
+    },
+    state: {
+        type: String,
+        required: true
+    },
+    zip: {
+        type: String,
+        required: true
     }
 }, { timestamps: true })
 

@@ -22,7 +22,7 @@ const CartProvider = ({ children }) => {
       if (role !== 'admin') {
         if (!token) {
           // For guest users, load from localStorage
-          const guestCart = JSON.parse(localStorage.getItem("guestCart")) || [];
+          const guestCart = Array.isArray(JSON.parse(localStorage.getItem("guestCart"))) ? JSON.parse(localStorage.getItem("guestCart")) : [];
           const guestCartMap = {};
           guestCart.forEach(item => {
             guestCartMap[item.productId] = item.quantity;

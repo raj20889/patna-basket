@@ -115,8 +115,7 @@ const OrderSummary = ({
                 <span className="text-gray-400 text-xs">i</span>
               </div>
               <div>
-                <span className="text-gray-400 line-through mr-1">₹25</span>
-                <span className="text-blue-600">FREE</span>
+                <span className="text-blue-600">₹{cartTotals.deliveryCharge.toFixed(2)}</span>
               </div>
             </div>
             

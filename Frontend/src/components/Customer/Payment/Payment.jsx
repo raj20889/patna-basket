@@ -68,11 +68,11 @@ const Payment = () => {
 
       // Calculate totals
       const itemsTotal = initialCartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-      const grandTotal = itemsTotal + handlingCharge + tipAmount + (donationSelected ? donationAmount : 0);
+      const grandTotal = itemsTotal + handlingCharge + tipAmount + (donationSelected ? donationAmount : 0) + deliveryFee;
       
       setCartTotals({
         itemsTotal,
-        deliveryCharge: 0,
+        deliveryCharge: deliveryFee, // Use dynamic delivery fee
         handlingCharge,
         tipAmount,
         donationAmount: donationSelected ? donationAmount : 0,

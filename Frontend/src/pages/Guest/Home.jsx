@@ -9,6 +9,7 @@ import VirtualStoresSection from "../../components/Shared/VirtualStoresSection";
 import CategoryGrid from "../../components/Shared/CategoryGrid";
 import ProductsLoaderTemplate from "../Customer/ProductsLoaderTemplate";
 import SplashScreen from "../../components/Shared/SplashScreen";
+import Footer from "../../components/Shared/Footer";
 
 // Lazy load heavy sections
 const SubcategorySection = React.lazy(() => import("../../components/Customer/CustomerCategory/SubcategorySection"));
@@ -242,13 +243,8 @@ const Home = () => {
                 navigatePath={section.categoryPath}
               />
             ))}
-            <ProductComponent
-              products={products}
-              onCartChange={handleCartChange}
-              cartUpdated={cartUpdated}
-              isLoggedIn={userIsLoggedIn}
-            />
           </Suspense>
+          <Footer />
         </>
       )}
     </div>

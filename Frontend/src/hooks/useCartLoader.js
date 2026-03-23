@@ -10,7 +10,7 @@ const useCartLoader = () => {
   useEffect(() => {
     if (!token) {
       console.log("useCartLoader: Initializing guest cart from localStorage.");
-      const guestCart = JSON.parse(localStorage.getItem('guestCart')) || [];
+      const guestCart = Array.isArray(JSON.parse(localStorage.getItem('guestCart'))) ? JSON.parse(localStorage.getItem('guestCart')) : [];
       console.log("useCartLoader: guestCart from localStorage:", guestCart);
       const itemsTotal = guestCart.reduce((total, item) => total + (item.price * item.quantity), 0);
       const selectedTip = 0;

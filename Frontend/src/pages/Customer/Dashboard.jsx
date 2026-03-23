@@ -9,6 +9,7 @@ import VirtualStoresSection from "../../components/Shared/VirtualStoresSection";
 import CategoryGrid from "../../components/Shared/CategoryGrid";
 import ProductsLoaderTemplate from "./ProductsLoaderTemplate.jsx";
 import { io } from "socket.io-client";
+import Footer from "../../components/Shared/Footer";
 
 // Lazy load category/product sections
 const SubcategorySection = lazy(() =>
@@ -231,11 +232,12 @@ const Dashboard = () => {
                 navigatePath={section.categoryPath}
               />
             ))}
-            <h2 className="text-2xl font-bold mb-6">All Products</h2>
-            <AllProducts {...sectionProps} />
+          
           </Suspense>
         )}
       </div>
+
+      <Footer />
 
       <WebSocketListener setProducts={setProducts} />
     </div>

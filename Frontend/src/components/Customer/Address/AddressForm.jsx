@@ -16,6 +16,9 @@ const AddressForm = ({ userId, token, onSuccess, onCancel, addressToEdit }) => {
     landmark: isEditMode ? addressToEdit.landmark || '' : '',
     contactName: isEditMode ? addressToEdit.contactName : '',
     contactPhone: isEditMode ? addressToEdit.contactPhone || '' : '',
+    city: isEditMode ? addressToEdit.city || '' : '', // Added city
+    state: isEditMode ? addressToEdit.state || '' : '', // Added state
+    zip: isEditMode ? addressToEdit.zip || '' : '', // Added zip
     isDefault: isEditMode ? addressToEdit.isDefault : false
   });
 
@@ -212,6 +215,60 @@ const AddressForm = ({ userId, token, onSuccess, onCancel, addressToEdit }) => {
                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="e.g. Near Central Park"
                 onFocus={() => setActiveField('landmark')}
+                onBlur={() => setActiveField(null)}
+              />
+            </div>
+
+            {/* City */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                City *
+              </label>
+              <input
+                type="text"
+                name="city"
+                value={formData.city}
+                onChange={handleChange}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="e.g. Patna"
+                required
+                onFocus={() => setActiveField('city')}
+                onBlur={() => setActiveField(null)}
+              />
+            </div>
+
+            {/* State */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                State *
+              </label>
+              <input
+                type="text"
+                name="state"
+                value={formData.state}
+                onChange={handleChange}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="e.g. Bihar"
+                required
+                onFocus={() => setActiveField('state')}
+                onBlur={() => setActiveField(null)}
+              />
+            </div>
+
+            {/* Zip Code */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Zip Code *
+              </label>
+              <input
+                type="text"
+                name="zip"
+                value={formData.zip}
+                onChange={handleChange}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="e.g. 800001"
+                required
+                onFocus={() => setActiveField('zip')}
                 onBlur={() => setActiveField(null)}
               />
             </div>

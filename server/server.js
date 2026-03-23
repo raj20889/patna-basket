@@ -29,6 +29,7 @@ const quickSearchRoute = require('./routes/quickSearch');
 const trendingSearchRoute = require('./routes/virtualStores');
 const storesRoute = require('./routes/stores');
 const notificationRoutes = require('./routes/notificationRoutes');
+const geocodeRoute = require('./routes/geocode');
 
 // Keep-alive service
 require('./keepAlive');
@@ -76,6 +77,7 @@ app.use('/delivery-promise', deliveryPromiseRoute);
 app.use('/quick-searches', quickSearchRoute);
 app.use('/trending-searches', trendingSearchRoute);
 app.use('/stores', storesRoute);
+app.use('/geocode', geocodeRoute);
 
 // PORT define
 const PORT = process.env.PORT || 5000;

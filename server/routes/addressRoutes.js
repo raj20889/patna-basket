@@ -6,11 +6,11 @@ const verifyToken = require('../middlewares/verifyToken')
 // Add new address
 router.post('/', verifyToken, async (req, res) => {
     try {
-        const { addressType, building, locality, contactName, floor, landmark, contactPhone, isDefault } = req.body
+        const { addressType, building, locality, contactName, floor, landmark, contactPhone, isDefault, city, state, zip } = req.body
 
         // Basic validation
-        if (!addressType || !building || !locality || !contactName) {
-            return res.status(400).json({ msg: 'Required fields: addressType, building, locality, contactName' })
+        if (!addressType || !building || !locality || !contactName || !city || !state || !zip) {
+            return res.status(400).json({ msg: 'Required fields: addressType, building, locality, contactName, city, state, zip' })
         }
 
         // Custom name required if addressType is 'Other'
@@ -40,6 +40,9 @@ router.post('/', verifyToken, async (req, res) => {
             landmark,
             contactName,
             contactPhone,
+            city,
+            state,
+            zip,
             isDefault: shouldSetDefault
         })
 
