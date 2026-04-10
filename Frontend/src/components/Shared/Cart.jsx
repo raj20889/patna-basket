@@ -42,10 +42,23 @@ const CartPage = () => {
           dispatch(setCart({ cartItems: items }));
         } else {
           const guestCart = JSON.parse(localStorage.getItem('guestCart') || '[]');
-          const updatedGuestCart = guestCart.map((item) => ({
-            ...item,
-            stock: item.stock || 1, // Add a default stock value if missing
-          }));
+
+          // Fetch stock values for guest cart items
+          const updatedGuestCart = await Promise.all(
+            guestCart.map(async (item) => {
+              try {
+                const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/products/${item.productId}`);
+                return {
+                  ...item,
+                  stock: res.data?.stock || 0, // Fetch and set the correct stock value
+                };
+              } catch (error) {
+                console.error(`Error fetching stock for product ${item.productId}:`, error);
+                return { ...item, stock: 1 }; // Default to 1 if stock fetch fails
+              }
+            })
+          );
+
           localStorage.setItem("guestCart", JSON.stringify(updatedGuestCart));
           dispatch(setCart({ cartItems: updatedGuestCart }));
         }
