@@ -109,13 +109,7 @@ const cartSlice = createSlice({
       state.totalPrice = newTotalPrice + state.tipAmount + state.donationAmount + state.deliveryCharge + state.handlingCharge;
 
       // Save updated cart to local storage
-      saveCartToLocalStorage({
-        items: state.items,
-        tipAmount: state.tipAmount,
-        donationAmount: state.donationAmount,
-        deliveryCharge: state.deliveryCharge,
-        handlingCharge: state.handlingCharge
-      });
+     saveCartToLocalStorage(state.items);
     },
     handleStockUpdate: (state, action) => {
       const { productId, stock } = action.payload;
