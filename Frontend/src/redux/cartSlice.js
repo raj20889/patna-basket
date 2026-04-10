@@ -94,23 +94,36 @@ const cartSlice = createSlice({
       state.totalPrice = 0;
       saveCartToLocalStorage(state.items);
     },
-    setCart: (state, action) => {
-      console.log("Redux: Setting cart with payload:", action.payload);
-      state.items = action.payload.cartItems || [];
-      const { totalQuantity: newTotalQuantity, totalPrice: newTotalPrice } = calculateTotals(state.items);
+  setCart: (state, action) => {
+  console.log("Redux: Setting cart with payload:", action.payload);
 
-      // Preserve additional charges
-      state.tipAmount = action.payload.tipAmount ?? state.tipAmount;
-      state.donationAmount = action.payload.donationAmount ?? state.donationAmount;
-      state.deliveryCharge = action.payload.deliveryCharge ?? state.deliveryCharge;
-      state.handlingCharge = action.payload.handlingCharge ?? state.handlingCharge;
+  state.items = action.payload.cartItems || [];
 
-      state.totalQuantity = newTotalQuantity;
-      state.totalPrice = newTotalPrice + state.tipAmount + state.donationAmount + state.deliveryCharge + state.handlingCharge;
+  const { totalQuantity: newTotalQuantity, totalPrice: newTotalPrice } =
+    calculateTotals(state.items);
 
-      // Save updated cart to local storage
-     saveCartToLocalStorage(state.items);
-    },
+  // ✅ Ensure defaults (VERY IMPORTANT)
+  state.tipAmount = action.payload.tipAmount ?? state.tipAmount ?? 0;
+  state.donationAmount = action.payload.donationAmount ?? state.donationAmount ?? 0;
+  state.deliveryCharge = action.payload.deliveryCharge ?? state.deliveryCharge ?? 0;
+  state.handlingCharge = action.payload.handlingCharge ?? state.handlingCharge ?? 0;
+
+  state.totalQuantity = newTotalQuantity;
+
+  // ✅ Apply your safe logic here
+  if (state.items.length === 0) {
+    state.totalPrice = 0;
+  } else {
+    state.totalPrice =
+      newTotalPrice +
+      state.tipAmount +
+      state.donationAmount +
+      state.deliveryCharge +
+      state.handlingCharge;
+  }
+
+  saveCartToLocalStorage(state.items);
+},
     handleStockUpdate: (state, action) => {
       const { productId, stock } = action.payload;
       const existingItem = state.items.find(item => item.productId === productId);

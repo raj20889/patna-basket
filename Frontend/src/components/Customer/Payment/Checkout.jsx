@@ -187,17 +187,24 @@ const Checkout = () => {
     }
   };
 
-  const handleAddressDeleted = (addressId) => {
-    setAddresses(addresses.filter(addr => addr._id !== addressId));
-    if (selectedAddress === addressId) {
-      setSelectedAddress(null);
-      // Select another default address if available
-      const defaultAddr = addresses.find(addr => addr.isDefault && addr._id !== addressId);
-      if (defaultAddr) {
-        setSelectedAddress(defaultAddr._id);
-      }
+  const handleAddressDeleted = async (addressId) => {
+    try {
+      // Call the API to delete the address
+      await axios.delete(`${API_BASE_URL}/addresses/${addressId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      // Refetch the updated list of addresses
+      fetchAddresses(token);
+
+      // Show success notification
+      showNotification('Address deleted successfully');
+    } catch (error) {
+      console.error('Error deleting address:', error);
+      showNotification('Failed to delete address', 'error');
     }
-    showNotification('Address deleted successfully');
   };
 
   const proceedToPayment = async () => {
@@ -310,22 +317,6 @@ const Checkout = () => {
             <p>Delivery Charge: ₹{deliveryDetails.deliveryCharge.toFixed(2)}</p>
           </div>
         )}
-
-        <div>
-          <h3>Shop Location</h3>
-          <p>Latitude: {SHOP_LOCATION.lat}, Longitude: {SHOP_LOCATION.lng}</p>
-        </div>
-        <div>
-          <h3>Current Address</h3>
-          <p>{deliveryDetails?.address || 'No address selected'}</p>
-        </div>
-        <div>
-          <h3>Calculated Delivery Details</h3>
-          <p>Latitude: {deliveryDetails?.lat || 'N/A'}</p>
-          <p>Longitude: {deliveryDetails?.lng || 'N/A'}</p>
-          <p>Distance: {deliveryDetails?.distance || 'N/A'} km</p>
-          <p>Delivery Charge: ₹{deliveryDetails?.deliveryCharge || 'N/A'}</p>
-        </div>
 
         <button
           className="w-full bg-white border-2 border-blue-500 text-blue-600 px-4 py-3 rounded-lg hover:bg-blue-50 font-medium transition-colors mb-6"
