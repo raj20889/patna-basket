@@ -51,6 +51,7 @@ import ProductManagement from "./pages/Admin/ProductManagement/index";
 import VirtualStoresPage from "./pages/Admin/VirtualStoresPage";
 
 import WebSocketListener from "./components/Shared/WebSocketListener"; // Corrected import path
+import GroceryDeliveryPatna from "./pages/SEO/grocery-delivery-patna";
 
 const App = () => {
   useCartLoader();
@@ -77,6 +78,8 @@ const App = () => {
             
             {/* Virtual Store Route - Public Access */}
             <Route path="/store/:storeId" element={<StoreView />} />
+
+            <Route path="/grocery-delivery-patna" element={<GroceryDeliveryPatna />} />
 
             {/* Protected Admin Routes */}
             <Route
