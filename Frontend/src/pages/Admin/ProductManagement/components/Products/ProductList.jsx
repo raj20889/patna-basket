@@ -6,13 +6,15 @@ import DeleteProductModal from './DeleteProductModal';
 import { tableColumns } from '../../constants';
 import { AiOutlinePlus, AiOutlineSearch, AiOutlineDelete } from 'react-icons/ai';
 
-const ProductList = ({ products, loading, onAdd, onUpdate, onDelete, categories, subcategories = [], onSearch, onBulkDelete, onStockUpdate }) => {
+const ProductList = ({ products, loading, onAdd, onUpdate, onDelete, categories, subcategories = [], onSearch, onBulkDelete, onStockUpdate, fetchProducts }) => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProducts, setSelectedProducts] = useState([]);
+
+  console.log('fetchProducts prop:', fetchProducts); // Debugging log to verify if fetchProducts is passed
 
   const handleEdit = (product) => {
     setSelectedProduct(product);
@@ -34,6 +36,15 @@ const ProductList = ({ products, loading, onAdd, onUpdate, onDelete, categories,
     if (onStockUpdate) {
       onStockUpdate(productId, newStock);
     }
+  };
+
+  const handleAddProduct = async (productData) => {
+    if (!fetchProducts) {
+      console.error('fetchProducts is not defined');
+      return;
+    }
+    await onAdd(productData);
+    await fetchProducts(); // Re-fetch products to update the list
   };
 
   return (
@@ -75,6 +86,8 @@ const ProductList = ({ products, loading, onAdd, onUpdate, onDelete, categories,
         columns={tableColumns.products}
         data={products.map(product => ({
           ...product,
+          category: Array.isArray(product.category) ? product.category.join(', ') : product.category,
+          subcategory: Array.isArray(product.subcategory) ? product.subcategory.join(', ') : product.subcategory,
           stock: (
             <input
               type="number"
@@ -97,7 +110,7 @@ const ProductList = ({ products, loading, onAdd, onUpdate, onDelete, categories,
       <AddProductModal
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}
-        onAdd={onAdd}
+        onAdd={handleAddProduct} // Use the updated handler
         categories={categories}
         subcategories={subcategories}
         loading={loading}

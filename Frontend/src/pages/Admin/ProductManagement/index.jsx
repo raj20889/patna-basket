@@ -166,7 +166,8 @@ const ProductManagement = () => {
               categories={categories}
               subcategories={subcategories}
               onSearch={searchProducts}
-              onStockUpdate={updateProductStock} // Pass stock update handler
+              onStockUpdate={updateProductStock}
+              fetchProducts={fetchProducts} // Pass fetchProducts as a prop
             />
           )}
 

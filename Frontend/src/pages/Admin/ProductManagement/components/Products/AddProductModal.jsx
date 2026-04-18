@@ -75,9 +75,17 @@ const AddProductModal = ({ isOpen, onClose, onAdd, categories, subcategories = [
     e.preventDefault();
     if (!validateForm()) return;
 
+    const processedFormData = {
+      ...formData,
+      price: Number(formData.price),
+      stock: Number(formData.stock),
+    };
+
+    console.log('Submitting processed form data:', processedFormData); // Debugging log
+
     try {
       setIsSubmitting(true);
-      await onAdd(formData);
+      await onAdd(processedFormData);
       setToast({ type: 'success', message: messages.product.addSuccess });
       setTimeout(() => {
         setFormData({
@@ -92,6 +100,7 @@ const AddProductModal = ({ isOpen, onClose, onAdd, categories, subcategories = [
         onClose();
       }, 500);
     } catch (err) {
+      console.error('Error adding product:', err); // Debugging log
       setToast({ type: 'error', message: messages.product.addError });
     } finally {
       setIsSubmitting(false);
