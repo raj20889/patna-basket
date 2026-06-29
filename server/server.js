@@ -60,6 +60,15 @@ app.use(
 
 app.use(express.json());
 
+// Health check endpoint for browser checks and Render keep-alive pings
+app.get(['/health', '/api/health'], (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString(),
+  });
+});
+
 // Routes setup
 app.use('/auth', authRoute);
 app.use('/products', productRoute);
