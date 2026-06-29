@@ -13,7 +13,10 @@ const EditProductModal = ({ isOpen, onClose, onUpdate, product, categories, subc
     category: [],
     subcategory: [],
     image: '',
-    stock: 0, // Add stock field to form data
+    stock: 0,
+    discount: { value: '', type: 'percentage', isActive: false, badgeText: '', badgeColor: 'red' },
+    badges: [],
+    deliveryTime: '',
   });
   const [errors, setErrors] = useState({});
   const [toast, setToast] = useState(null);
@@ -44,7 +47,16 @@ const EditProductModal = ({ isOpen, onClose, onUpdate, product, categories, subc
             ? [product.subcategory]
             : [],
         image: product.image || '',
-        stock: product.stock || 0, // Initialize stock field
+        stock: product.stock || 0,
+        discount: {
+          value: product.discount?.value || '',
+          type: product.discount?.type || 'percentage',
+          isActive: product.discount?.isActive ?? Boolean(product.discount?.value),
+          badgeText: product.discount?.badgeText || '',
+          badgeColor: product.discount?.badgeColor || 'red',
+        },
+        badges: Array.isArray(product.badges) ? product.badges : [],
+        deliveryTime: product.deliveryTime || '',
       });
     }
   }, [product, isOpen]);
@@ -93,9 +105,24 @@ const EditProductModal = ({ isOpen, onClose, onUpdate, product, categories, subc
     e.preventDefault();
     if (!validateForm()) return;
 
+    const discountValue = Number(formData.discount?.value || 0);
+
+    const payload = {
+      ...formData,
+      description: formData.description,
+      price: Number(formData.price),
+      stock: Number(formData.stock),
+      discount: {
+        ...formData.discount,
+        value: discountValue,
+        isActive: discountValue > 0,
+      },
+      badges: Array.isArray(formData.badges) ? formData.badges : [],
+    };
+
     try {
       setIsSubmitting(true);
-      await onUpdate(product._id, formData); // Update stock
+      await onUpdate(product._id, payload);
       setToast({ type: 'success', message: messages.product.updateSuccess });
       setTimeout(() => onClose(), 500);
     } catch (err) {
@@ -190,40 +217,85 @@ const EditProductModal = ({ isOpen, onClose, onUpdate, product, categories, subc
             required
           />
 
-          <div className="flex gap-2 mt-6">
-            <button
-              type="submit"
-              disabled={loading || isSubmitting}
-              className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 transition"
-            >
-              {isSubmitting ? 'Updating...' : 'Update Product'}
-            </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              className="btn btn-primary"
-              onClick={handleStockUpdate}
-              disabled={isSubmitting}
-            >
-              Update Stock
-            </button>
-          </div>
+          <FormInput
+            label="Discount Value"
+            type="number"
+            name="discount.value"
+            value={formData.discount?.value || ''}
+            onChange={(e) => setFormData(prev => ({
+              ...prev,
+              discount: { ...prev.discount, value: e.target.value },
+            }))}
+            placeholder="Enter discount value"
+          />
+
+          <FormInput
+            label="Discount Type"
+            type="select"
+            name="discount.type"
+            value={formData.discount?.type || 'percentage'}
+            onChange={(e) => setFormData(prev => ({
+              ...prev,
+              discount: { ...prev.discount, type: e.target.value },
+            }))}
+            options={[
+              { label: 'Percentage', value: 'percentage' },
+              { label: 'Flat', value: 'flat' }
+            ]}
+          />
+
+          <FormInput
+            label="Discount Badge Text"
+            name="discount.badgeText"
+            value={formData.discount?.badgeText || ''}
+            onChange={(e) => setFormData(prev => ({
+              ...prev,
+              discount: { ...prev.discount, badgeText: e.target.value },
+            }))}
+            placeholder="Enter badge text (optional)"
+          />
+
+          <FormInput
+            label="Discount Badge Color"
+            type="select"
+            name="discount.badgeColor"
+            value={formData.discount?.badgeColor || 'red'}
+            onChange={(e) => setFormData(prev => ({
+              ...prev,
+              discount: { ...prev.discount, badgeColor: e.target.value },
+            }))}
+            options={[
+              { label: 'Red', value: 'red' },
+              { label: 'Orange', value: 'orange' },
+              { label: 'Green', value: 'green' },
+              { label: 'Blue', value: 'blue' },
+            ]}
+          />
+
+          <FormInput
+            label="Custom Badges"
+            name="badges"
+            value={formData.badges.join(', ')}
+            onChange={(e) => setFormData(prev => ({
+              ...prev,
+              badges: e.target.value.split(',').map((badge) => badge.trim()).filter(Boolean),
+            }))}
+            placeholder="Enter badges separated by commas"
+          />
+
+          <FormInput
+            label="Delivery Time"
+            name="deliveryTime"
+            value={formData.deliveryTime}
+            onChange={handleInputChange}
+            placeholder="Enter delivery time (e.g., 30 mins)"
+          />
+
+          <button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? 'Saving...' : 'Save'}
+          </button>
         </form>
       </Modal>
-
-      {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
-        />
-      )}
     </>
   );
 };

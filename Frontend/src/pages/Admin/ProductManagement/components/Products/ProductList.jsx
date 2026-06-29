@@ -88,6 +88,12 @@ const ProductList = ({ products, loading, onAdd, onUpdate, onDelete, categories,
           ...product,
           category: Array.isArray(product.category) ? product.category.join(', ') : product.category,
           subcategory: Array.isArray(product.subcategory) ? product.subcategory.join(', ') : product.subcategory,
+          description: product.description || product.desc || '',
+          discount: product.discount && product.discount.isActive
+            ? `${product.discount.value}${product.discount.type === 'percentage' ? '%' : '₹'} OFF`
+            : 'No Discount',
+          badges: product.badges && product.badges.length > 0 ? product.badges.join(', ') : 'None',
+          deliveryTime: product.deliveryTime || 'N/A',
           stock: (
             <input
               type="number"

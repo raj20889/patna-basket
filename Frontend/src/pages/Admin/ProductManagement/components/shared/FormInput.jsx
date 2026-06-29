@@ -1,6 +1,6 @@
 import React from 'react';
 
-const FormInput = ({ label, type = 'text', name, value, onChange, required = false, error, placeholder }) => {
+const FormInput = ({ label, type = 'text', name, value, onChange, required = false, error, placeholder, options = [] }) => {
   return (
     <div className="mb-4">
       <label htmlFor={name} className="block text-sm font-medium text-gray-700 mb-1">
@@ -18,6 +18,22 @@ const FormInput = ({ label, type = 'text', name, value, onChange, required = fal
           }`}
           rows="3"
         />
+      ) : type === 'select' ? (
+        <select
+          id={name}
+          name={name}
+          value={value}
+          onChange={onChange}
+          className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
+            error ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+          }`}
+        >
+          {options.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
       ) : (
         <input
           id={name}

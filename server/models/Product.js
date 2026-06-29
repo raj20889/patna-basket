@@ -52,7 +52,19 @@ const productSchema = new mongoose.Schema({
         }
     ],
     stock: { type: Number, required: true, default: 0 } // Add stock field
-}, { timestamps: true });
+}, {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+});
+
+productSchema.virtual('description')
+    .get(function getDescription() {
+        return this.desc;
+    })
+    .set(function setDescription(value) {
+        this.desc = value;
+    });
 
 // Updated text index with subcategory
 productSchema.index({

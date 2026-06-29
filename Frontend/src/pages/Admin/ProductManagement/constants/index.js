@@ -34,6 +34,20 @@ export const validationRules = {
       min: 0,
       message: 'Stock must be a non-negative integer',
     },
+    discount: {
+      required: false,
+      min: 0,
+      max: 100,
+      message: 'Discount must be a number between 0 and 100',
+    },
+    badges: {
+      required: false,
+      message: 'Badges are optional',
+    },
+    deliveryTime: {
+      required: false,
+      message: 'Delivery time is optional',
+    },
   },
   category: {
     name: {
@@ -105,7 +119,10 @@ export const tableColumns = {
     { key: 'category', label: 'Category', sortable: true },
     { key: 'subcategory', label: 'Subcategory', sortable: false },
     { key: 'price', label: 'Price', sortable: true },
-    { key: 'stock', label: 'Stock', sortable: true }, // Added Stock column
+    { key: 'stock', label: 'Stock', sortable: true },
+    { key: 'discount', label: 'Discount', sortable: false },
+    { key: 'badges', label: 'Badges', sortable: false },
+    { key: 'deliveryTime', label: 'Delivery Time', sortable: false },
     { key: 'actions', label: 'Actions', sortable: false },
   ],
   categories: [

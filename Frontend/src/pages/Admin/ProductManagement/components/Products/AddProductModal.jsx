@@ -13,7 +13,15 @@ const AddProductModal = ({ isOpen, onClose, onAdd, categories, subcategories = [
     category: [],
     subcategory: [],
     image: '',
-    stock: 0, // Add stock field to form data
+    stock: 0,
+    discount: {
+      value: '',
+      type: 'percentage', // or 'flat'
+      badgeText: '',
+      badgeColor: 'red',
+    },
+    badges: [],
+    deliveryTime: '',
   });
   const [errors, setErrors] = useState({});
   const [toast, setToast] = useState(null);
@@ -75,10 +83,19 @@ const AddProductModal = ({ isOpen, onClose, onAdd, categories, subcategories = [
     e.preventDefault();
     if (!validateForm()) return;
 
+    const discountValue = Number(formData.discount.value || 0);
+
     const processedFormData = {
       ...formData,
+      description: formData.description,
       price: Number(formData.price),
       stock: Number(formData.stock),
+      discount: {
+        ...formData.discount,
+        value: discountValue,
+        isActive: discountValue > 0,
+      },
+      badges: Array.isArray(formData.badges) ? formData.badges : [],
     };
 
     console.log('Submitting processed form data:', processedFormData); // Debugging log
@@ -96,6 +113,15 @@ const AddProductModal = ({ isOpen, onClose, onAdd, categories, subcategories = [
           subcategory: [],
           image: '',
           stock: 0,
+          discount: {
+            value: '',
+            type: 'percentage', // or 'flat'
+            isActive: false,
+            badgeText: '',
+            badgeColor: 'red',
+          },
+          badges: [],
+          deliveryTime: '',
         });
         onClose();
       }, 500);
@@ -183,6 +209,81 @@ const AddProductModal = ({ isOpen, onClose, onAdd, categories, subcategories = [
             error={errors.stock}
             required
             placeholder="Enter stock quantity"
+          />
+
+          <FormInput
+            label="Discount Value"
+            type="number"
+            name="discount.value"
+            value={formData.discount.value}
+            onChange={(e) => setFormData(prev => ({
+              ...prev,
+              discount: { ...prev.discount, value: e.target.value },
+            }))}
+            placeholder="Enter discount value"
+          />
+
+          <FormInput
+            label="Discount Type"
+            type="select"
+            name="discount.type"
+            value={formData.discount.type}
+            onChange={(e) => setFormData(prev => ({
+              ...prev,
+              discount: { ...prev.discount, type: e.target.value },
+            }))}
+            options={[
+              { label: 'Percentage', value: 'percentage' },
+              { label: 'Flat', value: 'flat' }
+            ]}
+          />
+
+          <FormInput
+            label="Discount Badge Text"
+            name="discount.badgeText"
+            value={formData.discount.badgeText}
+            onChange={(e) => setFormData(prev => ({
+              ...prev,
+              discount: { ...prev.discount, badgeText: e.target.value },
+            }))}
+            placeholder="Enter badge text (optional)"
+          />
+
+          <FormInput
+            label="Discount Badge Color"
+            type="select"
+            name="discount.badgeColor"
+            value={formData.discount.badgeColor}
+            onChange={(e) => setFormData(prev => ({
+              ...prev,
+              discount: { ...prev.discount, badgeColor: e.target.value },
+            }))}
+            options={[
+              { label: 'Select color', value: 'red' },
+              { label: 'Red', value: 'red' },
+              { label: 'Orange', value: 'orange' },
+              { label: 'Green', value: 'green' },
+              { label: 'Blue', value: 'blue' },
+            ]}
+          />
+
+          <FormInput
+            label="Custom Badges"
+            name="badges"
+            value={formData.badges.join(', ')}
+            onChange={(e) => setFormData(prev => ({
+              ...prev,
+              badges: e.target.value.split(',').map(badge => badge.trim()),
+            }))}
+            placeholder="Enter badges separated by commas"
+          />
+
+          <FormInput
+            label="Delivery Time"
+            name="deliveryTime"
+            value={formData.deliveryTime}
+            onChange={handleInputChange}
+            placeholder="Enter delivery time (e.g., 30 mins)"
           />
 
           <div className="flex gap-2 mt-6">

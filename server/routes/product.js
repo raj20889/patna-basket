@@ -11,6 +11,19 @@ const normalizeToArray = (value) => {
     return [value].filter(Boolean);
 };
 
+const normalizeDiscount = (discount = {}) => {
+    const value = Number(discount.value || 0);
+
+    return {
+        isActive: Boolean(discount.isActive ?? value > 0),
+        type: discount.type || 'percentage',
+        value,
+        badgeColor: discount.badgeColor || 'red',
+        badgeText: discount.badgeText || '',
+        validUntil: discount.validUntil,
+    };
+};
+
 // Add Product (Admin Only)
 router.post('/add', verifyToken, async (req, res) => {
     if (req.user.role !== 'admin') return res.status(403).json({ msg: 'Access Denied' });
@@ -18,9 +31,12 @@ router.post('/add', verifyToken, async (req, res) => {
     try {
         const payload = {
             ...req.body,
+            desc: req.body.description ?? req.body.desc ?? '',
             category: normalizeToArray(req.body.category),
             subcategory: normalizeToArray(req.body.subcategory),
             stock: req.body.stock || 0, // Include stock field with default value
+            discount: normalizeDiscount(req.body.discount),
+            badges: Array.isArray(req.body.badges) ? req.body.badges : normalizeToArray(req.body.badges),
         };
 
         const newProduct = new Product(payload);
@@ -131,6 +147,7 @@ router.put('/:id', verifyToken, async (req, res) => {
     try {
         const payload = {
             ...req.body,
+            desc: req.body.description ?? req.body.desc,
         };
 
         if (req.body.category !== undefined) {
@@ -139,6 +156,18 @@ router.put('/:id', verifyToken, async (req, res) => {
 
         if (req.body.subcategory !== undefined) {
             payload.subcategory = normalizeToArray(req.body.subcategory);
+        }
+
+        if (req.body.badges !== undefined) {
+            payload.badges = Array.isArray(req.body.badges) ? req.body.badges : normalizeToArray(req.body.badges);
+        }
+
+        if (req.body.deliveryTime !== undefined) {
+            payload.deliveryTime = req.body.deliveryTime;
+        }
+
+        if (req.body.discount !== undefined) {
+            payload.discount = normalizeDiscount(req.body.discount);
         }
 
         const updatedProduct = await Product.findByIdAndUpdate(
