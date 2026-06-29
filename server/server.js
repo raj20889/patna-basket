@@ -60,6 +60,22 @@ app.use(
 
 app.use(express.json());
 
+// Root endpoint
+app.get('/', (req, res) => {
+  res.status(200).json({
+    message: 'Patna Basket Backend API',
+    version: '1.0.0',
+    status: 'running',
+    endpoints: {
+      health: '/health',
+      auth: '/auth/login',
+      products: '/products',
+      cart: '/cart',
+      orders: '/orders',
+    },
+  });
+});
+
 // Health check endpoint for browser checks and Render keep-alive pings
 app.get(['/health', '/api/health'], (req, res) => {
   res.status(200).json({
