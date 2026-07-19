@@ -6,7 +6,10 @@ import 'react-toastify/dist/ReactToastify.css';
 import PaymentMethods from './PaymentMethods';
 import OrderSummary from '../Order/OrderSummary';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+const RAZORPAY_KEY_ID = import.meta.env.VITE_RAZORPAY_KEY_ID;
+
+console.log("Razorpay Key ID:", RAZORPAY_KEY_ID);
 
 const Payment = () => {
   const location = useLocation();
@@ -259,6 +262,22 @@ const Payment = () => {
         }
       } else if (selectedPayment === 'RAZORPAY') {
         try {
+          const paymentInitResponse = await axios.post(`${API_BASE_URL}/payment/razorpay/create-order`, {
+            orderId: response.data.orderId,
+          }, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          });
+
+          const { key: responseKey, amount, currency, razorpayOrderId } = paymentInitResponse.data || {};
+          const key = responseKey || RAZORPAY_KEY_ID;
+
+          if (!key || !amount || !currency || !razorpayOrderId) {
+            throw new Error('Incomplete Razorpay initialization data');
+          }
+
           // Dynamically load Razorpay script if not already loaded
           const loadRazorpayScript = () => {
             return new Promise((resolve) => {
@@ -280,12 +299,12 @@ const Payment = () => {
           }
 
           const options = {
-            key: response.data.key, // Razorpay Key ID
-            amount: response.data.amount, // in paise
-            currency: response.data.currency,
+            key,
+            amount,
+            currency,
             name: 'Patna Basket',
             description: 'Order Payment',
-            order_id: response.data.razorpayOrderId,
+            order_id: razorpayOrderId,
             handler: async function (paymentResponse) {
               try {
                 // Verify payment on backend
