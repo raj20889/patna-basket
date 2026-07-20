@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import DataTable from '../shared/DataTable';
 import AddProductModal from './AddProductModal';
+import BulkAddProductsModal from './BulkAddProductsModal';
 import EditProductModal from './EditProductModal';
 import DeleteProductModal from './DeleteProductModal';
 import { tableColumns } from '../../constants';
-import { AiOutlinePlus, AiOutlineSearch, AiOutlineDelete } from 'react-icons/ai';
+import { AiOutlinePlus, AiOutlineSearch, AiOutlineDelete, AiOutlineImport } from 'react-icons/ai';
 
-const ProductList = ({ products, loading, onAdd, onUpdate, onDelete, categories, subcategories = [], onSearch, onBulkDelete, onStockUpdate, fetchProducts }) => {
+const ProductList = ({ products, loading, onAdd, onUpdate, onDelete, onBulkAdd, categories, subcategories = [], onSearch, onBulkDelete, onDeleteAll, onStockUpdate, fetchProducts }) => {
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showBulkAddModal, setShowBulkAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -47,6 +49,24 @@ const ProductList = ({ products, loading, onAdd, onUpdate, onDelete, categories,
     await fetchProducts(); // Re-fetch products to update the list
   };
 
+  const handleBulkAddProducts = async (productDataList) => {
+    if (!fetchProducts) {
+      console.error('fetchProducts is not defined');
+      return;
+    }
+    const result = await onBulkAdd(productDataList);
+    await fetchProducts();
+    return result;
+  };
+
+  const handleDeleteAllProducts = async () => {
+    if (!products.length) return;
+    if (!window.confirm(`Delete all ${products.length} product(s)? This action cannot be undone.`)) return;
+    await onDeleteAll();
+    setSelectedProducts([]);
+    await fetchProducts();
+  };
+
   return (
     <div className="space-y-6">
       {/* Header & Search */}
@@ -62,6 +82,15 @@ const ProductList = ({ products, loading, onAdd, onUpdate, onDelete, categories,
           />
         </div>
         <div className="flex gap-2">
+          {products.length > 0 && (
+            <button
+              onClick={handleDeleteAllProducts}
+              className="flex items-center gap-2 px-4 py-2 bg-red-700 text-white rounded-lg hover:bg-red-800 transition"
+            >
+              <AiOutlineDelete size={20} />
+              Delete All ({products.length})
+            </button>
+          )}
           {selectedProducts.length > 0 && (
             <button
               onClick={() => onBulkDelete(selectedProducts)}
@@ -71,6 +100,13 @@ const ProductList = ({ products, loading, onAdd, onUpdate, onDelete, categories,
               Delete Selected ({selectedProducts.length})
             </button>
           )}
+          <button
+            onClick={() => setShowBulkAddModal(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+          >
+            <AiOutlineImport size={20} />
+            Bulk Add
+          </button>
           <button
             onClick={() => setShowAddModal(true)}
             className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
@@ -119,6 +155,13 @@ const ProductList = ({ products, loading, onAdd, onUpdate, onDelete, categories,
         onAdd={handleAddProduct} // Use the updated handler
         categories={categories}
         subcategories={subcategories}
+        loading={loading}
+      />
+
+      <BulkAddProductsModal
+        isOpen={showBulkAddModal}
+        onClose={() => setShowBulkAddModal(false)}
+        onBulkAdd={handleBulkAddProducts}
         loading={loading}
       />
 

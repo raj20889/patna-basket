@@ -22,7 +22,9 @@ const ProductManagement = () => {
     addProduct,
     updateProduct,
     deleteProduct,
+    bulkAddProducts,
     bulkDeleteProducts,
+    deleteAllProducts,
     searchProducts,
     updateProductStock, // Pass stock update handler
   } = useProducts();
@@ -162,7 +164,9 @@ const ProductManagement = () => {
               onAdd={addProduct}
               onUpdate={updateProduct}
               onDelete={deleteProduct}
+              onBulkAdd={bulkAddProducts}
               onBulkDelete={bulkDeleteProducts}
+              onDeleteAll={deleteAllProducts}
               categories={categories}
               subcategories={subcategories}
               onSearch={searchProducts}

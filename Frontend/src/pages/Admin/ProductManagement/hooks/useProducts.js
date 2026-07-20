@@ -97,6 +97,25 @@ export const useProducts = () => {
     }
   }, [products]);
 
+  // Bulk add products
+  const bulkAddProducts = useCallback(async (productsToAdd) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const result = await productService.bulkAddProducts(productsToAdd);
+      if (Array.isArray(result.products) && result.products.length > 0) {
+        setProducts(prevProducts => [...result.products, ...prevProducts]);
+      }
+      return result;
+    } catch (err) {
+      const errorMsg = err.response?.data?.msg || 'Failed to import products';
+      setError(errorMsg);
+      throw new Error(errorMsg);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   // Bulk delete products
   const bulkDeleteProducts = useCallback(async (productIds) => {
     try {
@@ -112,6 +131,22 @@ export const useProducts = () => {
       setLoading(false);
     }
   }, [products]);
+
+  // Delete all products
+  const deleteAllProducts = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      await productService.deleteAllProducts();
+      setProducts([]);
+    } catch (err) {
+      const errorMsg = err.response?.data?.msg || 'Failed to delete all products';
+      setError(errorMsg);
+      throw new Error(errorMsg);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   // Search products
   const searchProducts = useCallback(async (query) => {
@@ -138,7 +173,9 @@ export const useProducts = () => {
     updateProduct,
     updateProductStock,
     deleteProduct,
+    bulkAddProducts,
     bulkDeleteProducts,
+    deleteAllProducts,
     searchProducts,
   };
 };

@@ -24,6 +24,15 @@ const normalizeDiscount = (discount = {}) => {
     };
 };
 
+const normalizeBadges = (badges) => {
+    if (Array.isArray(badges)) return badges.filter(Boolean);
+    if (!badges) return [];
+    return String(badges)
+        .split(/[|,]/)
+        .map((item) => item.trim())
+        .filter(Boolean);
+};
+
 // Add Product (Admin Only)
 router.post('/add', verifyToken, async (req, res) => {
     if (req.user.role !== 'admin') return res.status(403).json({ msg: 'Access Denied' });
@@ -42,6 +51,58 @@ router.post('/add', verifyToken, async (req, res) => {
         const newProduct = new Product(payload);
         await newProduct.save();
         res.status(201).json({ msg: 'Product Added', product: newProduct });
+    } catch (err) {
+        res.status(500).json(err);
+    }
+});
+
+// Bulk Add Products (Admin Only)
+router.post('/bulk-add', verifyToken, async (req, res) => {
+    if (req.user.role !== 'admin') return res.status(403).json({ msg: 'Access Denied' });
+
+    try {
+        const products = Array.isArray(req.body) ? req.body : req.body.products;
+
+        if (!Array.isArray(products) || products.length === 0) {
+            return res.status(400).json({ msg: 'No products provided' });
+        }
+
+        const createdProducts = [];
+        const errors = [];
+
+        for (const [index, productData] of products.entries()) {
+            try {
+                if (!productData || !productData.name || !productData.price) {
+                    errors.push({ index, msg: 'Name and price are required' });
+                    continue;
+                }
+
+                const payload = {
+                    ...productData,
+                    desc: productData.description ?? productData.desc ?? '',
+                    category: normalizeToArray(productData.category),
+                    subcategory: normalizeToArray(productData.subcategory),
+                    stock: Number(productData.stock || 0),
+                    discount: normalizeDiscount(productData.discount),
+                    badges: normalizeBadges(productData.badges),
+                    deliveryTime: productData.deliveryTime || '30 MINS',
+                };
+
+                const newProduct = new Product(payload);
+                await newProduct.save();
+                createdProducts.push(newProduct);
+            } catch (err) {
+                errors.push({ index, msg: err.message || 'Failed to save product' });
+            }
+        }
+
+        res.status(201).json({
+            msg: `Imported ${createdProducts.length} product(s)`,
+            addedCount: createdProducts.length,
+            failedCount: errors.length,
+            products: createdProducts,
+            errors,
+        });
     } catch (err) {
         res.status(500).json(err);
     }
@@ -220,6 +281,22 @@ router.post('/bulk-delete', verifyToken, async (req, res) => {
         res.status(200).json({ 
             msg: `${result.deletedCount} product(s) deleted successfully`,
             deletedCount: result.deletedCount
+        });
+    } catch (err) {
+        res.status(500).json(err);
+    }
+});
+
+// Delete All Products (Admin Only)
+router.post('/bulk-delete-all', verifyToken, async (req, res) => {
+    if (req.user.role !== 'admin') return res.status(403).json({ msg: 'Access Denied' });
+
+    try {
+        const result = await Product.deleteMany({});
+
+        res.status(200).json({
+            msg: `${result.deletedCount} product(s) deleted successfully`,
+            deletedCount: result.deletedCount,
         });
     } catch (err) {
         res.status(500).json(err);

@@ -66,11 +66,31 @@ export const productService = {
     return res.data;
   },
 
+  // Bulk add products
+  bulkAddProducts: async (productsToAdd) => {
+    const res = await axios.post(
+      `${API_BASE_URL}/products/bulk-add`,
+      productsToAdd,
+      getAuthHeaders()
+    );
+    return res.data;
+  },
+
   // Bulk delete products
   bulkDeleteProducts: async (productIds) => {
     const res = await axios.post(
       `${API_BASE_URL}/products/bulk-delete`,
       { productIds },
+      getAuthHeaders()
+    );
+    return res.data;
+  },
+
+  // Delete all products
+  deleteAllProducts: async () => {
+    const res = await axios.post(
+      `${API_BASE_URL}/products/bulk-delete-all`,
+      {},
       getAuthHeaders()
     );
     return res.data;
