@@ -49,6 +49,7 @@ import NotificationPanel from "./pages/Admin/NotificationPanel";
 import DeliveryManagement from "./pages/Admin/DeliveryManagement";
 import ProductManagement from "./pages/Admin/ProductManagement/index";
 import VirtualStoresPage from "./pages/Admin/VirtualStoresPage";
+import DashboardAnalytics from "./pages/Admin/DashboardAnalytics";
 
 import WebSocketListener from "./components/Shared/WebSocketListener"; // Corrected import path
 import GroceryDeliveryPatna from "./pages/SEO/grocery-delivery-patna";
@@ -146,6 +147,15 @@ const App = () => {
                   <>
                     <AdminDashboard />
                   </>
+                </PrivateRoute>
+              }
+            />
+
+            <Route
+              path="/admin/dashboard-analytics"
+              element={
+                <PrivateRoute allowedRoles={["admin"]}>
+                  <DashboardAnalytics />
                 </PrivateRoute>
               }
             />

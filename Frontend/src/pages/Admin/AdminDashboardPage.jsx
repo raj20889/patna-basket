@@ -6,6 +6,7 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
 
   const navItems = [
+    { name: 'Dashboard Analytics', route: '/admin/dashboard-analytics' },
     { name: 'Product Management', route: '/admin/product-management' },
     { name: 'User Management', route: '/admin/user-management' },
     { name: 'Order Management', route: '/admin/order-management' },

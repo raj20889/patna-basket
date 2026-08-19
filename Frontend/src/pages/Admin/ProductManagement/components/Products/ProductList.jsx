@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import DataTable from '../shared/DataTable';
 import AddProductModal from './AddProductModal';
 import BulkAddProductsModal from './BulkAddProductsModal';
@@ -7,7 +7,7 @@ import DeleteProductModal from './DeleteProductModal';
 import { tableColumns } from '../../constants';
 import { AiOutlinePlus, AiOutlineSearch, AiOutlineDelete, AiOutlineImport } from 'react-icons/ai';
 
-const ProductList = ({ products, loading, onAdd, onUpdate, onDelete, onBulkAdd, categories, subcategories = [], onSearch, onBulkDelete, onDeleteAll, onStockUpdate, fetchProducts }) => {
+const ProductList = ({ products, loading, onAdd, onUpdate, onDelete, onBulkAdd, categories, subcategories = [], onSearch, onBulkDelete, onDeleteAll, onStockUpdate, fetchProducts, pagination }) => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showBulkAddModal, setShowBulkAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -15,8 +15,6 @@ const ProductList = ({ products, loading, onAdd, onUpdate, onDelete, onBulkAdd, 
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProducts, setSelectedProducts] = useState([]);
-
-  console.log('fetchProducts prop:', fetchProducts); // Debugging log to verify if fetchProducts is passed
 
   const handleEdit = (product) => {
     setSelectedProduct(product);
@@ -32,6 +30,14 @@ const ProductList = ({ products, loading, onAdd, onUpdate, onDelete, onBulkAdd, 
     const term = e.target.value;
     setSearchTerm(term);
     onSearch(term);
+    setSelectedProducts([]);
+  };
+
+  const handlePageChange = async (nextPage) => {
+    if (!fetchProducts || loading) return;
+    if (nextPage < 1 || nextPage > (pagination?.totalPages || 1)) return;
+    setSelectedProducts([]);
+    await fetchProducts(nextPage, searchTerm);
   };
 
   const handleStockUpdate = (productId, newStock) => {
@@ -60,8 +66,9 @@ const ProductList = ({ products, loading, onAdd, onUpdate, onDelete, onBulkAdd, 
   };
 
   const handleDeleteAllProducts = async () => {
-    if (!products.length) return;
-    if (!window.confirm(`Delete all ${products.length} product(s)? This action cannot be undone.`)) return;
+    const totalProducts = pagination?.totalProducts || products.length;
+    if (!totalProducts) return;
+    if (!window.confirm(`Delete all ${totalProducts} product(s)? This action cannot be undone.`)) return;
     await onDeleteAll();
     setSelectedProducts([]);
     await fetchProducts();
@@ -122,6 +129,20 @@ const ProductList = ({ products, loading, onAdd, onUpdate, onDelete, onBulkAdd, 
         columns={tableColumns.products}
         data={products.map(product => ({
           ...product,
+          image: product.image ? (
+            <img
+              src={product.image}
+              alt={product.name || 'Product'}
+              className="h-12 w-12 rounded object-cover"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+                const nextSibling = e.currentTarget.nextElementSibling;
+                if (nextSibling) {
+                  nextSibling.style.display = 'flex';
+                }
+              }}
+            />
+          ) : null,
           category: Array.isArray(product.category) ? product.category.join(', ') : product.category,
           subcategory: Array.isArray(product.subcategory) ? product.subcategory.join(', ') : product.subcategory,
           description: product.description || product.desc || '',
@@ -140,6 +161,23 @@ const ProductList = ({ products, loading, onAdd, onUpdate, onDelete, onBulkAdd, 
           ),
         }))
         }
+        overrideRender={(key, row) => {
+          if (key === 'image') {
+            return row.image ? (
+              <div className="relative h-12 w-12">
+                {row.image}
+                <div className="absolute inset-0 hidden items-center justify-center rounded bg-gray-100 text-[10px] text-gray-500">
+                  No Image
+                </div>
+              </div>
+            ) : (
+              <div className="flex h-12 w-12 items-center justify-center rounded bg-gray-100 text-[10px] text-gray-500">
+                No Image
+              </div>
+            );
+          }
+          return null;
+        }}
         onEdit={handleEdit}
         onDelete={handleDelete}
         loading={loading}
@@ -147,6 +185,31 @@ const ProductList = ({ products, loading, onAdd, onUpdate, onDelete, onBulkAdd, 
         selectedItems={selectedProducts}
         onSelectionChange={setSelectedProducts}
       />
+
+      <div className="flex flex-col gap-3 border-t border-gray-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm text-gray-600">
+          Showing {products.length} of {pagination?.totalProducts || products.length} products
+        </p>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => handlePageChange((pagination?.currentPage || 1) - 1)}
+            disabled={loading || (pagination?.currentPage || 1) <= 1}
+            className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Previous
+          </button>
+          <span className="text-sm font-medium text-gray-700">
+            Page {pagination?.currentPage || 1} of {pagination?.totalPages || 1}
+          </span>
+          <button
+            onClick={() => handlePageChange((pagination?.currentPage || 1) + 1)}
+            disabled={loading || (pagination?.currentPage || 1) >= (pagination?.totalPages || 1)}
+            className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
+      </div>
 
       {/* Modals */}
       <AddProductModal

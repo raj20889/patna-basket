@@ -33,6 +33,8 @@ const normalizeBadges = (badges) => {
         .filter(Boolean);
 };
 
+const escapeRegex = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 // Add Product (Admin Only)
 router.post('/add', verifyToken, async (req, res) => {
     if (req.user.role !== 'admin') return res.status(403).json({ msg: 'Access Denied' });
@@ -111,8 +113,54 @@ router.post('/bulk-add', verifyToken, async (req, res) => {
 // Get All Products
 router.get('/', async (req, res) => {
     try {
-        const products = await Product.find();
-        res.status(200).json(products);
+        const parsedPage = Number.parseInt(req.query.page, 10);
+        const parsedLimit = Number.parseInt(req.query.limit, 10);
+        const search = typeof req.query.search === 'string' ? req.query.search.trim() : '';
+
+        const hasPaginationQuery = Number.isFinite(parsedPage)
+            || Number.isFinite(parsedLimit)
+            || Boolean(search);
+
+        // Preserve old response shape for callers that still expect an array.
+        if (!hasPaginationQuery) {
+            const products = await Product.find().sort({ createdAt: -1 });
+            return res.status(200).json(products);
+        }
+
+        const page = Number.isFinite(parsedPage) && parsedPage > 0 ? parsedPage : 1;
+        const limit = Number.isFinite(parsedLimit) && parsedLimit > 0 ? Math.min(parsedLimit, 100) : 10;
+        const skip = (page - 1) * limit;
+
+        let filter = {};
+        if (search) {
+            const searchRegex = new RegExp(escapeRegex(search), 'i');
+            filter = {
+                $or: [
+                    { name: searchRegex },
+                    { desc: searchRegex },
+                    { category: searchRegex },
+                    { subcategory: searchRegex },
+                ],
+            };
+        }
+
+        const [products, totalProducts] = await Promise.all([
+            Product.find(filter)
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit),
+            Product.countDocuments(filter),
+        ]);
+
+        const totalPages = Math.max(1, Math.ceil(totalProducts / limit));
+
+        return res.status(200).json({
+            products,
+            currentPage: page,
+            totalPages,
+            totalProducts,
+            limit,
+        });
     } catch (err) {
         res.status(500).json(err);
     }

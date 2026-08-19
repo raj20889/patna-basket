@@ -4,22 +4,41 @@ import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend
 } from 'recharts'
+import AdminNavbar from '../../components/Navbar/AdminNavbar'
 
 const COLORS = ['#00C49F', '#FFBB28', '#FF8042', '#0088FE', '#FF6384']
 
 const DashboardAnalytics = () => {
   const [data, setData] = useState(null)
+  const [error, setError] = useState('')
 
   useEffect(() => {
     const fetchAnalytics = async () => {
-      const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/analytics/dashboard`)
-      setData(res.data)
+      try {
+        setError('')
+        const token = localStorage.getItem('token')
+        const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/analytics/dashboard`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+        setData(res.data)
+      } catch (err) {
+        setError(err.response?.data?.message || 'Unable to load analytics right now.')
+      }
     }
     fetchAnalytics()
   }, [])
 
   if (!data) {
-    return <div className="p-6 text-center">Loading dashboard...</div>
+    return (
+      <>
+        <AdminNavbar />
+        <div className="min-h-screen bg-gray-100 p-6 text-center text-gray-600">
+          {error || 'Loading dashboard...'}
+        </div>
+      </>
+    )
   }
 
   const stats = [
@@ -33,8 +52,10 @@ const DashboardAnalytics = () => {
   ]
 
   return (
-    <div className="p-6 space-y-6">
-      <h2 className="text-2xl font-bold">📊 Dashboard Analytics</h2>
+    <>
+      <AdminNavbar />
+      <div className="min-h-screen bg-gray-100 p-6 space-y-6">
+      <h2 className="text-2xl font-bold">Dashboard Analytics</h2>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -48,7 +69,7 @@ const DashboardAnalytics = () => {
 
       {/* Monthly Revenue Line Chart */}
       <div className="bg-white p-6 rounded-xl shadow">
-        <h3 className="text-lg font-semibold mb-4">📈 Monthly Revenue</h3>
+        <h3 className="text-lg font-semibold mb-4">Monthly Revenue</h3>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={data.monthlyOrders}>
             <XAxis dataKey="_id" />
@@ -63,7 +84,7 @@ const DashboardAnalytics = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Payment Methods */}
         <div className="bg-white p-6 rounded-xl shadow">
-          <h3 className="text-lg font-semibold mb-4">💳 Payment Methods</h3>
+          <h3 className="text-lg font-semibold mb-4">Payment Methods</h3>
           <ResponsiveContainer width="100%" height={250}>
             <PieChart>
               <Pie
@@ -88,7 +109,7 @@ const DashboardAnalytics = () => {
 
         {/* Top Products */}
         <div className="bg-white p-6 rounded-xl shadow">
-          <h3 className="text-lg font-semibold mb-4">🔥 Top Products</h3>
+          <h3 className="text-lg font-semibold mb-4">Top Products</h3>
           <ul className="space-y-2">
             {data.topProducts.map((prod, i) => (
               <li key={i} className="flex justify-between text-sm border-b py-1">
@@ -99,7 +120,8 @@ const DashboardAnalytics = () => {
           </ul>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   )
 }
 

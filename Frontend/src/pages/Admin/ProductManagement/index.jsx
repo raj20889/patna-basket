@@ -18,6 +18,7 @@ const ProductManagement = () => {
     products,
     loading: productsLoading,
     error: productsError,
+    pagination,
     fetchProducts,
     addProduct,
     updateProduct,
@@ -84,7 +85,7 @@ const ProductManagement = () => {
                 : 'border-transparent text-gray-600 hover:text-gray-800'
             }`}
           >
-            Products ({products.length})
+            Products ({pagination.totalProducts || products.length})
           </button>
           <button
             onClick={() => setActiveTab('categories')}
@@ -172,6 +173,7 @@ const ProductManagement = () => {
               onSearch={searchProducts}
               onStockUpdate={updateProductStock}
               fetchProducts={fetchProducts} // Pass fetchProducts as a prop
+              pagination={pagination}
             />
           )}
 

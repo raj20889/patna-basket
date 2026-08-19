@@ -115,6 +115,7 @@ export const messages = {
 // ===== TABLE COLUMNS =====
 export const tableColumns = {
   products: [
+    { key: 'image', label: 'Image', sortable: false },
     { key: 'name', label: 'Product Name', sortable: true },
     { key: 'category', label: 'Category', sortable: true },
     { key: 'subcategory', label: 'Subcategory', sortable: false },
