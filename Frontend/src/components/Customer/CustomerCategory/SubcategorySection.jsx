@@ -16,6 +16,10 @@ const SubcategorySection = ({
   // State to manage live updates
   const [liveProducts, setLiveProducts] = useState(products);
 
+  useEffect(() => {
+    setLiveProducts(products);
+  }, [products]);
+
   // Add socket.io listener for live stock updates
   useEffect(() => {
     const socket = io(import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000');

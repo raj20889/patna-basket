@@ -4,17 +4,24 @@ import { useNavigate } from 'react-router-dom';
 import './QuickSearchChips.css'; // Import animation styles
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+const CACHE_TIME = 5 * 60 * 1000;
+let quickSearchCache = { data: null, fetchedAt: 0 };
 
 const QuickSearchChips = () => {
-  const [searches, setSearches] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const hasCache = quickSearchCache.data !== null;
+  const [searches, setSearches] = useState(() => quickSearchCache.data || []);
+  const [loading, setLoading] = useState(!hasCache);
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchQuickSearches = async () => {
+      const isFresh = Date.now() - quickSearchCache.fetchedAt < CACHE_TIME;
+      if (quickSearchCache.data !== null && isFresh) return;
+
       try {
         const response = await axios.get(`${API_BASE_URL}/quick-searches`);
         const data = Array.isArray(response.data) ? response.data : response.data.data || [];
+        quickSearchCache = { data, fetchedAt: Date.now() };
         setSearches(data);
       } catch (error) {
         console.error('Failed to fetch quick searches:', error);

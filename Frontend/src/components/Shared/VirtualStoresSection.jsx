@@ -4,10 +4,13 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Store } from 'lucide-react';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+const CACHE_TIME = 5 * 60 * 1000;
+let storesCache = { data: null, fetchedAt: 0 };
 
 const VirtualStoresSection = () => {
-  const [stores, setStores] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const hasCache = storesCache.data !== null;
+  const [stores, setStores] = useState(() => storesCache.data || []);
+  const [loading, setLoading] = useState(!hasCache);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(false);
   const scrollContainerRef = useRef(null);
@@ -15,9 +18,13 @@ const VirtualStoresSection = () => {
 
   useEffect(() => {
     const fetchStores = async () => {
+      const isFresh = Date.now() - storesCache.fetchedAt < CACHE_TIME;
+      if (storesCache.data !== null && isFresh) return;
+
       try {
         const response = await axios.get(`${API_BASE_URL}/stores`);
         const data = Array.isArray(response.data) ? response.data : response.data.data || [];
+        storesCache = { data, fetchedAt: Date.now() };
         console.log('Virtual Stores API Response:', response.data);
         console.log('Processed Stores Data:', data);
         data.forEach((store, idx) => {

@@ -3,10 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 
+const CACHE_TIME = 5 * 60 * 1000;
+let categoryCache = { data: null, fetchedAt: 0 };
+
 const CategoryGrid = () => {
   const navigate = useNavigate();
-  const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const hasCache = categoryCache.data !== null;
+  const [categories, setCategories] = useState(() => categoryCache.data || []);
+  const [loading, setLoading] = useState(!hasCache);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(false);
   const scrollContainerRef = useRef(null);
@@ -18,6 +22,9 @@ const CategoryGrid = () => {
   // Fetch categories from backend
   useEffect(() => {
     const fetchCategories = async () => {
+      const isFresh = Date.now() - categoryCache.fetchedAt < CACHE_TIME;
+      if (categoryCache.data !== null && isFresh) return;
+
       try {
         const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/categories`);
         const fetchedCategories = (response.data || []).map(cat => ({
@@ -26,15 +33,18 @@ const CategoryGrid = () => {
           path: cat.name.toLowerCase().replace(/\s+/g, '-'),
           description: cat.description || 'Explore our fresh selection'
         }));
+        categoryCache = { data: fetchedCategories, fetchedAt: Date.now() };
         setCategories(fetchedCategories);
       } catch (err) {
         console.error('Error fetching categories:', err);
         // Fallback to default categories if API fails
-        setCategories([
+        const fallbackCategories = [
           { name: 'Fruits', imageUrl: 'https://images.unsplash.com/photo-1550258987-190a2d41a8ba?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60', path: 'fruits', description: 'Fresh & Juicy' },
           { name: 'Vegetables', imageUrl: 'https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60', path: 'vegetables', description: 'Farm Fresh' },
           { name: 'Dairy', imageUrl: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60', path: 'dairy', description: 'Pure & Healthy' },
-        ]);
+        ];
+        categoryCache = { data: fallbackCategories, fetchedAt: Date.now() };
+        setCategories(fallbackCategories);
       } finally {
         setLoading(false);
       }

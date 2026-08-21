@@ -3,11 +3,15 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 
+const CACHE_TIME = 5 * 60 * 1000;
+let bannerCache = { data: null, fetchedAt: 0 };
+
 const BannerComponent = () => {
   const navigate = useNavigate();
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [slides, setSlides] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const hasCache = bannerCache.data !== null;
+  const [slides, setSlides] = useState(() => bannerCache.data || []);
+  const [loading, setLoading] = useState(!hasCache);
   const role = localStorage.getItem('role');
   const isCustomer = role === 'customer';
   const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
@@ -28,11 +32,15 @@ const BannerComponent = () => {
 
   useEffect(() => {
     const fetchBanners = async () => {
+      const isFresh = Date.now() - bannerCache.fetchedAt < CACHE_TIME;
+      if (bannerCache.data !== null && isFresh) return;
+
       try {
         const res = await axios.get(`${API_URL}/banners`);
         const activeSorted = (res.data || [])
           .filter((b) => b.isActive !== false)
           .sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
+        bannerCache = { data: activeSorted, fetchedAt: Date.now() };
         setSlides(activeSorted);
       } catch (err) {
         console.error('Banner fetch error:', err);
