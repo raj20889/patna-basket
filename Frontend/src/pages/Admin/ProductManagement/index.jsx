@@ -18,14 +18,12 @@ const ProductManagement = () => {
     products,
     loading: productsLoading,
     error: productsError,
-    pagination,
     fetchProducts,
     addProduct,
     updateProduct,
     deleteProduct,
     bulkAddProducts,
     bulkDeleteProducts,
-    deleteAllProducts,
     searchProducts,
     updateProductStock, // Pass stock update handler
   } = useProducts();
@@ -85,7 +83,7 @@ const ProductManagement = () => {
                 : 'border-transparent text-gray-600 hover:text-gray-800'
             }`}
           >
-            Products ({pagination.totalProducts || products.length})
+            Products ({products.length})
           </button>
           <button
             onClick={() => setActiveTab('categories')}
@@ -167,13 +165,11 @@ const ProductManagement = () => {
               onDelete={deleteProduct}
               onBulkAdd={bulkAddProducts}
               onBulkDelete={bulkDeleteProducts}
-              onDeleteAll={deleteAllProducts}
               categories={categories}
               subcategories={subcategories}
               onSearch={searchProducts}
               onStockUpdate={updateProductStock}
               fetchProducts={fetchProducts} // Pass fetchProducts as a prop
-              pagination={pagination}
             />
           )}
 

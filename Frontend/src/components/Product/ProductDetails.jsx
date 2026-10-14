@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { useDispatch, useSelector } from 'react-redux';
 import { addToCart, setCart } from '../../redux/cartSlice';
 import axios from "axios";
 import socket from '../../utils/socket';
+import { trackProductEvent } from '../../utils/productAnalytics';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -11,6 +12,7 @@ function ProductDetails() {
   const { id } = useParams();
   const [product, setProduct] = useState(null);
   const [productLoadingStates, setProductLoadingStates] = useState({});
+  const detailViewTracked = useRef(false);
 
   const dispatch = useDispatch();
   const cartItems = useSelector((state) => state.cart.items);
@@ -23,6 +25,7 @@ function ProductDetails() {
 
     setProductLoadingStates(prev => ({ ...prev, [product._id]: true }));
     try {
+      trackProductEvent({ eventType: 'ADD_TO_CART', product, eventSource: 'product_details', quantity: 1 });
       if (!token) {
         dispatch(addToCart({
           productId: product._id,
@@ -56,6 +59,7 @@ function ProductDetails() {
 
     setProductLoadingStates(prev => ({ ...prev, [product._id]: true }));
     try {
+      trackProductEvent({ eventType: newQuantity === 0 ? 'REMOVE_FROM_CART' : 'ADD_TO_CART', product, eventSource: 'product_details', quantity: Math.max(newQuantity, 1) });
       if (!token) {
         dispatch(addToCart({
           productId: product._id,
@@ -115,6 +119,13 @@ function ProductDetails() {
       window.removeEventListener('cartUpdated', handleCartUpdate);
     };
   }, [id, token, dispatch]);
+
+  useEffect(() => {
+    if (product && !detailViewTracked.current) {
+      detailViewTracked.current = true;
+      trackProductEvent({ eventType: 'PRODUCT_DETAIL_VIEW', product, eventSource: 'product_details' });
+    }
+  }, [product]);
 
   useEffect(() => {
     // Listen for stock updates

@@ -2,6 +2,7 @@ const express = require('express');
 const crypto = require('crypto');
 const Razorpay = require('razorpay');
 const Order = require('../models/Order');
+const { recordProductEvent } = require('../utils/productAnalytics');
 const { RAZORPAY } = require('../config/payment');
 
 const router = express.Router();
@@ -95,6 +96,16 @@ router.post('/razorpay/verify', async (req, res) => {
     order.paymentMethod = 'RAZORPAY';
     order.paidAt = new Date();
     await order.save();
+
+    await Promise.all(order.items.map((item) => recordProductEvent({
+      eventType: 'PAYMENT_SUCCESS',
+      productId: item.productId,
+      productName: item.name,
+      userId: order.userId,
+      orderId: order._id,
+      quantity: item.quantity,
+      eventId: `payment-success-${order._id}-${item.productId}`
+    })));
 
     return res.json({ success: true, msg: 'Payment verified successfully' });
   } catch (err) {

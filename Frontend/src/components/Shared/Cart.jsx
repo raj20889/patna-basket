@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import socket from "../../utils/socket"; // Import socket instance
 import { toast } from 'react-toastify';
+import { trackProductEvent } from '../../utils/productAnalytics';
 
 const CartPage = () => {
   const [productLoadingStates, setProductLoadingStates] = useState({});
@@ -251,6 +252,7 @@ const CartPage = () => {
     }
     setProceedLoading(true);
     try {
+      cartItems.forEach((item) => trackProductEvent({ eventType: 'CHECKOUT_STARTED', product: item, eventSource: 'checkout', quantity: item.quantity }));
       // Additional logic before navigating to checkout if needed
       navigate('/checkout');
     } catch (error) {

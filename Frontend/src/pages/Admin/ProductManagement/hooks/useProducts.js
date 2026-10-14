@@ -2,7 +2,6 @@ import { useState, useCallback } from 'react';
 import { productService } from '../services/apiService';
 
 export const useProducts = () => {
-  const PAGE_SIZE = 10;
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -17,10 +16,10 @@ export const useProducts = () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await productService.getAllProducts(page, PAGE_SIZE, search);
+      const data = await productService.getAllProducts(page, 10, search);
       setProducts(data.products || []);
       setPagination({
-        currentPage: data.currentPage || page,
+        currentPage: page,
         totalPages: data.totalPages || 1,
         totalProducts: data.totalProducts || 0,
       });
@@ -133,26 +132,20 @@ export const useProducts = () => {
     }
   }, [products]);
 
-  // Delete all products
-  const deleteAllProducts = useCallback(async () => {
+  // Search products
+  const searchProducts = useCallback(async (query) => {
     try {
       setLoading(true);
       setError(null);
-      await productService.deleteAllProducts();
-      setProducts([]);
+      const data = await productService.searchProducts(query);
+      setProducts(data);
     } catch (err) {
-      const errorMsg = err.response?.data?.msg || 'Failed to delete all products';
-      setError(errorMsg);
-      throw new Error(errorMsg);
+      setError(err.response?.data?.msg || 'Failed to search products');
+      console.error('Search error:', err);
     } finally {
       setLoading(false);
     }
   }, []);
-
-  // Search products
-  const searchProducts = useCallback(async (query) => {
-    await fetchProducts(1, query);
-  }, [fetchProducts]);
 
   return {
     products,
@@ -166,7 +159,6 @@ export const useProducts = () => {
     deleteProduct,
     bulkAddProducts,
     bulkDeleteProducts,
-    deleteAllProducts,
     searchProducts,
   };
 };

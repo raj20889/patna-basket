@@ -4,8 +4,9 @@ import { addToCart, removeFromCart } from "../../redux/cartSlice";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useCart } from "../../contexts/CartContext";
+import { trackProductEvent, useProductImpression } from "../../utils/productAnalytics";
 
-const ProductCard = ({ product }) => {
+const ProductCard = ({ product, eventSource = 'homepage', searchQuery, categoryContext }) => {
   console.log("ProductCard props:", { product }); // Debugging: Log props to verify stock
   const dispatch = useDispatch();
   const [isLoading, setIsLoading] = React.useState(false);
@@ -36,6 +37,7 @@ const ProductCard = ({ product }) => {
     return 0;
   })();
   const token = localStorage.getItem("token");
+  const impressionRef = useProductImpression(product, eventSource, { searchQuery, categoryContext });
 
   const syncToServer = async (newQuantity) => {
     if (!token) return; // Guest users don't need server sync
@@ -55,6 +57,7 @@ const ProductCard = ({ product }) => {
   const handleAddToCart = async () => {
     setIsLoading(true);
     try {
+      trackProductEvent({ eventType: 'ADD_TO_CART', product, eventSource, quantity: Math.max(quantity + 1, 1) });
       dispatch(addToCart({ 
         productId: product._id, 
         name: product.name,
@@ -83,6 +86,7 @@ const ProductCard = ({ product }) => {
 
     setIsLoading(true);
     const newQuantity = quantity + 1;
+    trackProductEvent({ eventType: 'ADD_TO_CART', product, eventSource, quantity: newQuantity });
     dispatch(addToCart({ 
       productId: product._id, 
       name: product.name,
@@ -108,6 +112,7 @@ const ProductCard = ({ product }) => {
       await syncToServer(newQuantity);
       setTimeout(() => setIsLoading(false), 100);
     } else {
+      trackProductEvent({ eventType: 'REMOVE_FROM_CART', product, eventSource, quantity: 1 });
       dispatch(removeFromCart({ productId: product._id }));
       if (token) {
         try {
@@ -157,6 +162,7 @@ const ProductCard = ({ product }) => {
 
   return (
     <div
+      ref={impressionRef}
       className={`flex-shrink-0 w-36 md:w-40 rounded-xl overflow-hidden bg-white/70 backdrop-blur-md border border-gray-200 shadow-sm hover:shadow-xl transition-all duration-300 group ${product.stock === 0 ? 'opacity-50' : ''}`}
       style={{
         animation: 'pc-fade-in 0.5s ease-out both'
@@ -213,6 +219,7 @@ const ProductCard = ({ product }) => {
           onError={(e) => {
             e.target.src = "/placeholder-product.jpg";
           }}
+          onClick={() => trackProductEvent({ eventType: 'PRODUCT_IMAGE_CLICK', product, eventSource })}
         />
 
         {/* Decorative gradient glow */}
@@ -222,7 +229,16 @@ const ProductCard = ({ product }) => {
       {/* Product Details */}
       <div className="p-2">
         <h3 className="font-semibold text-xs md:text-sm line-clamp-2 mb-1 text-gray-900 group-hover:text-purple-600 transition-colors">
-          {truncateTitle(product?.name || product?.title || "Product")}
+          <button
+            type="button"
+            className="text-left"
+            onClick={() => {
+              trackProductEvent({ eventType: 'PRODUCT_CARD_CLICK', product, eventSource });
+              navigate(`/product/${product._id}`);
+            }}
+          >
+            {truncateTitle(product?.name || product?.title || "Product")}
+          </button>
         </h3>
         <div className="text-[10px] md:text-[11px] text-gray-500 mb-2">
           {product.weight || "1 pc"}

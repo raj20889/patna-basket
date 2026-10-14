@@ -5,6 +5,7 @@ import {
   PieChart, Pie, Cell, Legend
 } from 'recharts'
 import AdminNavbar from '../../components/Navbar/AdminNavbar'
+import ProductInteractionAnalytics from './ProductInteractionAnalytics'
 
 const COLORS = ['#00C49F', '#FFBB28', '#FF8042', '#0088FE', '#FF6384']
 
@@ -120,6 +121,7 @@ const DashboardAnalytics = () => {
           </ul>
         </div>
       </div>
+      <ProductInteractionAnalytics />
       </div>
     </>
   )

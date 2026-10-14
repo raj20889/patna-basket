@@ -15,39 +15,16 @@ const getAuthHeaders = () => {
 // ===== PRODUCT SERVICE =====
 export const productService = {
   // Get all products with pagination
-  getAllProducts: async (page = 1, limit = 10, search = '') => {
-    const params = {
-      page,
-      limit,
-    };
-
-    if (search && search.trim()) {
-      params.search = search.trim();
-    }
-
+  getAllProducts: async (page = 1, limit = 100, search = '') => {
     const res = await axios.get(
       `${API_BASE_URL}/products`,
-      {
-        ...getAuthHeaders(),
-        params,
-      }
+      getAuthHeaders()
     );
-
-    if (Array.isArray(res.data)) {
-      // Backward compatibility if backend returns full list array.
-      return {
-        products: res.data,
-        currentPage: 1,
-        totalPages: 1,
-        totalProducts: res.data.length,
-      };
-    }
-
+    // Backend returns array directly, wrap it for consistency
     return {
-      products: res.data.products || [],
-      currentPage: res.data.currentPage || page,
-      totalPages: res.data.totalPages || 1,
-      totalProducts: res.data.totalProducts || 0,
+      products: res.data,
+      totalPages: 1,
+      totalProducts: res.data.length,
     };
   },
 
@@ -109,19 +86,20 @@ export const productService = {
     return res.data;
   },
 
-  // Delete all products
-  deleteAllProducts: async () => {
-    const res = await axios.post(
-      `${API_BASE_URL}/products/bulk-delete-all`,
-      {},
-      getAuthHeaders()
-    );
-    return res.data;
-  },
-
   // Search products
   searchProducts: async (query) => {
-    return productService.getAllProducts(1, 10, query || '');
+    if (!query || query.trim().length === 0) {
+      const res = await axios.get(
+        `${API_BASE_URL}/products`,
+        getAuthHeaders()
+      );
+      return res.data;
+    }
+    const res = await axios.get(
+      `${API_BASE_URL}/products/search?q=${query}`,
+      getAuthHeaders()
+    );
+    return res.data.products || res.data;
   },
 };
 

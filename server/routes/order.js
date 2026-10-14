@@ -8,6 +8,7 @@ const { check, validationResult } = require('express-validator');
 const Razorpay = require('razorpay');
 const { RAZORPAY } = require('../config/payment');
 const { getSocket } = require("../socket"); // Import getSocket to emit WebSocket events
+const { recordProductEvent } = require('../utils/productAnalytics');
 
 // Initialize Razorpay instance
 const razorpay = new Razorpay({
@@ -122,6 +123,16 @@ router.post(
         });
 
         await newOrder.save({ session });
+
+        await Promise.all(newOrder.items.map((item) => recordProductEvent({
+          eventType: 'ORDER_PLACED',
+          productId: item.productId,
+          productName: item.name,
+          userId: req.user.id,
+          orderId: newOrder._id,
+          quantity: item.quantity,
+          eventId: `order-placed-${newOrder._id}-${item.productId}`
+        })));
 
         // Commit transaction
         await session.commitTransaction();
@@ -331,6 +342,16 @@ router.patch(
       order.cancelledAt = new Date();
       await order.save();
 
+      await Promise.all(order.items.map((item) => recordProductEvent({
+        eventType: 'ORDER_CANCELLED',
+        productId: item.productId,
+        productName: item.name,
+        userId: req.user.id,
+        orderId: order._id,
+        quantity: item.quantity,
+        eventId: `order-cancelled-${order._id}-${item.productId}`
+      })));
+
       // Emit WebSocket event
       const io = require('../socket').getSocket();
       io.emit('orderCancelled', { orderId: order._id, status: order.status });
@@ -373,6 +394,16 @@ router.put('/:id/cancel', verifyToken, async (req, res) => {
     order.status = 'cancelled';
     order.cancelledAt = new Date();
     await order.save();
+
+    await Promise.all(order.items.map((item) => recordProductEvent({
+      eventType: 'ORDER_CANCELLED',
+      productId: item.productId,
+      productName: item.name,
+      userId: req.user.id,
+      orderId: order._id,
+      quantity: item.quantity,
+      eventId: `order-cancelled-${order._id}-${item.productId}`
+    })));
 
     res.status(200).json({ success: true, message: 'Order cancelled successfully', order });
   } catch (error) {
